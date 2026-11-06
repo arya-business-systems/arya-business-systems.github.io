@@ -5896,3 +5896,149 @@ iniciarSupabase().then(function (cliente) {
 const botaoPrevia = document.getElementById("abtnPrevia");
 if (botaoPrevia) botaoPrevia.remove();
 // FIM DA PARTE 20
+// ===== PARTE 21: Esqueci minha senha / Nova senha =====
+// Guarda se a página foi aberta pelo link do e-mail (antes do Supabase limpar o endereço)
+let precisaNovaSenha = /type=recovery/.test(window.location.hash);
+
+const estiloSenha = document.createElement("style");
+estiloSenha.textContent = `
+  .ns-fundo {
+    position: fixed; inset: 0; z-index: 300;
+    display: grid; place-items: center; padding: 20px;
+    background: rgba(10, 10, 10, .45);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  .ns-fundo[hidden] { display: none; }
+  .ns-caixa {
+    width: 100%; max-width: 400px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px 24px; box-shadow: var(--shadow-lg);
+  }
+  .ns-caixa h2 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; margin-bottom: 6px; }
+  .rs-ok { color: var(--success); font-size: 13px; font-weight: 500; margin-top: 10px; text-align: center; }
+`;
+document.head.appendChild(estiloSenha);
+
+// ---- 1) Link "Esqueci minha senha" na tela de login ----
+const linkEsqueci = document.createElement("button");
+linkEsqueci.type = "button";
+linkEsqueci.className = "link-btn";
+linkEsqueci.id = "btnEsqueciSenha";
+linkEsqueci.textContent = "Esqueci minha senha";
+
+const rsMensagem = document.createElement("p");
+rsMensagem.className = "rs-ok";
+rsMensagem.hidden = true;
+
+btnAuth.after(linkEsqueci);
+linkEsqueci.after(rsMensagem);
+
+tabEntrar.addEventListener("click", function () { linkEsqueci.hidden = false; rsMensagem.hidden = true; });
+tabCriar.addEventListener("click", function () { linkEsqueci.hidden = true; rsMensagem.hidden = true; });
+
+linkEsqueci.addEventListener("click", async function () {
+  limparErros();
+  rsMensagem.hidden = true;
+  const email = inEmail.value.trim();
+  if (!emailValido(email)) {
+    falha(inEmail, "Digite seu e-mail no campo acima e toque de novo em \"Esqueci minha senha\".");
+    return;
+  }
+
+  linkEsqueci.disabled = true;
+  linkEsqueci.textContent = "Enviando...";
+  try {
+    const cliente = await iniciarSupabase();
+    const r = await cliente.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin
+    });
+    if (r.error) throw r.error;
+    rsMensagem.textContent = "Se este e-mail estiver cadastrado, você vai receber um link para criar uma nova senha. Confira também a caixa de spam.";
+    rsMensagem.hidden = false;
+  } catch (e) {
+    console.error(e);
+    const msg = e && e.message ? e.message : String(e);
+    authErro.textContent = /security purposes|seconds|rate limit/i.test(msg)
+      ? "Aguarde um minuto antes de pedir outro link."
+      : "Não foi possível enviar o e-mail: " + msg;
+  } finally {
+    linkEsqueci.disabled = false;
+    linkEsqueci.textContent = "Esqueci minha senha";
+  }
+});
+
+// ---- 2) Janela "Criar nova senha" (quando a pessoa chega pelo link do e-mail) ----
+const nsFundo = document.createElement("div");
+nsFundo.className = "ns-fundo";
+nsFundo.hidden = true;
+nsFundo.innerHTML = `
+  <div class="ns-caixa" role="dialog" aria-modal="true" aria-labelledby="nsTitulo">
+    <h2 id="nsTitulo">Criar nova senha</h2>
+    <p class="item-sub" style="margin-bottom:18px;">Escolha uma nova senha para entrar na ARYA.</p>
+    <div class="field">
+      <label for="nsSenha">Nova senha</label>
+      <input id="nsSenha" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" />
+    </div>
+    <div class="field">
+      <label for="nsSenha2">Confirmar nova senha</label>
+      <input id="nsSenha2" type="password" autocomplete="new-password" placeholder="Repita a senha" />
+    </div>
+    <p class="form-error" id="nsErro" role="alert"></p>
+    <button class="btn btn-full" id="btnNsSalvar" type="button">Salvar nova senha</button>
+  </div>
+`;
+document.body.appendChild(nsFundo);
+
+function abrirNovaSenha() {
+  precisaNovaSenha = false;
+  document.getElementById("nsSenha").value = "";
+  document.getElementById("nsSenha2").value = "";
+  document.getElementById("nsErro").textContent = "";
+  nsFundo.hidden = false;
+  document.getElementById("nsSenha").focus();
+}
+
+document.getElementById("btnNsSalvar").addEventListener("click", async function () {
+  const erro = document.getElementById("nsErro");
+  const senha = document.getElementById("nsSenha").value;
+  const senha2 = document.getElementById("nsSenha2").value;
+  erro.textContent = "";
+
+  if (senha.length < 8) {
+    erro.textContent = "A senha precisa ter pelo menos 8 caracteres.";
+    return;
+  }
+  if (senha !== senha2) {
+    erro.textContent = "As senhas não são iguais.";
+    return;
+  }
+
+  const botao = document.getElementById("btnNsSalvar");
+  botao.disabled = true;
+  botao.textContent = "Salvando...";
+  try {
+    const cliente = await iniciarSupabase();
+    const r = await cliente.auth.updateUser({ password: senha });
+    if (r.error) throw r.error;
+    nsFundo.hidden = true;
+    avisar("Senha nova salva! Você já está dentro da ARYA.");
+  } catch (e) {
+    console.error(e);
+    const msg = e && e.message ? e.message : String(e);
+    erro.textContent = /different from the old/i.test(msg)
+      ? "A nova senha precisa ser diferente da antiga."
+      : "Não foi possível salvar: " + msg;
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Salvar nova senha";
+  }
+});
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (evento === "PASSWORD_RECOVERY" || (precisaNovaSenha && sessao)) {
+      setTimeout(abrirNovaSenha, 400);
+    }
+  });
+});
+// FIM DA PARTE 21
