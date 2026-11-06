@@ -1,0 +1,156 @@
+<link rel="stylesheet" href="style.css">
+
+<div class="app">
+  <aside class="sidebar" aria-label="Menu principal">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <span class="brand-name">ARYA</span>
+    </div>
+    <nav class="nav" id="navDesktop">
+      <button class="nav-item active" data-view="dashboard"><span class="ico">▦</span>Dashboard</button>
+      <button class="nav-item" data-view="clientes"><span class="ico">◉</span>Clientes</button>
+      <button class="nav-item" data-view="produtos"><span class="ico">▣</span>Produtos</button>
+      <button class="nav-item" data-view="vendas"><span class="ico">◈</span>Vendas</button>
+      <button class="nav-item" data-view="intelligence"><span class="ico">✦</span>Intelligence</button>
+      <button class="nav-item soon" disabled><span class="ico">⬡</span>Connect<em>Em breve</em></button>
+    </nav>
+    <div class="sidebar-foot">ARYA Management</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <h1 id="viewTitle">Dashboard</h1>
+      <span class="badge" id="badgeConexao">Sem banco de dados conectado</span>
+    </header>
+
+    <section class="view active" id="view-dashboard">
+      <div class="grid-4">
+        <article class="card"><p class="label">Faturamento</p><p class="value">R$ —</p><p class="hint">Disponível após conectar o banco</p></article>
+        <article class="card"><p class="label">Vendas</p><p class="value">—</p><p class="hint">Disponível após conectar o banco</p></article>
+        <article class="card"><p class="label">Clientes</p><p class="value">—</p><p class="hint">Disponível após conectar o banco</p></article>
+        <article class="card"><p class="label">Estoque baixo</p><p class="value">—</p><p class="hint">Disponível após conectar o banco</p></article>
+      </div>
+      <article class="card wide">
+        <h2>Desempenho</h2>
+        <div class="empty">Os gráficos aparecerão aqui quando houver vendas registradas.</div>
+      </article>
+    </section>
+
+    <section class="view" id="view-clientes">
+      <article class="card wide">
+        <div class="card-head">
+          <h2>Clientes</h2>
+          <button class="btn" id="btnNovoCliente" type="button">+ Novo cliente</button>
+        </div>
+
+        <form class="form-panel" id="formCliente" hidden novalidate>
+          <h3 id="tituloFormCliente">Novo cliente</h3>
+          <div class="field">
+            <label for="clNome">Nome</label>
+            <input id="clNome" type="text" placeholder="Nome do cliente" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="clTelefone">Telefone</label>
+              <input id="clTelefone" type="tel" placeholder="(00) 00000-0000" />
+            </div>
+            <div class="field">
+              <label for="clEmail">E-mail</label>
+              <input id="clEmail" type="email" placeholder="cliente@email.com" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="clNotas">Observações</label>
+            <input id="clNotas" type="text" placeholder="Opcional" />
+          </div>
+          <p class="form-error" id="clErro" role="alert"></p>
+          <div class="form-actions">
+            <button class="btn" id="btnSalvarCliente" type="submit">Salvar</button>
+            <button class="btn btn-ghost" id="btnCancelarCliente" type="button">Cancelar</button>
+          </div>
+        </form>
+
+        <div class="search-row">
+          <input id="clBusca" type="search" placeholder="Pesquisar por nome..." />
+        </div>
+
+        <div id="listaClientes" class="list">
+          <div class="empty">Os clientes aparecerão aqui.</div>
+        </div>
+      </article>
+    </section>
+
+    <section class="view" id="view-produtos">
+      <article class="card wide">
+        <div class="card-head"><h2>Produtos</h2><button class="btn" id="btnTeste2">+ Novo produto</button></div>
+        <div class="empty">Nenhum produto ainda. O cadastro será ligado ao banco na etapa de Produtos.</div>
+      </article>
+    </section>
+
+    <section class="view" id="view-vendas">
+      <article class="card wide">
+        <div class="card-head"><h2>Vendas</h2><button class="btn" id="btnTeste3">+ Nova venda</button></div>
+        <div class="empty">Nenhuma venda ainda. O registro de vendas será ligado ao banco na etapa de Vendas.</div>
+      </article>
+    </section>
+
+    <section class="view" id="view-intelligence">
+      <article class="card wide">
+        <h2>ARYA Intelligence</h2>
+        <div class="empty">As análises e sugestões aparecem aqui quando houver dados de vendas e estoque.</div>
+      </article>
+    </section>
+  </main>
+
+  <nav class="bottombar" id="navMobile" aria-label="Menu inferior">
+    <button class="tab active" data-view="dashboard"><span class="ico">▦</span>Início</button>
+    <button class="tab" data-view="clientes"><span class="ico">◉</span>Clientes</button>
+    <button class="tab" data-view="produtos"><span class="ico">▣</span>Produtos</button>
+    <button class="tab" data-view="vendas"><span class="ico">◈</span>Vendas</button>
+    <button class="tab" data-view="intelligence"><span class="ico">✦</span>IA</button>
+  </nav>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<section class="auth" id="auth" aria-label="Acesso à ARYA">
+  <div class="auth-box">
+    <div class="brand auth-brand">
+      <span class="brand-mark">A</span>
+      <span class="brand-name">ARYA</span>
+    </div>
+    <p class="auth-sub">Tecnologia que transforma a gestão em inteligência.</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabEntrar" type="button">Entrar</button>
+      <button class="auth-tab" id="tabCriar" type="button">Criar conta</button>
+    </div>
+
+    <form id="formAuth" novalidate>
+      <div class="field" id="fieldEmpresa" hidden>
+        <label for="empresa">Nome da empresa</label>
+        <input id="empresa" type="text" autocomplete="organization" placeholder="Ex.: Minha Loja" />
+      </div>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" autocomplete="email" placeholder="voce@empresa.com" />
+      </div>
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" autocomplete="current-password" placeholder="Mínimo 8 caracteres" />
+      </div>
+      <div class="field" id="fieldConfirma" hidden>
+        <label for="confirma">Confirmar senha</label>
+        <input id="confirma" type="password" autocomplete="new-password" placeholder="Repita a senha" />
+      </div>
+
+      <p class="form-error" id="authErro" role="alert"></p>
+      <button class="btn btn-full" id="btnAuth" type="submit">Entrar</button>
+    </form>
+
+    <button class="link-btn" id="btnPrevia" type="button">Ver prévia do app (sem login)</button>
+    <p class="auth-note">Modo de construção: o login será ligado ao banco na etapa de Autenticação.</p>
+  </div>
+</section>
+<script src="script.js"></script>
+
