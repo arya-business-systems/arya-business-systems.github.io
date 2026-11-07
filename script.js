@@ -11527,4 +11527,682 @@ iniciarSupabase().then(function (cliente) {
 setInterval(function () { if (document.visibilityState === "visible") cnImportarPendentes(true); }, 60000);
 document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") cnImportarPendentes(true); });
 // FIM DA PARTE 37
+// ===== PARTE 38: Dinheiro na mesa · o dinheiro escondido na loja =====
+const estilo38 = document.createElement("style");
+estilo38.textContent = `
+  .dm-hero { position: relative; overflow: hidden; color: #fff; border-radius: var(--radius); padding: 30px 30px 26px; margin-bottom: 16px;
+    background: radial-gradient(560px 300px at 85% -10%, rgba(255,255,255,.16), transparent 70%), radial-gradient(400px 240px at 0% 120%, rgba(255,255,255,.08), transparent 70%), #000;
+    display: grid; grid-template-columns: 1fr 230px; gap: 28px; align-items: center; }
+  .dm-selo { font-family: var(--font-brand); font-size: 12px; letter-spacing: .14em; color: #a1a1aa; }
+  .dm-total { font-size: 56px; font-weight: 600; letter-spacing: -.045em; line-height: 1; margin-top: 12px; font-variant-numeric: tabular-nums; }
+  .dm-sub { color: #a1a1aa; font-size: 14.5px; margin-top: 8px; max-width: 480px; }
+  .dm-barra { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: #18181b; margin-top: 22px; gap: 3px; }
+  .dm-barra i { display: block; height: 100%; width: 0; transition: width 1.2s cubic-bezier(.2,.8,.2,1); }
+  .dm-barra i:nth-child(1) { background: #fff; }
+  .dm-barra i:nth-child(2) { background: #a1a1aa; }
+  .dm-barra i:nth-child(3) { background: #52525b; }
+  .dm-barra i:nth-child(4) { background: #3f3f46; }
+  .dm-legenda { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 12.5px; color: #d4d4d8; }
+  .dm-legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .dm-legenda span::before { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
+  .dm-legenda b { font-variant-numeric: tabular-nums; }
+  .dm-placar { text-align: center; }
+  .dm-anel { position: relative; width: 170px; height: 170px; margin: 0 auto; }
+  .dm-anel svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .dm-anel circle { fill: none; stroke-width: 12; }
+  .dm-anel .f { stroke: #27272a; }
+  .dm-anel .c { stroke: #fff; stroke-linecap: round; stroke-dasharray: 452.4; stroke-dashoffset: 452.4; transition: stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1); }
+  .dm-anel div { position: absolute; inset: 0; display: grid; place-content: center; }
+  .dm-anel small { font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+  .dm-anel strong { font-size: 24px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .dm-pagou { margin-top: 10px; font-size: 13px; color: #d4d4d8; }
+  .dm-pagou b { color: #fff; }
+
+  .dm-filtros { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+  .dm-filtro { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-weight: 500; }
+  .dm-filtro small { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .dm-filtro.ativo { background: #000; color: #fff; border-color: #000; }
+  .dm-filtro.ativo small { color: #a1a1aa; }
+
+  .dm-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+  .dm-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; animation: dm-entra .45s ease backwards; }
+  .dm-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  @keyframes dm-entra { from { opacity: 0; transform: translateY(10px); } }
+  .dm-topo { display: flex; gap: 12px; align-items: flex-start; }
+  .dm-ic { width: 44px; height: 44px; border-radius: 13px; background: #000; color: #fff; display: grid; place-items: center; font-size: 18px; flex: none; overflow: hidden; }
+  .dm-ic img { width: 100%; height: 100%; object-fit: cover; }
+  .dm-info { flex: 1; min-width: 0; }
+  .dm-tipo { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--muted); }
+  .dm-titulo { font-size: 15.5px; font-weight: 600; margin-top: 2px; line-height: 1.3; }
+  .dm-valor { text-align: right; flex: none; }
+  .dm-valor strong { display: block; font-size: 20px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .dm-valor span { font-size: 11.5px; color: var(--muted); }
+  .dm-porque { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+  .dm-porque b { color: var(--text); font-weight: 600; }
+  .dm-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+  .dm-card.feito { opacity: .6; }
+  .dm-feito { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; background: var(--surface-2); border-radius: 999px; padding: 6px 12px; }
+  .dm-mais { margin-top: 12px; }
+  .dm-vazio { padding: 34px 20px; text-align: center; color: var(--muted); border: 1px dashed var(--border-strong); border-radius: 18px; }
+  .dm-vazio b { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px; }
+
+  #view-mesa > * { min-width: 0; }
+  .dm-hist { display: block; min-width: 0; }
+  .dm-hist-linha { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .dm-hist-linha:last-child { border-bottom: 0; }
+  .dm-hist-linha .dm-hist-info { flex: 1; min-width: 0; overflow: hidden; }
+  .dm-hist-linha p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dm-chip { flex: none; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 4px 10px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+  .dm-chip.ok { background: #000; color: #fff; }
+
+  .dm-teaser { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; color: #fff; border-radius: var(--radius); padding: 18px 22px; margin-bottom: 16px;
+    background: radial-gradient(420px 200px at 100% 0%, rgba(255,255,255,.14), transparent 70%), #000; transition: transform .2s ease; }
+  .dm-teaser:hover { transform: translateY(-2px); }
+  .dm-teaser .dm-ic { background: #fff; color: #000; }
+  .dm-teaser p { font-size: 13px; color: #a1a1aa; }
+  .dm-teaser strong { display: block; font-size: 22px; letter-spacing: -.02em; color: #fff; font-variant-numeric: tabular-nums; }
+  .dm-teaser .dm-ir { margin-left: auto; flex: none; height: 40px; padding: 0 18px; border-radius: 999px; background: #fff; color: #000; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; }
+
+  .dm-folha-fundo { position: fixed; inset: 0; z-index: 140; background: rgba(10,10,10,.5); display: flex; align-items: flex-end; justify-content: center; }
+  .dm-folha-fundo[hidden] { display: none; }
+  .dm-folha { width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; background: var(--surface); border-radius: 22px 22px 0 0; padding: 22px; padding-bottom: max(22px, env(safe-area-inset-bottom));
+    animation: dm-sobe .3s cubic-bezier(.2,.8,.2,1); }
+  @keyframes dm-sobe { from { transform: translateY(100%); } }
+  .dm-folha h3 { font-size: 18px; }
+  .dm-folha textarea { width: 100%; min-height: 110px; border-radius: 12px; border: 1px solid var(--border); padding: 12px; font: inherit; font-size: 14.5px; margin-top: 12px; resize: vertical; background: var(--surface); }
+  .dm-desc { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
+  .dm-desc button { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 13px; font-weight: 500; }
+  .dm-desc button.ativo { background: #000; color: #fff; border-color: #000; }
+  .dm-pessoas { display: grid; gap: 0; margin-top: 14px; }
+  .dm-pessoa { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .dm-pessoa div { flex: 1; min-width: 0; }
+  .dm-pessoa small { display: block; color: var(--muted); font-size: 12px; }
+  .dm-pessoa.enviado .btn { opacity: .5; }
+
+  @media (max-width: 860px) {
+    .dm-hero { grid-template-columns: 1fr; padding: 24px 20px; gap: 22px; }
+    .dm-total { font-size: 42px; }
+    .dm-lista { grid-template-columns: 1fr; }
+    .dm-teaser .dm-ir { display: none; }
+    .dm-hist-linha { font-size: 13.5px; gap: 10px; }
+    .dm-chip { font-size: 11px; padding: 4px 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dm-barra i, .dm-anel .c { transition: none; }
+    .dm-card, .dm-folha { animation: none; }
+  }
+`;
+document.head.appendChild(estilo38);
+
+// ---------- Tela ----------
+titulos.mesa = "Dinheiro na mesa";
+const dmView = document.createElement("section");
+dmView.className = "view";
+dmView.id = "view-mesa";
+dmView.innerHTML = `
+  <div class="dm-hero">
+    <div>
+      <p class="dm-selo">✦ DINHEIRO NA MESA</p>
+      <p class="dm-total" id="dmTotal">R$ 0</p>
+      <p class="dm-sub" id="dmSub">A ARYA está procurando o dinheiro escondido na sua loja...</p>
+      <div class="dm-barra" id="dmBarra"><i></i><i></i><i></i><i></i></div>
+      <div class="dm-legenda" id="dmLegenda"></div>
+    </div>
+    <div class="dm-placar">
+      <div class="dm-anel">
+        <svg viewBox="0 0 170 170"><circle class="f" cx="85" cy="85" r="72"/><circle class="c" id="dmAnel" cx="85" cy="85" r="72"/></svg>
+        <div><small>Recuperado no mês</small><strong id="dmRecuperado">R$ 0</strong></div>
+      </div>
+      <p class="dm-pagou" id="dmPagou">Cada ação que você faz aqui é medida.</p>
+    </div>
+  </div>
+  <div class="dm-filtros" id="dmFiltros"></div>
+  <div class="dm-lista" id="dmLista"></div>
+  <div style="text-align:center;"><button class="btn btn-ghost dm-mais" id="dmMais" type="button" hidden>Ver mais oportunidades</button></div>
+  <article class="card wide" style="margin-top:16px;">
+    <div class="card-head"><h2>Suas ações e o resultado</h2><span class="item-sub">Últimos 30 dias</span></div>
+    <div class="dm-hist" id="dmHist"></div>
+  </article>
+`;
+document.querySelector("main.main").appendChild(dmView);
+
+const dmFolhaFundo = document.createElement("div");
+dmFolhaFundo.className = "dm-folha-fundo";
+dmFolhaFundo.hidden = true;
+dmFolhaFundo.innerHTML = '<div class="dm-folha" role="dialog" aria-modal="true" id="dmFolha"></div>';
+document.body.appendChild(dmFolhaFundo);
+dmFolhaFundo.addEventListener("click", function (e) { if (e.target === dmFolhaFundo) dmFolhaFundo.hidden = true; });
+
+// Menu: computador e celular
+const dmNav = document.createElement("button");
+dmNav.type = "button";
+dmNav.className = "nav-item";
+dmNav.dataset.view = "mesa";
+dmNav.innerHTML = '<span class="ico">◆</span>Dinheiro na mesa';
+const dmDepoisDe = document.querySelector('#navDesktop [data-view="intelligence"]');
+if (dmDepoisDe) dmDepoisDe.after(dmNav); else document.getElementById("navDesktop").appendChild(dmNav);
+dmNav.addEventListener("click", function () { mostrarTela("mesa"); abrirMesa(); });
+
+const dmMaisPainel = document.querySelector(".mais-painel");
+if (dmMaisPainel) {
+  const item = document.createElement("button");
+  item.type = "button";
+  item.className = "mais-item";
+  item.dataset.alvo = "mesa";
+  item.innerHTML = '<span class="ico">◆</span>Dinheiro na mesa';
+  item.addEventListener("click", function () {
+    dmNav.click();
+    const tab = document.getElementById("tabMais");
+    if (tab) tab.classList.add("active");
+    const fundo = document.querySelector(".mais-fundo");
+    if (fundo) fundo.hidden = true;
+  });
+  const titulo = dmMaisPainel.querySelector(".mais-titulo");
+  if (titulo) titulo.after(item); else dmMaisPainel.appendChild(item);
+}
+
+// Chamada no Dashboard
+const dmTeaser = document.createElement("button");
+dmTeaser.type = "button";
+dmTeaser.className = "dm-teaser";
+dmTeaser.hidden = true;
+dmTeaser.innerHTML = '<span class="dm-ic">◆</span><span><p id="dmTeaserTxt">Dinheiro na mesa</p><strong id="dmTeaserValor">R$ 0</strong></span><span class="dm-ir">Ver onde está →</span>';
+const dmHeroDash = document.getElementById("dashHero");
+if (dmHeroDash) dmHeroDash.after(dmTeaser); else document.getElementById("view-dashboard").prepend(dmTeaser);
+dmTeaser.addEventListener("click", function () { dmNav.click(); });
+
+// ---------- Estado ----------
+const DM_DIA = 86400000;
+const DM_TIPOS = {
+  parado:    { nome: "Estoque parado",  ic: "▣", cor: "#ffffff" },
+  reativar:  { nome: "Clientes sumidos", ic: "◉", cor: "#a1a1aa" },
+  repor:     { nome: "Vai faltar",       ic: "↻", cor: "#52525b" },
+  orcamento: { nome: "Orçamentos parados", ic: "◇", cor: "#3f3f46" }
+};
+let dmDados = null;
+let dmOps = [];
+let dmFiltro = "tudo";
+let dmLimite = 8;
+let dmSemTabela = false;
+let dmLoja = "";
+const dmEl = function (id) { return document.getElementById(id); };
+function dmEsc(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function dmPrimeiro(n) { return String(n || "").trim().split(" ")[0] || ""; }
+function dmDias(d) { return Math.floor((Date.now() - new Date(d).getTime()) / DM_DIA); }
+function dmWhats(fone, msg) {
+  let d = String(fone || "").replace(/\D/g, "");
+  if (d.length === 10 || d.length === 11) d = "55" + d;
+  return d.length >= 12 ? "https://wa.me/" + d + "?text=" + encodeURIComponent(msg) : null;
+}
+
+// ---------- Dados ----------
+async function dmCarregar() {
+  const cliente = await iniciarSupabase();
+  const desde = new Date(Date.now() - 180 * DM_DIA).toISOString();
+  const r = await Promise.all([
+    cliente.from("products").select("id, name, stock_quantity, cost_price, sale_price, image_url, created_at"),
+    cliente.from("sales").select("id, customer_id, total, status, created_at").gte("created_at", desde),
+    cliente.from("customers").select("id, name, phone"),
+    cliente.from("quotes").select("id, customer_id, status, total, created_at, updated_at"),
+    carregarGrade()
+  ]);
+  for (let i = 0; i < 4; i++) if (r[i].error) throw r[i].error;
+  const vendas = (r[1].data || []).filter(function (v) { return v.status !== "cancelled"; });
+  let itens = [];
+  const ids = vendas.map(function (v) { return v.id; });
+  for (let i = 0; i < ids.length; i += 150) {
+    const it = await cliente.from("sale_items").select("sale_id, product_id, quantity, total").in("sale_id", ids.slice(i, i + 150));
+    if (it.error) throw it.error;
+    itens = itens.concat(it.data || []);
+  }
+  let acoes = [];
+  const a = await cliente.from("growth_actions").select("id, kind, ref_id, label, potential, created_at")
+    .gte("created_at", new Date(Date.now() - 60 * DM_DIA).toISOString()).order("created_at", { ascending: false });
+  if (a.error) dmSemTabela = true; else { dmSemTabela = false; acoes = a.data || []; }
+
+  if (!dmLoja) {
+    try {
+      const u = await cliente.auth.getUser();
+      const p = await cliente.from("profiles").select("companies(name)").eq("id", u.data.user.id).maybeSingle();
+      dmLoja = p.data && p.data.companies ? p.data.companies.name : "";
+    } catch (e) { /* segue sem o nome */ }
+  }
+  return { produtos: r[0].data || [], vendas: vendas, itens: itens, clientes: r[2].data || [], orcamentos: r[3].data || [], acoes: acoes };
+}
+
+function dmEstoque(p) {
+  const vars = variacoesDe(p.id);
+  if (vars.length) return vars.reduce(function (s, v) { return s + Number(v.stock_quantity || 0); }, 0);
+  return Number(p.stock_quantity || 0);
+}
+
+function dmCalcular(d) {
+  const agora = Date.now();
+  const vendaPorId = {};
+  d.vendas.forEach(function (v) { vendaPorId[v.id] = v; });
+  const clientePorId = {};
+  d.clientes.forEach(function (c) { clientePorId[c.id] = c; });
+
+  // Movimento de cada produto
+  const mov = {};
+  d.itens.forEach(function (i) {
+    const v = vendaPorId[i.sale_id];
+    if (!v || !i.product_id) return;
+    const t = new Date(v.created_at).getTime();
+    const m = mov[i.product_id] || (mov[i.product_id] = { ultima: 0, q30: 0, q90: 0 });
+    if (t > m.ultima) m.ultima = t;
+    if (agora - t <= 30 * DM_DIA) m.q30 += Number(i.quantity);
+    if (agora - t <= 90 * DM_DIA) m.q90 += Number(i.quantity);
+  });
+
+  // Ações recentes (14 dias) ficam marcadas como "feito"
+  const feito = {};
+  d.acoes.forEach(function (a) { if (agora - new Date(a.created_at).getTime() <= 14 * DM_DIA) feito[a.kind + ":" + a.ref_id] = a; });
+
+  const ops = [];
+
+  // 1) Estoque parado
+  d.produtos.forEach(function (p) {
+    const est = dmEstoque(p);
+    if (est <= 0) return;
+    const m = mov[p.id];
+    const desde = m && m.ultima ? m.ultima : new Date(p.created_at || agora).getTime();
+    const dias = Math.floor((agora - desde) / DM_DIA);
+    if (dias < 45) return;
+    const custo = Number(p.cost_price) > 0 ? Number(p.cost_price) : Number(p.sale_price) * 0.5;
+    const valor = Math.round(est * custo);
+    if (valor <= 0) return;
+    ops.push({
+      tipo: "parado", ref: p.id, valor: valor, foto: p.image_url,
+      titulo: p.name,
+      porque: "<b>" + est + " peça(s)</b> sem vender há <b>" + dias + " dias</b>" + (m && m.ultima ? "" : " (desde o cadastro)") +
+        ". É dinheiro seu parado na arara. Vendidas, viram <b>" + moeda(est * Number(p.sale_price)) + "</b>.",
+      rotulo: "parados", produto: p, estoque: est, feito: feito["parado:" + p.id]
+    });
+  });
+
+  // 2) Clientes sumidos
+  const compras = {};
+  d.vendas.forEach(function (v) {
+    if (!v.customer_id) return;
+    (compras[v.customer_id] = compras[v.customer_id] || []).push(v);
+  });
+  Object.keys(compras).forEach(function (id) {
+    const c = clientePorId[id];
+    if (!c) return;
+    const lista = compras[id].sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); });
+    const ultima = new Date(lista[lista.length - 1].created_at).getTime();
+    const dias = Math.floor((agora - ultima) / DM_DIA);
+    const ticket = lista.reduce(function (s, v) { return s + Number(v.total); }, 0) / lista.length;
+    let intervalo = null;
+    if (lista.length >= 2) intervalo = (ultima - new Date(lista[0].created_at).getTime()) / DM_DIA / (lista.length - 1);
+    const limite = intervalo ? Math.max(25, intervalo * 1.6) : 45;
+    if (dias < limite || dias > 170) return;
+    ops.push({
+      tipo: "reativar", ref: id, valor: Math.round(ticket),
+      titulo: c.name,
+      porque: "Sumiu há <b>" + dias + " dias</b>" + (intervalo ? ", e costumava voltar a cada <b>" + Math.round(intervalo) + " dias</b>" : "") +
+        ". Gasta em média <b>" + moeda(ticket) + "</b> por compra" + (lista.length > 1 ? " (" + lista.length + " compras)." : "."),
+      rotulo: "por visita", cliente: c, dias: dias, feito: feito["reativar:" + id]
+    });
+  });
+
+  // 3) Vai faltar
+  d.produtos.forEach(function (p) {
+    const m = mov[p.id];
+    if (!m || m.q30 < 2) return;
+    const ritmo = m.q30 / 30;
+    const est = dmEstoque(p);
+    const diasRestantes = est / ritmo;
+    if (diasRestantes > 14) return;
+    const valor = Math.round(Math.max(0, ritmo * 21 - est) * Number(p.sale_price));
+    if (valor <= 0) return;
+    ops.push({
+      tipo: "repor", ref: p.id, valor: valor, foto: p.image_url,
+      titulo: p.name,
+      porque: (est <= 0 ? "<b>Esgotado</b>" : "Acaba em <b>~" + Math.max(1, Math.round(diasRestantes)) + " dia(s)</b> (" + est + " em estoque)") +
+        ". Vende <b>" + (Math.round(ritmo * 10) / 10).toLocaleString("pt-BR") + " por dia</b>: sem repor, você deixa de vender isso nas próximas 3 semanas.",
+      rotulo: "em risco", produto: p, sugestao: Math.max(1, Math.ceil(ritmo * 21 - Math.max(0, est))), feito: feito["repor:" + p.id]
+    });
+  });
+
+  // 4) Orçamentos parados
+  d.orcamentos.forEach(function (o) {
+    if (["open", "sent", "accepted"].indexOf(o.status) < 0) return;
+    const dias = dmDias(o.updated_at || o.created_at);
+    if (dias < 2 || dias > 60) return;
+    const c = clientePorId[o.customer_id];
+    ops.push({
+      tipo: "orcamento", ref: o.id, valor: Math.round(Number(o.total)),
+      titulo: "Orçamento " + (c ? "de " + c.name : "sem cliente"),
+      porque: (o.status === "accepted" ? "<b>Aceito</b> e ainda não virou venda" : "Enviado e <b>sem resposta</b>") + " há <b>" + dias + " dias</b>. Um lembrete simples costuma fechar a venda.",
+      rotulo: "esperando", cliente: c, orcamento: o, feito: feito["orcamento:" + o.id]
+    });
+  });
+
+  ops.sort(function (a, b) { return (a.feito ? 1 : 0) - (b.feito ? 1 : 0) || b.valor - a.valor; });
+  return ops;
+}
+
+// Quanto as ações trouxeram de volta (vendas depois da ação)
+function dmResultado(d) {
+  const agora = Date.now();
+  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0);
+  const contadas = {};
+  const vendaPorId = {};
+  d.vendas.forEach(function (v) { vendaPorId[v.id] = v; });
+  let totalMes = 0;
+  const linhas = d.acoes.filter(function (a) { return agora - new Date(a.created_at).getTime() <= 30 * DM_DIA; }).map(function (a) {
+    const t0 = new Date(a.created_at).getTime();
+    const fim = t0 + 21 * DM_DIA;
+    let valor = 0;
+    if (a.kind === "reativar" || a.kind === "orcamento") {
+      const alvo = a.kind === "reativar" ? a.ref_id : (d.orcamentos.find(function (o) { return o.id === a.ref_id; }) || {}).customer_id;
+      d.vendas.forEach(function (v) {
+        const t = new Date(v.created_at).getTime();
+        if (alvo && v.customer_id === alvo && t >= t0 && t <= fim && !contadas[v.id]) { contadas[v.id] = true; valor += Number(v.total); }
+      });
+    } else if (a.kind === "parado") {
+      d.itens.forEach(function (i) {
+        const v = vendaPorId[i.sale_id];
+        if (!v || i.product_id !== a.ref_id) return;
+        const t = new Date(v.created_at).getTime();
+        const chave = i.sale_id + ":" + i.product_id;
+        if (t >= t0 && t <= fim && !contadas[chave]) { contadas[chave] = true; valor += Number(i.total); }
+      });
+    }
+    if (valor > 0 && t0 >= inicioMes.getTime()) totalMes += valor;
+    return { acao: a, valor: valor };
+  });
+  return { totalMes: totalMes, linhas: linhas };
+}
+
+// ---------- Desenho ----------
+function dmDesenhar() {
+  const ops = dmOps.filter(function (o) { return !o.feito; });
+  const soma = { parado: 0, reativar: 0, repor: 0, orcamento: 0 };
+  const qtd = { parado: 0, reativar: 0, repor: 0, orcamento: 0 };
+  ops.forEach(function (o) { soma[o.tipo] += o.valor; qtd[o.tipo] += 1; });
+  const total = soma.parado + soma.reativar + soma.repor + soma.orcamento;
+
+  const elTotal = dmEl("dmTotal");
+  if (typeof contarAte === "function") contarAte(elTotal, total, true); else elTotal.textContent = moeda(total);
+  dmEl("dmSub").textContent = total > 0
+    ? "encontrados em " + ops.length + " oportunidade(s) na sua loja. Comece pelas de maior valor."
+    : "Nenhuma oportunidade grande agora. Continue registrando as vendas: a ARYA avisa quando aparecer.";
+  const barras = dmEl("dmBarra").children;
+  ["parado", "reativar", "repor", "orcamento"].forEach(function (k, i) {
+    const w = total > 0 ? soma[k] / total * 100 : 0;
+    barras[i].style.width = "0";
+    requestAnimationFrame(function () { requestAnimationFrame(function () { barras[i].style.width = w + "%"; }); });
+  });
+  dmEl("dmLegenda").innerHTML = ["parado", "reativar", "repor", "orcamento"].filter(function (k) { return soma[k] > 0; }).map(function (k) {
+    return '<span style="--c:' + DM_TIPOS[k].cor + '">' + DM_TIPOS[k].nome + " <b>" + moedaCurta(soma[k]) + "</b></span>";
+  }).join("");
+
+  // Placar
+  const res = dmResultado(dmDados);
+  const rec = res.totalMes;
+  const elRec = dmEl("dmRecuperado");
+  if (typeof contarAte === "function") contarAte(elRec, rec, true); else elRec.textContent = moeda(rec);
+  const anel = dmEl("dmAnel");
+  const meta = Math.max(490, rec);
+  anel.style.strokeDashoffset = "452.4";
+  requestAnimationFrame(function () { requestAnimationFrame(function () { anel.style.strokeDashoffset = String(452.4 * (1 - Math.min(1, rec / meta))); }); });
+  dmEl("dmPagou").innerHTML = rec >= 49
+    ? "A ARYA já se pagou <b>" + Math.floor(rec / 49) + "×</b> este mês ✦"
+    : dmSemTabela ? "Rode o SQL da Parte 38 para medir os resultados." : "Faça uma ação: a ARYA mede quanto ela trouxe de volta.";
+
+  // Filtros
+  const filtros = dmEl("dmFiltros");
+  filtros.innerHTML = "";
+  [["tudo", "Tudo", ops.length, total]].concat(Object.keys(DM_TIPOS).map(function (k) { return [k, DM_TIPOS[k].nome, qtd[k], soma[k]]; }))
+    .forEach(function (f) {
+      if (f[0] !== "tudo" && !f[2]) return;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "dm-filtro" + (dmFiltro === f[0] ? " ativo" : "");
+      b.innerHTML = dmEsc(f[1]) + " <small>" + f[2] + " · " + moedaCurta(f[3]) + "</small>";
+      b.addEventListener("click", function () { dmFiltro = f[0]; dmLimite = 8; dmDesenhar(); });
+      filtros.appendChild(b);
+    });
+
+  // Cartões
+  const lista = dmEl("dmLista");
+  lista.innerHTML = "";
+  const visiveis = dmOps.filter(function (o) { return dmFiltro === "tudo" || o.tipo === dmFiltro; });
+  if (!visiveis.length) {
+    lista.innerHTML = '<div class="dm-vazio" style="grid-column:1/-1;"><b>✦ Tudo em ordem por aqui</b>Quanto mais vendas e clientes você registra, mais oportunidades a ARYA encontra.</div>';
+  }
+  visiveis.slice(0, dmLimite).forEach(function (o, i) { lista.appendChild(dmCartao(o, i)); });
+  dmEl("dmMais").hidden = visiveis.length <= dmLimite;
+
+  // Histórico
+  const hist = dmEl("dmHist");
+  hist.innerHTML = "";
+  if (!res.linhas.length) {
+    hist.innerHTML = '<p class="empty">' + (dmSemTabela ? "Para guardar as ações, rode o comando SQL da Parte 38 no Supabase." : "Quando você agir numa oportunidade, ela aparece aqui com o resultado em reais.") + "</p>";
+  }
+  res.linhas.forEach(function (l) {
+    const div = document.createElement("div");
+    div.className = "dm-hist-linha";
+    const ic = document.createElement("span");
+    ic.className = "dm-ic";
+    ic.style.cssText = "width:34px;height:34px;font-size:14px;border-radius:10px;";
+    ic.textContent = DM_TIPOS[l.acao.kind] ? DM_TIPOS[l.acao.kind].ic : "✦";
+    const info = document.createElement("div");
+    info.className = "dm-hist-info";
+    const t = document.createElement("p");
+    t.textContent = l.acao.label || DM_TIPOS[l.acao.kind].nome;
+    const s = document.createElement("p");
+    s.className = "item-sub";
+    const dd = dmDias(l.acao.created_at);
+    s.textContent = (DM_TIPOS[l.acao.kind] ? DM_TIPOS[l.acao.kind].nome : "") + " · " + (dd === 0 ? "hoje" : "há " + dd + " dia(s)");
+    info.appendChild(t);
+    info.appendChild(s);
+    const chip = document.createElement("span");
+    chip.className = "dm-chip" + (l.valor > 0 ? " ok" : "");
+    chip.textContent = l.valor > 0 ? "✓ Trouxe " + moeda(l.valor) : l.acao.kind === "repor" ? "Reposição pedida" : "Aguardando";
+    div.appendChild(ic);
+    div.appendChild(info);
+    div.appendChild(chip);
+    hist.appendChild(div);
+  });
+
+  // Chamada no Dashboard
+  dmTeaser.hidden = total <= 0;
+  dmEl("dmTeaserValor").textContent = moeda(total);
+  dmEl("dmTeaserTxt").textContent = "✦ Dinheiro na mesa · " + ops.length + " oportunidade(s) encontradas";
+}
+
+function dmCartao(o, i) {
+  const card = document.createElement("article");
+  card.className = "dm-card" + (o.feito ? " feito" : "");
+  card.style.animationDelay = (i * 0.04) + "s";
+  const topo = document.createElement("div");
+  topo.className = "dm-topo";
+  const ic = document.createElement("span");
+  ic.className = "dm-ic";
+  if (o.foto) { const img = document.createElement("img"); img.src = o.foto; img.alt = ""; img.loading = "lazy"; ic.appendChild(img); }
+  else ic.textContent = DM_TIPOS[o.tipo].ic;
+  const info = document.createElement("div");
+  info.className = "dm-info";
+  info.innerHTML = '<p class="dm-tipo">' + DM_TIPOS[o.tipo].nome + '</p><p class="dm-titulo"></p>';
+  info.querySelector(".dm-titulo").textContent = o.titulo;
+  const valor = document.createElement("div");
+  valor.className = "dm-valor";
+  valor.innerHTML = "<strong>" + moeda(o.valor) + "</strong><span>" + o.rotulo + "</span>";
+  topo.appendChild(ic);
+  topo.appendChild(info);
+  topo.appendChild(valor);
+  const porque = document.createElement("p");
+  porque.className = "dm-porque";
+  porque.innerHTML = o.porque;
+  const acoes = document.createElement("div");
+  acoes.className = "dm-acoes";
+
+  if (o.feito) {
+    const f = document.createElement("span");
+    f.className = "dm-feito";
+    f.textContent = "✓ Feito há " + Math.max(0, dmDias(o.feito.created_at)) + " dia(s) · medindo o resultado";
+    acoes.appendChild(f);
+  } else if (o.tipo === "reativar") {
+    const msg = "Oi, " + dmPrimeiro(o.cliente.name) + "! Tudo bem? Aqui é da " + (dmLoja || "loja") +
+      ". Faz um tempinho que você não aparece e chegaram novidades que têm a sua cara ✨ Quer que eu te mande umas fotos?";
+    const link = dmWhats(o.cliente.phone, msg);
+    if (link) acoes.appendChild(criarBotao("Chamar no WhatsApp", "btn btn-small", function () { dmAbrirLink(link); dmRegistrar(o, "Chamou " + o.cliente.name + " de volta"); }));
+    else acoes.appendChild(criarBotao("Copiar mensagem", "btn btn-small", function () { dmCopiar(msg); dmRegistrar(o, "Chamou " + o.cliente.name + " de volta"); }));
+    if (!link) { const s = document.createElement("span"); s.className = "item-sub"; s.textContent = "Sem telefone cadastrado"; acoes.appendChild(s); }
+  } else if (o.tipo === "parado") {
+    acoes.appendChild(criarBotao("Criar promoção", "btn btn-small", function () { dmFolhaPromocao(o); }));
+  } else if (o.tipo === "repor") {
+    acoes.appendChild(criarBotao("Copiar pedido de reposição", "btn btn-small", function () {
+      dmCopiar("Pedido de reposição · " + (dmLoja || "") + "\n" + o.titulo + ": " + o.sugestao + " unidade(s)");
+      dmRegistrar(o, "Pediu reposição de " + o.titulo);
+    }));
+    const s = document.createElement("span"); s.className = "item-sub"; s.textContent = "Sugestão: " + o.sugestao + " un. para 3 semanas"; acoes.appendChild(s);
+  } else if (o.tipo === "orcamento") {
+    const nome = o.cliente ? dmPrimeiro(o.cliente.name) : "";
+    const msg = "Oi" + (nome ? ", " + nome : "") + "! Passando para saber se ficou alguma dúvida no orçamento de " + moeda(o.valor) +
+      ". Consigo reservar as peças para você até amanhã 😊";
+    const link = o.cliente ? dmWhats(o.cliente.phone, msg) : null;
+    if (link) acoes.appendChild(criarBotao("Lembrar no WhatsApp", "btn btn-small", function () { dmAbrirLink(link); dmRegistrar(o, "Lembrou o orçamento" + (o.cliente ? " de " + o.cliente.name : "")); }));
+    else acoes.appendChild(criarBotao("Copiar lembrete", "btn btn-small", function () { dmCopiar(msg); dmRegistrar(o, "Lembrou um orçamento"); }));
+  }
+  if (!o.feito) acoes.appendChild(criarBotao("Já resolvi", "btn btn-ghost btn-small", function () { dmRegistrar(o, (DM_TIPOS[o.tipo].nome) + ": " + o.titulo); }));
+
+  card.appendChild(topo);
+  card.appendChild(porque);
+  card.appendChild(acoes);
+  return card;
+}
+
+function dmAbrirLink(link) { window.open(link, "_blank", "noopener"); }
+async function dmCopiar(t) {
+  try { await navigator.clipboard.writeText(t); avisar("Texto copiado ✦"); }
+  catch (e) { avisar("Não consegui copiar automaticamente"); }
+}
+
+async function dmRegistrar(o, label) {
+  const registro = { kind: o.tipo, ref_id: String(o.ref), label: label, potential: o.valor, created_at: new Date().toISOString() };
+  try {
+    if (!dmSemTabela) {
+      const cliente = await iniciarSupabase();
+      const r = await cliente.from("growth_actions").insert(Object.assign({ company_id: await obterEmpresaId() }, {
+        kind: registro.kind, ref_id: registro.ref_id, label: registro.label, potential: registro.potential
+      })).select("id, kind, ref_id, label, potential, created_at").single();
+      if (r.error) throw r.error;
+      dmDados.acoes.unshift(r.data);
+    } else {
+      dmDados.acoes.unshift(registro);
+    }
+  } catch (e) {
+    console.error(e);
+    dmDados.acoes.unshift(registro);
+  }
+  avisar("✦ Ação registrada. A ARYA vai medir o resultado.");
+  dmOps = dmCalcular(dmDados);
+  dmDesenhar();
+}
+
+// Folha de promoção para estoque parado
+function dmFolhaPromocao(o) {
+  const folha = dmEl("dmFolha");
+  let desconto = 15;
+  const ate = new Date(Date.now() + 3 * DM_DIA).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  function texto(nome) {
+    return "Oi" + (nome ? ", " + nome : "") + "! Separei uma condição especial para você aqui na " + (dmLoja || "loja") + ": " +
+      o.titulo + " com " + desconto + "% de desconto, só até " + ate + ". Quer que eu reserve o seu tamanho? ✨";
+  }
+  // Clientes que mais compraram (180 dias), com telefone
+  const gasto = {};
+  dmDados.vendas.forEach(function (v) { if (v.customer_id) gasto[v.customer_id] = (gasto[v.customer_id] || 0) + Number(v.total); });
+  const pessoas = dmDados.clientes.filter(function (c) { return dmWhats(c.phone, "x"); })
+    .sort(function (a, b) { return (gasto[b.id] || 0) - (gasto[a.id] || 0); }).slice(0, 15);
+
+  folha.innerHTML = "";
+  const h = document.createElement("h3");
+  h.textContent = "Promoção: " + o.titulo;
+  const sub = document.createElement("p");
+  sub.className = "item-sub";
+  sub.textContent = o.estoque + " peça(s) paradas. Mande para as clientes que mais compram ou poste no status.";
+  const desc = document.createElement("div");
+  desc.className = "dm-desc";
+  desc.appendChild(document.createTextNode("Desconto:"));
+  const area = document.createElement("textarea");
+  [10, 15, 20, 30].forEach(function (p) {
+    desc.appendChild(criarBotao(p + "%", p === desconto ? "ativo" : "", function () {
+      desconto = p;
+      desc.querySelectorAll("button").forEach(function (b) { b.classList.toggle("ativo", b.textContent === p + "%"); });
+      area.value = texto("");
+    }));
+  });
+  area.value = texto("");
+  const acoesTopo = document.createElement("div");
+  acoesTopo.className = "item-actions";
+  acoesTopo.style.cssText = "justify-content:flex-start; margin-top:10px;";
+  acoesTopo.appendChild(criarBotao("Copiar para status / Instagram", "btn btn-ghost btn-small", function () {
+    dmCopiar(area.value.replace(/^Oi[^!]*! /, ""));
+    dmRegistrar(o, "Promoção de " + o.titulo);
+  }));
+  const lista = document.createElement("div");
+  lista.className = "dm-pessoas";
+  let registrou = false;
+  if (!pessoas.length) {
+    const p = document.createElement("p");
+    p.className = "item-sub";
+    p.textContent = "Cadastre o telefone das clientes para mandar a promoção direto no WhatsApp.";
+    lista.appendChild(p);
+  }
+  pessoas.forEach(function (c) {
+    const linha = document.createElement("div");
+    linha.className = "dm-pessoa";
+    const info = document.createElement("div");
+    info.innerHTML = "<b></b><small></small>";
+    info.querySelector("b").textContent = c.name;
+    info.querySelector("small").textContent = gasto[c.id] ? "Já comprou " + moeda(gasto[c.id]) : "Cliente cadastrada";
+    linha.appendChild(info);
+    linha.appendChild(criarBotao("Enviar", "btn btn-small", function () {
+      const msg = area.value.replace(/^Oi[^!]*!/, "Oi, " + dmPrimeiro(c.name) + "!");
+      dmAbrirLink(dmWhats(c.phone, msg));
+      linha.classList.add("enviado");
+      if (!registrou) { registrou = true; dmRegistrar(o, "Promoção de " + o.titulo); }
+    }));
+    lista.appendChild(linha);
+  });
+  const fechar = criarBotao("Fechar", "btn btn-ghost", function () { dmFolhaFundo.hidden = true; });
+  fechar.style.cssText = "width:100%; margin-top:16px;";
+  [h, sub, desc, area, acoesTopo, lista, fechar].forEach(function (el) { folha.appendChild(el); });
+  dmFolhaFundo.hidden = false;
+}
+
+dmEl("dmMais").addEventListener("click", function () { dmLimite += 12; dmDesenhar(); });
+
+async function abrirMesa(silencioso) {
+  if (!silencioso) {
+    dmEl("dmSub").textContent = "A ARYA está procurando o dinheiro escondido na sua loja...";
+    if (!dmDados) dmEl("dmLista").innerHTML = '<div class="dm-vazio" style="grid-column:1/-1;">Calculando...</div>';
+  }
+  try {
+    dmDados = await dmCarregar();
+    dmOps = dmCalcular(dmDados);
+    dmDesenhar();
+  } catch (e) {
+    console.error("Dinheiro na mesa:", e);
+    if (!silencioso) dmEl("dmLista").innerHTML = '<div class="dm-vazio" style="grid-column:1/-1;">Não foi possível calcular agora: ' + dmEsc(e.message || e) + "</div>";
+  }
+}
+
+// Atualiza a chamada do Dashboard ao entrar e ao voltar para o Dashboard
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) { dmDados = null; dmOps = []; dmTeaser.hidden = true; dmLoja = ""; return; }
+    setTimeout(function () { abrirMesa(true); }, 2000);
+  });
+});
+document.querySelectorAll('[data-view="dashboard"]').forEach(function (b) {
+  b.addEventListener("click", function () { if (dmDados) abrirMesa(true); });
+});
+// FIM DA PARTE 38
 
