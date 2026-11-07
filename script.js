@@ -7756,3 +7756,421 @@ function avisar(mensagem) {
   }
 }
 // FIM DA PARTE 28
+// ===== PARTE 29: Vitrine de produtos, foto em tela cheia e fotos no banner =====
+const SEM_MOV_29 = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const estiloVitrine = document.createElement("style");
+estiloVitrine.textContent = `
+  .vt-modos { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); margin: 4px 0 12px; }
+  .vt-modos button { padding: 7px 16px; border-radius: 9px; font-size: 14px; font-weight: 500; color: var(--muted); }
+  .vt-modos button.ativo { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+  .vt-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; margin-top: 6px; }
+  .vt-grade[hidden] { display: none; }
+  .vt-cena { perspective: 1000px; }
+  .vt-cartao {
+    position: relative; height: 330px; border-radius: 18px; cursor: pointer;
+    transform-style: preserve-3d; transition: transform .6s cubic-bezier(.2,.8,.2,1);
+  }
+  .vt-cartao.virado { transform: rotateY(180deg) !important; }
+  .vt-face {
+    position: absolute; inset: 0; border-radius: 18px; overflow: hidden;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    border: 1px solid var(--border); background: var(--surface);
+    box-shadow: 0 18px 40px -28px rgba(0,0,0,.45);
+  }
+  .vt-foto { height: 236px; background: var(--surface-2); position: relative; overflow: hidden; }
+  .vt-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+  .vt-cartao:hover .vt-foto img { transform: scale(1.06); }
+  .vt-inicial {
+    width: 100%; height: 100%; display: grid; place-items: center;
+    background: radial-gradient(circle at 30% 20%, #3f3f46, #000 70%); color: #fff;
+    font-family: var(--font-brand); font-size: 54px;
+  }
+  .vt-brilho { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at var(--bx, 50%) var(--by, 0%), rgba(255,255,255,.28), transparent 45%); opacity: 0; transition: opacity .3s ease; }
+  .vt-cartao:hover .vt-brilho { opacity: 1; }
+  .vt-selo { position: absolute; top: 10px; left: 10px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.92); color: #000; }
+  .vt-selo.alerta { background: #fff7ed; color: #c2410c; }
+  .vt-info { padding: 12px 14px; }
+  .vt-nome { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vt-preco { font-size: 18px; font-weight: 600; letter-spacing: -.02em; margin-top: 2px; }
+  .vt-verso { transform: rotateY(180deg); padding: 18px; display: flex; flex-direction: column; gap: 10px; background: #000; color: #fff; border-color: #000; }
+  .vt-verso .vt-nome { white-space: normal; font-size: 16px; }
+  .vt-verso p { color: #a1a1aa; font-size: 13px; }
+  .vt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .vt-chips span { font-size: 12px; padding: 4px 9px; border-radius: 8px; border: 1px solid #3f3f46; }
+  .vt-chips span.zero { color: #f97316; border-color: #7c2d12; }
+  .vt-verso .vt-botoes { margin-top: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .vt-verso .btn { background: #fff; color: #000; border-color: #fff; }
+  .vt-verso .btn-ghost { background: transparent; color: #fff; border-color: #3f3f46; box-shadow: none; }
+
+  /* Foto em tela cheia */
+  .lb-fundo { position: fixed; inset: 0; z-index: 380; background: rgba(0,0,0,.94); display: grid; grid-template-rows: auto 1fr auto; color: #fff; touch-action: none; }
+  .lb-fundo[hidden] { display: none; }
+  .lb-topo { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; padding-top: calc(14px + env(safe-area-inset-top)); }
+  .lb-fechar, .lb-seta { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; font-size: 20px; display: grid; place-items: center; }
+  .lb-palco { position: relative; overflow: hidden; display: grid; place-items: center; }
+  .lb-palco img { max-width: 92vw; max-height: 72vh; object-fit: contain; border-radius: 12px; transition: transform .25s ease, opacity .25s ease; user-select: none; -webkit-user-drag: none; }
+  .lb-seta { position: absolute; top: 50%; translate: 0 -50%; }
+  .lb-seta.esq { left: 14px; } .lb-seta.dir { right: 14px; }
+  .lb-legenda { text-align: center; padding: 14px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .lb-legenda strong { display: block; font-size: 17px; }
+  .lb-legenda span { color: #a1a1aa; font-size: 14px; }
+  @media (max-width: 700px) { .lb-seta { display: none; } }
+
+  /* Polaroids no banner de Produtos */
+  .pol { position: absolute; width: 92px; padding: 6px 6px 18px; background: #fff; border-radius: 6px; box-shadow: 0 14px 30px -12px rgba(0,0,0,.6); animation: pol-boia 5s ease-in-out infinite; }
+  .pol img { width: 100%; height: 80px; object-fit: cover; border-radius: 3px; display: block; }
+  .pol.p1 { left: 4px; top: 14px; rotate: -10deg; }
+  .pol.p2 { left: 64px; top: 0; rotate: 6deg; animation-delay: -1.6s; z-index: 2; }
+  .pol.p3 { right: 0; top: 40px; rotate: 12deg; animation-delay: -3.2s; }
+  @keyframes pol-boia { 50% { translate: 0 -8px; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vt-cartao, .vt-foto img, .lb-palco img { transition: none !important; }
+    .pol { animation: none !important; }
+  }
+`;
+document.head.appendChild(estiloVitrine);
+
+// ---------- Botões Lista | Vitrine ----------
+const vtModos = document.createElement("div");
+vtModos.className = "vt-modos";
+vtModos.setAttribute("role", "group");
+vtModos.setAttribute("aria-label", "Modo de exibição");
+vtModos.innerHTML = '<button type="button" data-modo="lista" class="ativo">Lista</button><button type="button" data-modo="vitrine">Vitrine</button>';
+listaProdutosEl.before(vtModos);
+
+const vtGrade = document.createElement("div");
+vtGrade.className = "vt-grade";
+vtGrade.hidden = true;
+listaProdutosEl.after(vtGrade);
+
+let vtModo = "lista";
+try { if (localStorage.getItem("arya_modo_produtos") === "vitrine") vtModo = "vitrine"; } catch (e) {}
+
+function vtAplicarModo() {
+  vtModos.querySelectorAll("button").forEach(function (b) { b.classList.toggle("ativo", b.dataset.modo === vtModo); });
+  const vitrine = vtModo === "vitrine";
+  listaProdutosEl.hidden = vitrine;
+  vtGrade.hidden = !vitrine;
+  if (vitrine) desenharVitrine();
+}
+vtModos.querySelectorAll("button").forEach(function (b) {
+  b.addEventListener("click", function () {
+    vtModo = b.dataset.modo;
+    try { localStorage.setItem("arya_modo_produtos", vtModo); } catch (e) {}
+    vtAplicarModo();
+  });
+});
+
+// Mesmos filtros da lista (pesquisa, categoria e estoque baixo)
+function vtFiltrados() {
+  const termo = prBuscaEl.value.trim().toLowerCase();
+  const categoria = selFiltroCategoria.value;
+  const soBaixo = chkFiltroBaixo.checked;
+  return produtosCache.filter(function (p) {
+    if (!p.name.toLowerCase().includes(termo)) return false;
+    if (categoria === "__sem__" && p.category_id) return false;
+    if (categoria && categoria !== "__sem__" && p.category_id !== categoria) return false;
+    if (soBaixo && !estaComEstoqueBaixo(p)) return false;
+    return true;
+  });
+}
+
+function desenharVitrine() {
+  vtGrade.innerHTML = "";
+  const lista = vtFiltrados();
+  if (lista.length === 0) {
+    const vazio = document.createElement("div");
+    vazio.className = "empty";
+    vazio.style.gridColumn = "1 / -1";
+    vazio.textContent = produtosCache.length ? "Nenhum produto com esses filtros." : "Nenhum produto cadastrado ainda.";
+    vtGrade.appendChild(vazio);
+    return;
+  }
+
+  lista.forEach(function (p) {
+    const vars = (typeof gradeCache !== "undefined" && gradeCache[p.id]) || [];
+    const cena = document.createElement("div");
+    cena.className = "vt-cena";
+    const cartao = document.createElement("div");
+    cartao.className = "vt-cartao";
+    cartao.tabIndex = 0;
+    cartao.setAttribute("role", "button");
+    cartao.setAttribute("aria-label", p.name + ", toque para ver detalhes");
+
+    // Frente
+    const frente = document.createElement("div");
+    frente.className = "vt-face";
+    const foto = document.createElement("div");
+    foto.className = "vt-foto";
+    if (p.image_url) {
+      const img = document.createElement("img");
+      img.src = p.image_url;
+      img.alt = p.name;
+      img.loading = "lazy";
+      foto.appendChild(img);
+    } else {
+      const ini = document.createElement("div");
+      ini.className = "vt-inicial";
+      ini.textContent = p.name.trim().charAt(0).toUpperCase();
+      foto.appendChild(ini);
+    }
+    const brilho = document.createElement("div");
+    brilho.className = "vt-brilho";
+    foto.appendChild(brilho);
+    if (p.stock_quantity <= 0 || estaComEstoqueBaixo(p)) {
+      const selo = document.createElement("span");
+      selo.className = "vt-selo alerta";
+      selo.textContent = p.stock_quantity <= 0 ? "Esgotado" : "Estoque baixo";
+      foto.appendChild(selo);
+    } else if (vars.length) {
+      const selo = document.createElement("span");
+      selo.className = "vt-selo";
+      selo.textContent = vars.length + " variações";
+      foto.appendChild(selo);
+    }
+    const info = document.createElement("div");
+    info.className = "vt-info";
+    const nome = document.createElement("p");
+    nome.className = "vt-nome";
+    nome.textContent = p.name;
+    const preco = document.createElement("p");
+    preco.className = "vt-preco";
+    preco.textContent = moeda(p.sale_price);
+    info.appendChild(nome);
+    info.appendChild(preco);
+    frente.appendChild(foto);
+    frente.appendChild(info);
+
+    // Verso
+    const verso = document.createElement("div");
+    verso.className = "vt-face vt-verso";
+    const vNome = document.createElement("p");
+    vNome.className = "vt-nome";
+    vNome.textContent = p.name;
+    const vDet = document.createElement("p");
+    vDet.textContent = nomeCategoria(p.category_id) + " · Venda " + moeda(p.sale_price) + " · Estoque " + p.stock_quantity;
+    verso.appendChild(vNome);
+    verso.appendChild(vDet);
+    if (vars.length) {
+      const chips = document.createElement("div");
+      chips.className = "vt-chips";
+      vars.slice(0, 12).forEach(function (v) {
+        const c = document.createElement("span");
+        if (v.stock_quantity <= 0) c.className = "zero";
+        c.textContent = rotuloVariacao(v) + " · " + v.stock_quantity;
+        chips.appendChild(c);
+      });
+      verso.appendChild(chips);
+    }
+    const botoes = document.createElement("div");
+    botoes.className = "vt-botoes";
+    if (p.image_url) {
+      botoes.appendChild(criarBotao("Ver foto", "btn btn-small", function (e) {
+        e.stopPropagation();
+        abrirFotoGrande(p.id);
+      }));
+    }
+    botoes.appendChild(criarBotao("Grade", "btn btn-ghost btn-small", function (e) {
+      e.stopPropagation();
+      abrirGrade(p);
+    }));
+    botoes.appendChild(criarBotao("Editar", "btn btn-ghost btn-small", function (e) {
+      e.stopPropagation();
+      fecharGrade();
+      fecharEstoque();
+      fecharCategorias();
+      abrirFormProduto(p);
+    }));
+    verso.appendChild(botoes);
+
+    cartao.appendChild(frente);
+    cartao.appendChild(verso);
+    cena.appendChild(cartao);
+    vtGrade.appendChild(cena);
+
+    // Inclina em 3D acompanhando o dedo/mouse
+    if (!SEM_MOV_29) {
+      cartao.addEventListener("pointermove", function (e) {
+        if (cartao.classList.contains("virado")) return;
+        const r = cartao.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;
+        const y = (e.clientY - r.top) / r.height;
+        cartao.style.transform = "rotateY(" + ((x - .5) * 18) + "deg) rotateX(" + ((.5 - y) * 14) + "deg)";
+        brilho.style.setProperty("--bx", (x * 100) + "%");
+        brilho.style.setProperty("--by", (y * 100) + "%");
+      });
+      cartao.addEventListener("pointerleave", function () {
+        if (!cartao.classList.contains("virado")) cartao.style.transform = "";
+      });
+    }
+    // Tocar vira o cartão
+    function virar() {
+      cartao.style.transform = "";
+      cartao.classList.toggle("virado");
+    }
+    cartao.addEventListener("click", virar);
+    cartao.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); virar(); }
+    });
+  });
+}
+
+// A vitrine e o banner se atualizam sempre que a lista de produtos muda
+new MutationObserver(function () {
+  if (vtModo === "vitrine") desenharVitrine();
+  atualizarFotosBanner();
+}).observe(listaProdutosEl, { childList: true });
+
+// ---------- Foto em tela cheia ----------
+const lbFundo = document.createElement("div");
+lbFundo.className = "lb-fundo";
+lbFundo.hidden = true;
+lbFundo.setAttribute("role", "dialog");
+lbFundo.setAttribute("aria-modal", "true");
+lbFundo.setAttribute("aria-label", "Foto do produto");
+lbFundo.innerHTML = `
+  <div class="lb-topo"><span id="lbContador" style="color:#a1a1aa; font-size:14px;"></span><button class="lb-fechar" type="button" aria-label="Fechar">✕</button></div>
+  <div class="lb-palco">
+    <img id="lbImg" alt="" />
+    <button class="lb-seta esq" type="button" aria-label="Foto anterior">‹</button>
+    <button class="lb-seta dir" type="button" aria-label="Próxima foto">›</button>
+  </div>
+  <div class="lb-legenda"><strong id="lbNome"></strong><span id="lbPreco"></span></div>
+`;
+document.body.appendChild(lbFundo);
+
+const lbImg = document.getElementById("lbImg");
+let lbLista = [];
+let lbIndice = 0;
+let lbZoom = 1;
+let lbPan = { x: 0, y: 0 };
+
+function lbAplicarTransform() {
+  lbImg.style.transform = "translate(" + lbPan.x + "px," + lbPan.y + "px) scale(" + lbZoom + ")";
+}
+
+function lbMostrar() {
+  const p = lbLista[lbIndice];
+  if (!p) return;
+  lbZoom = 1;
+  lbPan = { x: 0, y: 0 };
+  lbAplicarTransform();
+  lbImg.style.opacity = 0;
+  setTimeout(function () {
+    lbImg.src = p.image_url;
+    lbImg.alt = p.name;
+    lbImg.style.opacity = 1;
+  }, 120);
+  document.getElementById("lbNome").textContent = p.name;
+  document.getElementById("lbPreco").textContent = moeda(p.sale_price) + " · estoque " + p.stock_quantity;
+  document.getElementById("lbContador").textContent = (lbIndice + 1) + " de " + lbLista.length;
+}
+
+function abrirFotoGrande(productId) {
+  lbLista = produtosCache.filter(function (p) { return p.image_url; });
+  lbIndice = Math.max(0, lbLista.findIndex(function (p) { return p.id === productId; }));
+  if (!lbLista.length) return;
+  lbFundo.hidden = false;
+  lbMostrar();
+}
+function fecharFotoGrande() { lbFundo.hidden = true; }
+function lbPassar(direcao) {
+  if (!lbLista.length) return;
+  lbIndice = (lbIndice + direcao + lbLista.length) % lbLista.length;
+  lbMostrar();
+}
+
+lbFundo.querySelector(".lb-fechar").addEventListener("click", fecharFotoGrande);
+lbFundo.querySelector(".lb-seta.esq").addEventListener("click", function () { lbPassar(-1); });
+lbFundo.querySelector(".lb-seta.dir").addEventListener("click", function () { lbPassar(1); });
+lbFundo.addEventListener("click", function (e) {
+  if (e.target === lbFundo || e.target.classList.contains("lb-palco")) fecharFotoGrande();
+});
+document.addEventListener("keydown", function (e) {
+  if (lbFundo.hidden) return;
+  if (e.key === "Escape") fecharFotoGrande();
+  if (e.key === "ArrowLeft") lbPassar(-1);
+  if (e.key === "ArrowRight") lbPassar(1);
+});
+
+// Toque duplo = zoom; arrastar = mover (com zoom) ou passar de foto (sem zoom)
+let lbUltimoToque = 0;
+let lbArraste = null;
+lbImg.addEventListener("pointerdown", function (e) {
+  const agora = Date.now();
+  if (agora - lbUltimoToque < 300) {
+    lbZoom = lbZoom > 1 ? 1 : 2.2;
+    lbPan = { x: 0, y: 0 };
+    lbAplicarTransform();
+    lbUltimoToque = 0;
+    return;
+  }
+  lbUltimoToque = agora;
+  lbArraste = { x: e.clientX, y: e.clientY, panX: lbPan.x, panY: lbPan.y };
+  lbImg.setPointerCapture(e.pointerId);
+  lbImg.style.transition = "none";
+});
+lbImg.addEventListener("pointermove", function (e) {
+  if (!lbArraste) return;
+  const dx = e.clientX - lbArraste.x;
+  const dy = e.clientY - lbArraste.y;
+  if (lbZoom > 1) {
+    lbPan = { x: lbArraste.panX + dx, y: lbArraste.panY + dy };
+  } else {
+    lbPan = { x: dx, y: 0 };
+  }
+  lbAplicarTransform();
+});
+lbImg.addEventListener("pointerup", function (e) {
+  if (!lbArraste) return;
+  const dx = e.clientX - lbArraste.x;
+  lbImg.style.transition = "";
+  lbArraste = null;
+  if (lbZoom === 1) {
+    lbPan = { x: 0, y: 0 };
+    lbAplicarTransform();
+    if (Math.abs(dx) > 60) lbPassar(dx < 0 ? 1 : -1);
+  }
+});
+
+// Tocar na miniatura da lista também abre a foto grande
+listaProdutosEl.addEventListener("click", function (e) {
+  const img = e.target.closest("img");
+  if (!img) return;
+  const p = produtosCache.find(function (x) { return x.image_url === img.getAttribute("src"); });
+  if (p) abrirFotoGrande(p.id);
+});
+
+// ---------- Fotos reais no banner de Produtos ----------
+function atualizarFotosBanner() {
+  const banner = document.getElementById("banner-produtos");
+  if (!banner) return;
+  const arte = banner.querySelector(".b-arte");
+  const comFoto = produtosCache.filter(function (p) { return p.image_url; }).slice(0, 3);
+  if (comFoto.length === 0 || arte.dataset.fotos === comFoto.map(function (p) { return p.id; }).join(",")) return;
+  arte.dataset.fotos = comFoto.map(function (p) { return p.id; }).join(",");
+  arte.innerHTML = "";
+  comFoto.forEach(function (p, i) {
+    const pol = document.createElement("div");
+    pol.className = "pol p" + (i + 1);
+    const img = document.createElement("img");
+    img.src = p.image_url;
+    img.alt = "";
+    pol.appendChild(img);
+    arte.appendChild(pol);
+  });
+}
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) {
+      fecharFotoGrande();
+      vtGrade.innerHTML = "";
+    }
+  });
+});
+
+vtAplicarModo();
+// FIM DA PARTE 29
