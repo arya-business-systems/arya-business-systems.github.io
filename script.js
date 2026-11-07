@@ -7203,3 +7203,177 @@ if (window.location.hash === "#criar") {
   history.replaceState(null, "", window.location.pathname);
 }
 // FIM DA PARTE 25
+// ===== PARTE 27: Efeitos e animações (login + dentro do sistema) =====
+const ARYA_CALMO = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const estiloEfeitos = document.createElement("style");
+estiloEfeitos.textContent = `
+  /* ---------- Login com vitrine animada (telas largas) ---------- */
+  .vitrine { display: none; }
+  @media (min-width: 960px) {
+    .auth { grid-template-columns: 1.05fr 1fr; padding: 0; align-items: stretch; justify-items: stretch; }
+    .auth > .auth-box { align-self: center; justify-self: center; margin: 32px; }
+    .vitrine {
+      display: flex; flex-direction: column; justify-content: space-between;
+      position: relative; overflow: hidden; padding: 48px 56px;
+      background: radial-gradient(700px 420px at 80% 10%, rgba(255,255,255,.08), transparent 70%), #000;
+      color: #fff; min-height: 100vh;
+    }
+  }
+  .vit-topo { display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
+  .vit-topo svg { width: 40px; height: auto; display: block; color: #fff; }
+  .vit-topo span { font-family: var(--font-brand); font-size: 15px; letter-spacing: .38em; }
+  .vit-fundo { position: absolute; right: -18%; bottom: -6%; width: 120%; color: rgba(255,255,255,.04); pointer-events: none; }
+  .vit-fundo svg { width: 100%; height: auto; display: block; }
+  .vit-frase {
+    position: relative; z-index: 2;
+    font-family: var(--font-brand); font-weight: 400; font-size: clamp(26px, 2.6vw, 40px);
+    line-height: 1.2; max-width: 14ch; min-height: 3.6em;
+    transition: opacity .45s ease, transform .45s ease;
+  }
+  .vit-frase.trocando { opacity: 0; transform: translateY(10px); }
+  .vit-palco { position: relative; height: 300px; z-index: 2; }
+  .vit-card {
+    position: absolute; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-radius: 16px; padding: 12px 16px; font-size: 14px; white-space: nowrap;
+    animation: arya-boiar 6s ease-in-out infinite;
+  }
+  .vit-card small { display: block; color: #a1a1aa; font-size: 12px; }
+  .vit-card strong { font-weight: 600; }
+  .vc1 { top: 0; left: 0; }
+  .vc2 { top: 96px; left: 46%; animation-delay: -2s; }
+  .vc3 { top: 196px; left: 8%; animation-delay: -4s; }
+  .vit-grafico { position: absolute; right: 0; bottom: 0; display: flex; align-items: flex-end; gap: 6px; height: 110px; }
+  .vit-grafico i { width: 14px; background: #fff; border-radius: 5px 5px 2px 2px; transform-origin: bottom; animation: arya-barra 4s ease-in-out infinite; }
+  .vit-grafico i:last-child { background: #22c55e; }
+  @keyframes arya-barra { 0% { transform: scaleY(.08); } 30%, 80% { transform: scaleY(1); } 100% { transform: scaleY(.08); } }
+  @keyframes arya-boiar { 50% { translate: 0 -10px; } }
+  .vit-estrela { position: absolute; color: #fff; opacity: 0; animation: arya-brilho 3.8s ease-in-out infinite; pointer-events: none; z-index: 1; }
+  @keyframes arya-brilho { 0%, 100% { opacity: 0; transform: scale(.6) rotate(0deg); } 40% { opacity: .9; transform: scale(1) rotate(45deg); } }
+  .vit-rodape { position: relative; z-index: 2; color: #71717a; font-size: 13px; }
+
+  /* Brilho suave atrás da caixa de login (celular) */
+  @media (max-width: 959px) {
+    .auth::before {
+      content: ""; position: fixed; left: 50%; top: 18%; width: 520px; height: 520px; translate: -50% 0;
+      background: radial-gradient(circle, rgba(10,10,10,.08), transparent 65%);
+      animation: arya-respira 6s ease-in-out infinite; pointer-events: none;
+    }
+    .auth > .auth-box { position: relative; }
+  }
+  @keyframes arya-respira { 50% { transform: scale(1.12); opacity: .6; } }
+
+  /* ---------- Dentro do sistema ---------- */
+  .db-barra, .rl-barra { transform-origin: bottom; animation: arya-crescer .75s cubic-bezier(.2,.8,.2,1) backwards; }
+  .db-col:nth-child(2) .db-barra, .rl-col:nth-child(2) .rl-barra { animation-delay: .05s; }
+  .db-col:nth-child(3) .db-barra, .rl-col:nth-child(3) .rl-barra { animation-delay: .1s; }
+  .db-col:nth-child(4) .db-barra, .rl-col:nth-child(4) .rl-barra { animation-delay: .15s; }
+  .db-col:nth-child(5) .db-barra, .rl-col:nth-child(5) .rl-barra { animation-delay: .2s; }
+  .db-col:nth-child(6) .db-barra, .rl-col:nth-child(6) .rl-barra { animation-delay: .25s; }
+  .db-col:nth-child(7) .db-barra, .rl-col:nth-child(7) .rl-barra { animation-delay: .3s; }
+  @keyframes arya-crescer { from { transform: scaleY(0); } }
+
+  .view.active > .card,
+  .view.active > article,
+  .view.active > .grid-4 > .card,
+  .view.active > .db-duas > .card { animation: arya-entra .5s cubic-bezier(.2,.8,.2,1) backwards; }
+  .view.active > .grid-4 > .card:nth-child(2) { animation-delay: .06s; }
+  .view.active > .grid-4 > .card:nth-child(3) { animation-delay: .12s; }
+  .view.active > .grid-4 > .card:nth-child(4) { animation-delay: .18s; }
+  .view.active > .db-duas > .card:nth-child(2) { animation-delay: .08s; }
+  @keyframes arya-entra { from { opacity: 0; transform: translateY(12px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vit-card, .vit-grafico i, .vit-estrela, .auth::before,
+    .db-barra, .rl-barra, .view.active > .card, .view.active > article,
+    .view.active > .grid-4 > .card, .view.active > .db-duas > .card { animation: none !important; }
+    .vit-estrela { opacity: .6; }
+  }
+`;
+document.head.appendChild(estiloEfeitos);
+
+// ---------- Vitrine do login ----------
+const authBox = document.querySelector(".auth-box");
+if (authBox && !document.getElementById("vitrine")) {
+  const vitrine = document.createElement("div");
+  vitrine.id = "vitrine";
+  vitrine.className = "vitrine";
+  vitrine.setAttribute("aria-hidden", "true");
+  vitrine.innerHTML = `
+    <div class="vit-fundo">${ARYA_SIMBOLO}</div>
+    <div class="vit-topo">${ARYA_SIMBOLO}<span>ARYA</span></div>
+    <h2 class="vit-frase" id="vitFrase">Sua loja pensa com você.</h2>
+    <div class="vit-palco">
+      <div class="vit-card vc1"><small>Venda registrada</small><strong>R$ 189,90 no Pix</strong></div>
+      <div class="vit-card vc2"><small>✦ ARYA Pulso</small><strong>3 clientes para reativar</strong></div>
+      <div class="vit-card vc3"><small>Estoque</small><strong>Camiseta M acabando</strong></div>
+      <div class="vit-grafico">
+        <i style="height:45%; animation-delay:0s"></i>
+        <i style="height:62%; animation-delay:.08s"></i>
+        <i style="height:88%; animation-delay:.16s"></i>
+        <i style="height:38%; animation-delay:.24s"></i>
+        <i style="height:55%; animation-delay:.32s"></i>
+        <i style="height:70%; animation-delay:.4s"></i>
+        <i style="height:100%; animation-delay:.48s"></i>
+      </div>
+    </div>
+    <p class="vit-rodape">Gestão e inteligência para lojas de roupas e pequenos comércios.</p>
+    <span class="vit-estrela" style="top:14%; right:16%; font-size:20px;">✦</span>
+    <span class="vit-estrela" style="top:46%; right:8%; font-size:12px; animation-delay:1.3s;">✦</span>
+    <span class="vit-estrela" style="bottom:22%; left:44%; font-size:14px; animation-delay:2.4s;">✦</span>
+  `;
+  authBox.parentElement.insertBefore(vitrine, authBox);
+
+  const VIT_FRASES = [
+    "Sua loja pensa com você.",
+    "Venda, estoque e clientes num só lugar.",
+    "O Pulso diz o que fazer hoje.",
+    "Do P ao GG, cada peça no lugar.",
+    "Orçamento pronto para o WhatsApp."
+  ];
+  let vitIndice = 0;
+  if (!ARYA_CALMO) {
+    setInterval(function () {
+      if (authEl.classList.contains("hidden")) return;
+      const frase = document.getElementById("vitFrase");
+      frase.classList.add("trocando");
+      setTimeout(function () {
+        vitIndice = (vitIndice + 1) % VIT_FRASES.length;
+        frase.textContent = VIT_FRASES[vitIndice];
+        frase.classList.remove("trocando");
+      }, 450);
+    }, 3800);
+  }
+}
+
+// ---------- Números do Dashboard subindo ----------
+// Esta versão de dbTexto substitui a anterior (o navegador usa a última).
+function dbTexto(id, texto) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const limpo = String(texto).replace(/\u00a0/g, " ").trim();
+  const partes = /^(R\$ ?)?(\d{1,3}(?:\.\d{3})*|\d+)(,\d{1,2})?$/.exec(limpo);
+  if (el._animacao) cancelAnimationFrame(el._animacao);
+  if (!partes || ARYA_CALMO) {
+    el.textContent = texto;
+    return;
+  }
+  const alvo = Number(limpo.replace(/R\$ ?/, "").replace(/\./g, "").replace(",", "."));
+  const ehMoeda = Boolean(partes[1]);
+  const inicio = performance.now();
+  const duracao = 900;
+  function passo(agora) {
+    const p = Math.min(1, (agora - inicio) / duracao);
+    const v = alvo * (1 - Math.pow(1 - p, 3));
+    if (p < 1) {
+      el.textContent = ehMoeda ? moeda(v) : Math.round(v).toLocaleString("pt-BR");
+      el._animacao = requestAnimationFrame(passo);
+    } else {
+      el.textContent = texto;
+      el._animacao = null;
+    }
+  }
+  el._animacao = requestAnimationFrame(passo);
+}
+// FIM DA PARTE 27
