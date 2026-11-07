@@ -11058,7 +11058,7 @@ if (cnMaisPainel) {
 }
 
 // ---------- Estado ----------
-const CN_URL_FUNCAO = SUPABASE_URL + "/functions/v1/arya-pedidos";
+const CN_URL_FUNCAO = SUPABASE_URL + "/functions/v1/Arya-pedidos";
 let cnToken = null;
 let cnAba = "shopify";
 let cnPedidos = [];
