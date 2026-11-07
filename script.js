@@ -12912,4 +12912,409 @@ document.head.appendChild(estilo40b);
 asNav.addEventListener("click", function () { apValorCarregado = false; });
 if (asBilling) asDesenharTela();
 // FIM DA PARTE 40
+// ===== PARTE 41: Pix direto para a fundadora + Painel da fundadora =====
+const estilo41 = document.createElement("style");
+estilo41.textContent = `
+  .px-painel { display: grid; grid-template-columns: 220px 1fr; gap: 22px; align-items: center; padding: 18px; border-radius: 18px;
+    background: var(--surface-2); margin-bottom: 14px; max-width: 760px; animation: ap-entra .4s ease; }
+  .px-painel[hidden] { display: none !important; }
+  .px-qr { width: 220px; height: 220px; border-radius: 14px; background: #fff; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--border); }
+  .px-qr img { width: 100%; height: 100%; image-rendering: pixelated; }
+  .px-qr span { font-size: 12px; color: var(--muted); padding: 16px; text-align: center; }
+  .px-info small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--muted); }
+  .px-valor { font-size: 34px; font-weight: 600; letter-spacing: -.03em; margin: 2px 0 6px; }
+  .px-para { font-size: 13.5px; color: var(--muted); }
+  .px-para b { color: var(--text); }
+  .px-cola { display: flex; gap: 8px; margin-top: 12px; }
+  .px-cola input { flex: 1; min-width: 0; height: 42px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); padding: 0 10px; font: inherit; font-size: 12px; color: var(--muted); }
+  .px-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .px-msg { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 16px; }
+  .px-passos { margin: 10px 0 0 18px; font-size: 13px; color: var(--muted); display: grid; gap: 3px; }
+  .as-trava .px-painel { background: #18181b; grid-template-columns: 1fr; justify-items: center; text-align: center; color: #fff; max-width: 420px; margin: 20px auto 0; }
+  .as-trava .px-qr { width: 200px; height: 200px; }
+  .as-trava .px-cola input { background: #000; border-color: #3f3f46; }
+  .as-trava .px-para, .as-trava .px-msg, .as-trava .px-passos { color: #a1a1aa; }
+  .as-trava .px-para b { color: #fff; }
+  .as-trava .px-cola, .as-trava .px-acoes { justify-content: center; width: 100%; }
+  .px-outra { margin-top: 14px; font-size: 13.5px; color: #a1a1aa; text-decoration: underline; text-underline-offset: 3px; }
+  .ap-metodo[hidden], .nav-item[hidden], .mais-item[hidden] { display: none !important; }
+
+  .fd-hero { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .fd-num { border-radius: 18px; padding: 18px; background: var(--surface); border: 1px solid var(--border); }
+  .fd-num.preto { background: radial-gradient(300px 160px at 100% 0%, rgba(255,255,255,.15), transparent 70%), #000; color: #fff; border-color: #000; }
+  .fd-num small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--muted); }
+  .fd-num.preto small { color: #a1a1aa; }
+  .fd-num strong { display: block; font-size: 28px; letter-spacing: -.03em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .fd-num p { font-size: 12.5px; color: var(--muted); }
+  .fd-num.preto p { color: #a1a1aa; }
+  .fd-aviso { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px; border-radius: 16px; border: 1px solid #000; margin-bottom: 10px; animation: ap-entra .35s ease; }
+  .fd-aviso .fd-ic { width: 42px; height: 42px; border-radius: 12px; background: #000; color: #fff; display: grid; place-items: center; font-size: 18px; flex: none; }
+  .fd-aviso div.fd-txt { flex: 1; min-width: 180px; }
+  .fd-aviso b { display: block; font-size: 15px; }
+  .fd-aviso span { font-size: 13px; color: var(--muted); }
+  .fd-loja { display: flex; align-items: center; gap: 12px; padding: 13px 2px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .fd-loja:last-child { border-bottom: 0; }
+  .fd-loja .fd-txt { flex: 1; min-width: 160px; }
+  .fd-loja b { display: block; font-size: 14.5px; }
+  .fd-loja span { font-size: 12.5px; color: var(--muted); }
+  .fd-chip { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
+  .fd-chip.ok { background: #000; color: #fff; }
+  .fd-chip.alerta { background: #fee2e2; color: #991b1b; }
+  @media (max-width: 860px) {
+    .px-painel { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    .px-cola, .px-acoes { justify-content: center; width: 100%; }
+    .fd-hero { grid-template-columns: 1fr 1fr; }
+  }
+`;
+document.head.appendChild(estilo41);
+
+// ---------- Pix: código "copia e cola" (padrão do Banco Central) ----------
+function pxLimpo(t, max) {
+  return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9 ]/g, "").toUpperCase().trim().slice(0, max);
+}
+function pxCampo(id, valor) { return id + String(valor.length).padStart(2, "0") + valor; }
+function pxCrc16(t) {
+  let crc = 0xFFFF;
+  for (let i = 0; i < t.length; i++) {
+    crc ^= t.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+  }
+  return crc.toString(16).toUpperCase().padStart(4, "0");
+}
+function pxCodigo(chave, nome, cidade, valor, txid) {
+  const conta = pxCampo("00", "br.gov.bcb.pix") + pxCampo("01", String(chave).trim());
+  let p = pxCampo("00", "01") + pxCampo("26", conta) + pxCampo("52", "0000") + pxCampo("53", "986") +
+    pxCampo("54", Number(valor).toFixed(2)) + pxCampo("58", "BR") +
+    pxCampo("59", pxLimpo(nome, 25) || "ARYA") + pxCampo("60", pxLimpo(cidade, 15) || "BRASIL") +
+    pxCampo("62", pxCampo("05", (String(txid || "ARYA").replace(/[^A-Za-z0-9]/g, "").slice(0, 25)) || "***"));
+  p += "6304";
+  return p + pxCrc16(p);
+}
+
+// ---------- Estado ----------
+let pxConfig = null;
+let pxAviso = null; // último "Já fiz o Pix" desta loja
+let pxCodigoAtual = "";
+const pxPaineis = [];
+
+async function pxCarregar() {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.rpc("get_pix_config");
+  if (r.error) { pxConfig = null; return; }
+  pxConfig = Array.isArray(r.data) ? r.data[0] : r.data;
+  const a = await cliente.from("pix_payments").select("id, status, created_at, amount").order("created_at", { ascending: false }).limit(1);
+  pxAviso = !a.error && a.data && a.data[0] ? a.data[0] : null;
+  if (pxConfig && pxConfig.pix_key && pxConfig.pix_key.indexOf("SUA_CHAVE") < 0) {
+    const empresa = await obterEmpresaId();
+    pxCodigoAtual = pxCodigo(pxConfig.pix_key, pxConfig.pix_name, pxConfig.pix_city, pxConfig.price || 49, "ARYA" + String(empresa).replace(/-/g, "").slice(0, 12));
+  } else {
+    pxCodigoAtual = "";
+  }
+  pxPaineis.forEach(pxDesenharPainel);
+  pxAjustarMetodos();
+}
+function pxModo() { return pxConfig ? pxConfig.billing_mode : "asaas"; }
+function pxPendente() {
+  return pxAviso && pxAviso.status === "claimed" && (Date.now() - new Date(pxAviso.created_at).getTime()) < 3 * 86400000;
+}
+
+// ---------- Painel de Pix (na tela de Assinatura e na tela de bloqueio) ----------
+function pxCriarPainel(destino, antesDe) {
+  const el = document.createElement("div");
+  el.className = "px-painel";
+  el.innerHTML = `
+    <div class="px-qr"><span>Gerando QR Code...</span></div>
+    <div class="px-info">
+      <small>Pix · cai na hora</small>
+      <div class="px-valor">R$ 49,00</div>
+      <p class="px-para">Para: <b class="px-nome">—</b></p>
+      <div class="px-cola"><input readonly aria-label="Pix copia e cola" /><button class="btn btn-small px-copiar" type="button">Copiar</button></div>
+      <ol class="px-passos"><li>Abra o app do seu banco → Pix → Pagar com QR Code ou Copia e Cola</li><li>Confira o valor de R$ 49,00 e pague</li><li>Volte aqui e toque em "Já fiz o Pix"</li></ol>
+      <div class="px-acoes"><button class="as-pagar px-fiz" type="button" style="height:46px;">Já fiz o Pix</button></div>
+      <p class="px-msg"></p>
+    </div>
+  `;
+  if (antesDe) destino.insertBefore(el, antesDe); else destino.appendChild(el);
+  el.querySelector(".px-copiar").addEventListener("click", async function () {
+    const inp = el.querySelector(".px-cola input");
+    try { await navigator.clipboard.writeText(inp.value); avisar("Pix copiado ✦ Cole no app do seu banco"); }
+    catch (e) { inp.select(); avisar("Selecione e copie o código"); }
+  });
+  el.querySelector(".px-fiz").addEventListener("click", function () { pxAvisarPagamento(el); });
+  pxPaineis.push(el);
+  pxDesenharPainel(el);
+  return el;
+}
+
+let pxQrModulo = null;
+async function pxDesenharPainel(el) {
+  const msg = el.querySelector(".px-msg");
+  const qr = el.querySelector(".px-qr");
+  const botao = el.querySelector(".px-fiz");
+  el.querySelector(".px-valor").textContent = moeda(pxConfig && pxConfig.price ? pxConfig.price : 49);
+  el.querySelector(".px-nome").textContent = pxConfig && pxConfig.pix_name && pxConfig.pix_name !== "SEU NOME" ? pxConfig.pix_name : "ARYA";
+  el.querySelector(".px-cola input").value = pxCodigoAtual;
+  if (!pxCodigoAtual) {
+    qr.innerHTML = "<span>O Pix da ARYA ainda não foi configurado.</span>";
+    botao.disabled = true;
+    return;
+  }
+  botao.disabled = false;
+  if (pxPendente()) {
+    botao.textContent = "✓ Aviso enviado";
+    botao.disabled = true;
+    msg.textContent = "Recebemos o seu aviso de pagamento. A fundadora confirma em até 1 dia útil, e enquanto isso a ARYA continua liberada.";
+  } else {
+    botao.textContent = "Já fiz o Pix";
+    msg.textContent = "";
+  }
+  try {
+    if (!pxQrModulo) pxQrModulo = await import("https://esm.sh/qrcode@1.5.4");
+    const lib = pxQrModulo.toDataURL ? pxQrModulo : pxQrModulo.default;
+    const url = await lib.toDataURL(pxCodigoAtual, { margin: 1, width: 440, errorCorrectionLevel: "M" });
+    qr.innerHTML = "";
+    const img = document.createElement("img");
+    img.alt = "QR Code do Pix da ARYA";
+    img.src = url;
+    qr.appendChild(img);
+  } catch (e) {
+    console.error("QR:", e);
+    qr.innerHTML = "<span>Use o Pix Copia e Cola ao lado.</span>";
+  }
+}
+
+async function pxAvisarPagamento(el) {
+  const botao = el.querySelector(".px-fiz");
+  botao.disabled = true;
+  botao.textContent = "Enviando...";
+  try {
+    const cliente = await iniciarSupabase();
+    const empresa = await obterEmpresaId();
+    const r = await cliente.rpc("claim_pix_payment", { p_reference: "ARYA" + String(empresa).replace(/-/g, "").slice(0, 12) });
+    if (r.error) throw r.error;
+    pxAviso = Array.isArray(r.data) ? r.data[0] : r.data;
+    pxPaineis.forEach(pxDesenharPainel);
+    if (typeof asAplicar === "function") asAplicar();
+    avisar("✦ Aviso enviado! Obrigada.");
+  } catch (e) {
+    console.error(e);
+    botao.disabled = false;
+    botao.textContent = "Já fiz o Pix";
+    el.querySelector(".px-msg").textContent = "Não consegui enviar: " + (e.message || e);
+  }
+}
+
+// Painel na tela de Assinatura (depois da escolha da forma de pagamento)
+const pxTela = pxCriarPainel(apFormCard, apDica.nextSibling);
+// Painel na tela de bloqueio
+const pxTravaCaixa = asTrava.querySelector(".as-trava-caixa");
+const pxTravaForm = pxTravaCaixa.querySelector(".as-form");
+const pxTrava = pxCriarPainel(pxTravaCaixa, pxTravaForm);
+const pxOutra = document.createElement("button");
+pxOutra.type = "button";
+pxOutra.className = "px-outra";
+pxOutra.textContent = "Prefere cartão ou boleto?";
+pxTravaForm.before(pxOutra);
+
+// ---------- Formas de pagamento: Pix direto x cartão/boleto ----------
+let pxMetodo = "pix";
+let pxTravaAsaas = false;
+function pxAjustarMetodos() {
+  const modo = pxModo();
+  const tiles = apMetodos.querySelectorAll(".ap-metodo");
+  tiles[0].hidden = modo === "asaas";
+  tiles[1].hidden = modo === "pix";
+  tiles[2].hidden = modo === "pix";
+  if (modo === "asaas") pxMetodo = "asaas";
+  if (modo === "pix") pxMetodo = "pix";
+  if (pxMetodo === "asaas" && !tiles[1].classList.contains("ativo") && !tiles[2].classList.contains("ativo")) tiles[1].classList.add("ativo");
+  tiles[0].classList.toggle("ativo", pxMetodo === "pix");
+  if (pxMetodo === "pix") { tiles[1].classList.remove("ativo"); tiles[2].classList.remove("ativo"); }
+  const b = asBilling;
+  const s = b ? asSituacao(b) : { tipo: "teste" };
+  const temAssinatura = Boolean(b && b.asaas_subscription_id && b.status !== "canceled");
+  const usarPix = pxMetodo === "pix" && !temAssinatura;
+  // Pix aparece para quem ainda precisa pagar (ou falta 7 dias ou menos para vencer)
+  const emDia = s.tipo === "vitalicio" || (s.tipo === "ativa" && b && asDiasAte(b.paid_until) > 7);
+  pxTela.hidden = !usarPix || emDia;
+  asEl("asForm").style.display = usarPix ? "none" : "";
+  asEl("asPagar").style.display = usarPix ? "none" : "";
+  const seguro = apFormCard.querySelector(".as-seguro");
+  if (seguro) seguro.style.display = usarPix ? "none" : "";
+  apDica.textContent = usarPix
+    ? (emDia ? "Sua assinatura está em dia ✦ O Pix do próximo mês aparece aqui 7 dias antes do vencimento." : "Pix direto: o pagamento cai na hora para a ARYA. Depois toque em \"Já fiz o Pix\".")
+    : "Cartão ou boleto: você paga numa página segura do Asaas.";
+  // Tela de bloqueio
+  pxTrava.hidden = modo === "asaas" || (modo === "ambos" && pxTravaAsaas);
+  pxOutra.hidden = modo !== "ambos";
+  pxOutra.textContent = pxTravaAsaas ? "Voltar para o Pix" : "Prefere cartão ou boleto?";
+  pxTravaForm.style.display = modo === "pix" || (modo === "ambos" && !pxTravaAsaas) ? "none" : "";
+}
+pxOutra.addEventListener("click", function () { pxTravaAsaas = !pxTravaAsaas; pxAjustarMetodos(); });
+apMetodos.querySelectorAll(".ap-metodo").forEach(function (t, i) {
+  t.addEventListener("click", function () { pxMetodo = i === 0 ? "pix" : "asaas"; pxAjustarMetodos(); });
+});
+
+// Aviso de Pix pendente: a ARYA não bloqueia enquanto a fundadora confirma
+const pxSituacaoOriginal = asSituacao;
+asSituacao = function (b) {
+  const s = pxSituacaoOriginal(b);
+  if (pxPendente() && (s.tipo === "tolerancia" || !s.pode)) return { pode: true, tipo: "confirmando" };
+  return s;
+};
+const pxDesenharOriginal = asDesenharTela;
+asDesenharTela = function () {
+  pxDesenharOriginal();
+  const s = asBilling ? asSituacao(asBilling) : null;
+  if (s && s.tipo === "confirmando") {
+    asEl("asStatus").style.setProperty("--c", "#fbbf24");
+    asEl("asStatus").querySelector("span").textContent = "Pix em confirmação";
+    asEl("asDetalhe").textContent = "Recebemos o seu aviso de Pix. Assim que a fundadora confirmar, a assinatura fica ativa por 1 mês.";
+    const sel = document.getElementById("apSeloTxt");
+    if (sel) { sel.innerHTML = "Pix em confirmação<small>a ARYA está liberada</small>"; }
+    const n = document.getElementById("apSeloNum");
+    if (n) n.textContent = "⏳";
+  }
+  pxAjustarMetodos();
+};
+
+// ---------- Painel da fundadora ----------
+titulos.fundadora = "Painel da fundadora";
+const fdView = document.createElement("section");
+fdView.className = "view";
+fdView.id = "view-fundadora";
+fdView.innerHTML = `
+  <div class="fd-hero">
+    <div class="fd-num preto"><small>A ARYA fatura por mês</small><strong id="fdMrr">R$ 0</strong><p id="fdMrrTxt">lojas ativas × R$ 49</p></div>
+    <div class="fd-num"><small>Lojas ativas</small><strong id="fdAtivas">0</strong><p>pagando</p></div>
+    <div class="fd-num"><small>Em teste grátis</small><strong id="fdTeste">0</strong><p>podem virar clientes</p></div>
+    <div class="fd-num"><small>Pix para confirmar</small><strong id="fdPend">0</strong><p>confira na sua Nubank</p></div>
+  </div>
+  <article class="card wide" style="margin-bottom:16px;">
+    <div class="card-head"><h2>Pix para confirmar</h2><button class="btn btn-ghost btn-small" id="fdAtualizar" type="button">Atualizar</button></div>
+    <p class="item-sub" style="margin-bottom:12px;">Abra a sua Nubank e confira se o Pix de R$ 49 chegou (a descrição tem o código ARYA da loja). Depois toque em "Recebi".</p>
+    <div id="fdAvisos"></div>
+  </article>
+  <article class="card wide">
+    <div class="card-head"><h2>Todas as lojas</h2></div>
+    <div id="fdLojas"></div>
+  </article>
+`;
+document.querySelector("main.main").appendChild(fdView);
+
+const fdNav = document.createElement("button");
+fdNav.type = "button";
+fdNav.className = "nav-item";
+fdNav.dataset.view = "fundadora";
+fdNav.hidden = true;
+fdNav.innerHTML = '<span class="ico">♛</span>Painel da fundadora';
+document.getElementById("navDesktop").appendChild(fdNav);
+fdNav.addEventListener("click", function () { mostrarTela("fundadora"); fdCarregar(); });
+let fdMaisItem = null;
+const fdMais = document.querySelector(".mais-painel");
+if (fdMais) {
+  fdMaisItem = document.createElement("button");
+  fdMaisItem.type = "button";
+  fdMaisItem.className = "mais-item";
+  fdMaisItem.dataset.alvo = "fundadora";
+  fdMaisItem.hidden = true;
+  fdMaisItem.innerHTML = '<span class="ico">♛</span>Painel da fundadora';
+  fdMaisItem.addEventListener("click", function () {
+    fdNav.click();
+    const tab = document.getElementById("tabMais");
+    if (tab) tab.classList.add("active");
+    const fundo = document.querySelector(".mais-fundo");
+    if (fundo) fundo.hidden = true;
+  });
+  fdMais.appendChild(fdMaisItem);
+}
+
+function fdSituacao(l) {
+  if (l.status === "lifetime") return ["Vitalícia", "ok", "acesso liberado para sempre"];
+  const agora = Date.now();
+  if (l.paid_until && new Date(l.paid_until).getTime() > agora) return ["Ativa", "ok", "paga até " + new Date(l.paid_until).toLocaleDateString("pt-BR")];
+  if (l.status === "trial" && l.trial_ends_at && new Date(l.trial_ends_at).getTime() > agora)
+    return ["Teste grátis", "", "até " + new Date(l.trial_ends_at).toLocaleDateString("pt-BR")];
+  return ["Pendente", "alerta", "sem pagamento em dia"];
+}
+
+async function fdCarregar() {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.rpc("founder_overview");
+  const avisos = document.getElementById("fdAvisos");
+  const lojas = document.getElementById("fdLojas");
+  if (r.error) { avisos.innerHTML = '<p class="empty">Não foi possível carregar: ' + r.error.message + "</p>"; return; }
+  const dados = r.data || [];
+  const ativas = dados.filter(function (l) { const s = fdSituacao(l)[0]; return s === "Ativa"; }).length;
+  const teste = dados.filter(function (l) { return fdSituacao(l)[0] === "Teste grátis"; }).length;
+  const pend = dados.filter(function (l) { return l.claim_id; });
+  const preco = pxConfig && pxConfig.price ? Number(pxConfig.price) : 49;
+  if (typeof contarAte === "function") contarAte(document.getElementById("fdMrr"), ativas * preco, true);
+  else document.getElementById("fdMrr").textContent = moeda(ativas * preco);
+  document.getElementById("fdAtivas").textContent = ativas;
+  document.getElementById("fdTeste").textContent = teste;
+  document.getElementById("fdPend").textContent = pend.length;
+
+  avisos.innerHTML = "";
+  if (!pend.length) avisos.innerHTML = '<p class="empty">Nenhum aviso de Pix esperando. ✦</p>';
+  pend.forEach(function (l) {
+    const div = document.createElement("div");
+    div.className = "fd-aviso";
+    div.innerHTML = '<span class="fd-ic">⚡</span><div class="fd-txt"><b></b><span></span></div>';
+    div.querySelector("b").textContent = l.company_name + " · " + moeda(l.claim_amount);
+    div.querySelector(".fd-txt span").textContent = "Avisou em " + new Date(l.claim_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + " · código " + l.claim_reference;
+    div.appendChild(criarBotao("✓ Recebi", "btn btn-small", function () { fdDecidir(l.claim_id, true); }));
+    div.appendChild(criarBotao("Não recebi", "btn btn-ghost btn-small", function () { fdDecidir(l.claim_id, false); }));
+    avisos.appendChild(div);
+  });
+
+  lojas.innerHTML = "";
+  if (!dados.length) lojas.innerHTML = '<p class="empty">Nenhuma loja ainda.</p>';
+  dados.forEach(function (l) {
+    const s = fdSituacao(l);
+    const div = document.createElement("div");
+    div.className = "fd-loja";
+    div.innerHTML = '<div class="fd-txt"><b></b><span></span></div><span class="fd-chip ' + s[1] + '"></span>';
+    div.querySelector("b").textContent = l.company_name;
+    div.querySelector(".fd-txt span").textContent = s[2] + " · " + l.sales_30d + " venda(s) em 30 dias";
+    div.querySelector(".fd-chip").textContent = s[0];
+    if (l.status !== "lifetime") div.appendChild(criarBotao("Liberar para sempre", "btn btn-ghost btn-small", function () { fdStatus(l.company_id, "lifetime"); }));
+    else div.appendChild(criarBotao("Tirar vitalício", "btn btn-ghost btn-small", function () { fdStatus(l.company_id, "trial"); }));
+    lojas.appendChild(div);
+  });
+}
+async function fdDecidir(id, ok) {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.rpc("founder_decide_pix", { p_id: id, p_ok: ok });
+  if (r.error) { avisar("Erro: " + r.error.message); return; }
+  avisar(ok ? "✦ Pagamento confirmado! A loja ganhou mais 1 mês." : "Aviso recusado.");
+  fdCarregar();
+}
+async function fdStatus(empresa, status) {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.rpc("founder_set_status", { p_company: empresa, p_status: status });
+  if (r.error) { avisar("Erro: " + r.error.message); return; }
+  fdCarregar();
+}
+document.getElementById("fdAtualizar").addEventListener("click", fdCarregar);
+
+async function fdVerificar() {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.rpc("is_founder");
+  const sou = !r.error && r.data === true;
+  fdNav.hidden = !sou;
+  if (fdMaisItem) fdMaisItem.hidden = !sou;
+}
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) { pxConfig = null; pxAviso = null; fdNav.hidden = true; if (fdMaisItem) fdMaisItem.hidden = true; return; }
+    setTimeout(function () {
+      pxCarregar().then(function () { if (asBilling) asAplicar(); });
+      fdVerificar();
+    }, 900);
+  });
+});
+asNav.addEventListener("click", function () { pxCarregar(); });
+// FIM DA PARTE 41
 
