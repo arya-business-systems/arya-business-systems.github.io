@@ -6730,3 +6730,470 @@ iniciarSupabase().then(function (cliente) {
   });
 });
 // FIM DA PARTE 24c
+// ===== PARTE 24d: Tamanho/cor na Venda e no Orçamento =====
+// As funções abaixo substituem as versões anteriores (o navegador usa a última).
+
+function mesmoItem(item, productId, variantId) {
+  return item.product_id === productId && (item.variant_id || null) === (variantId || null);
+}
+
+function variacoesDe(productId) {
+  return gradeCache[productId] || [];
+}
+
+function buscarVariacao(productId, variantId) {
+  return variacoesDe(productId).find(function (v) { return v.id === variantId; });
+}
+
+function nomeComVariacao(nome, rotulo) {
+  return rotulo ? nome + " (" + rotulo + ")" : nome;
+}
+
+function criarCampoVariacao(id) {
+  const campo = document.createElement("div");
+  campo.className = "field";
+  campo.hidden = true;
+  const label = document.createElement("label");
+  label.htmlFor = id;
+  label.textContent = "Tamanho / cor";
+  const sel = document.createElement("select");
+  sel.id = id;
+  campo.appendChild(label);
+  campo.appendChild(sel);
+  return campo;
+}
+
+function preencherVariacoes(campo, sel, productId, bloquearEsgotadas) {
+  const vars = variacoesDe(productId);
+  sel.innerHTML = "";
+  if (!productId || vars.length === 0) {
+    campo.hidden = true;
+    return;
+  }
+  const vazio = document.createElement("option");
+  vazio.value = "";
+  vazio.textContent = "Escolha o tamanho/cor";
+  sel.appendChild(vazio);
+  vars.forEach(function (v) {
+    const o = document.createElement("option");
+    o.value = v.id;
+    o.textContent = rotuloVariacao(v) + " · estoque " + v.stock_quantity;
+    if (bloquearEsgotadas && v.stock_quantity <= 0) o.disabled = true;
+    sel.appendChild(o);
+  });
+  campo.hidden = false;
+}
+
+// ---------- VENDAS ----------
+const vdVarCampo = criarCampoVariacao("vdVariacao");
+selVdProduto.closest(".field-row").after(vdVarCampo);
+const selVdVariacao = document.getElementById("vdVariacao");
+
+function vdAtualizarVariacoes() {
+  preencherVariacoes(vdVarCampo, selVdVariacao, selVdProduto.value, true);
+}
+selVdProduto.addEventListener("change", vdAtualizarVariacoes);
+
+function vdAdicionarItem() {
+  vdErroEl.textContent = "";
+  const id = selVdProduto.value;
+  if (!id) {
+    vdErroEl.textContent = "Escolha um produto.";
+    return;
+  }
+  const texto = inVdQtd.value.trim() || "1";
+  if (!/^\d+$/.test(texto) || Number(texto) <= 0) {
+    vdErroEl.textContent = "Quantidade inválida. Use números inteiros (ex.: 2).";
+    return;
+  }
+  const qtd = Number(texto);
+  const p = vdBuscarProduto(id);
+  const vars = variacoesDe(id);
+  let variante = null;
+  let disponivel = p.stock_quantity;
+  let rotulo = "";
+
+  if (vars.length) {
+    const vid = selVdVariacao.value;
+    if (!vid) {
+      vdErroEl.textContent = "Escolha o tamanho/cor de \"" + p.name + "\".";
+      return;
+    }
+    const v = buscarVariacao(id, vid);
+    variante = v.id;
+    disponivel = v.stock_quantity;
+    rotulo = rotuloVariacao(v);
+  }
+
+  const existente = vdCarrinho.find(function (x) { return mesmoItem(x, id, variante); });
+  const jaNoCarrinho = existente ? existente.quantity : 0;
+  if (jaNoCarrinho + qtd > disponivel) {
+    vdErroEl.textContent = "Estoque insuficiente para \"" + nomeComVariacao(p.name, rotulo) + "\". Disponível: " + disponivel;
+    return;
+  }
+
+  if (existente) existente.quantity += qtd;
+  else vdCarrinho.push({ product_id: id, variant_id: variante, quantity: qtd });
+
+  inVdQtd.value = "";
+  selVdProduto.value = "";
+  vdAtualizarVariacoes();
+  vdDesenharCarrinho();
+}
+
+function vdDesenharCarrinho() {
+  if (vdCarrinho.length === 0) {
+    vdMensagem(vdCarrinhoEl, "Nenhum produto adicionado.");
+    vdAtualizarResumo();
+    return;
+  }
+
+  vdCarrinhoEl.innerHTML = "";
+  vdCarrinho.forEach(function (item) {
+    const p = vdBuscarProduto(item.product_id);
+    if (!p) return;
+    const v = item.variant_id ? buscarVariacao(item.product_id, item.variant_id) : null;
+
+    const linha = document.createElement("div");
+    linha.className = "list-item";
+
+    const info = document.createElement("div");
+    const nome = document.createElement("p");
+    nome.className = "item-title";
+    nome.textContent = nomeComVariacao(p.name, v ? rotuloVariacao(v) : "");
+    const sub = document.createElement("p");
+    sub.className = "item-sub";
+    sub.textContent = item.quantity + " × " + moeda(p.sale_price) + " = " +
+      moeda(Number(p.sale_price) * item.quantity);
+    info.appendChild(nome);
+    info.appendChild(sub);
+
+    const acoes = document.createElement("div");
+    acoes.className = "item-actions";
+    acoes.appendChild(criarBotao("Remover", "btn btn-ghost btn-small", function () {
+      vdCarrinho = vdCarrinho.filter(function (x) { return !mesmoItem(x, item.product_id, item.variant_id); });
+      vdDesenharCarrinho();
+    }));
+
+    linha.appendChild(info);
+    linha.appendChild(acoes);
+    vdCarrinhoEl.appendChild(linha);
+  });
+  vdAtualizarResumo();
+}
+
+function vdLimparFormulario() {
+  vdCarrinho = [];
+  selVdCliente.value = "";
+  selVdProduto.value = "";
+  inVdQtd.value = "";
+  selVdPagamento.value = "pix";
+  inVdDesconto.value = "";
+  inVdNotas.value = "";
+  vdErroEl.textContent = "";
+  vdAtualizarVariacoes();
+  vdDesenharCarrinho();
+}
+
+async function vdFinalizar() {
+  vdErroEl.textContent = "";
+  if (vdCarrinho.length === 0) {
+    vdErroEl.textContent = "Adicione pelo menos um produto à venda.";
+    return;
+  }
+  const desconto = lerNumero(inVdDesconto.value);
+  if (Number.isNaN(desconto)) {
+    vdErroEl.textContent = "Desconto inválido. Use números, como 10,00.";
+    return;
+  }
+  const subtotal = vdSubtotal();
+  if (desconto > subtotal) {
+    vdErroEl.textContent = "O desconto não pode ser maior que o valor da venda.";
+    return;
+  }
+
+  btnFinalizarVenda.disabled = true;
+  btnFinalizarVenda.textContent = "Registrando...";
+
+  try {
+    const cliente = await iniciarSupabase();
+    const resposta = await cliente.rpc("create_sale", {
+      p_items: vdCarrinho.map(function (x) {
+        const item = { product_id: x.product_id, quantity: x.quantity };
+        if (x.variant_id) item.variant_id = x.variant_id;
+        return item;
+      }),
+      p_payment_method: selVdPagamento.value,
+      p_customer_id: selVdCliente.value || null,
+      p_discount: desconto,
+      p_notes: inVdNotas.value.trim() || null
+    });
+    if (resposta.error) throw resposta.error;
+
+    avisar("Venda registrada: " + moeda(subtotal - desconto));
+    vdLimparFormulario();
+    vdFecharPainel();
+    await carregarVendas();
+  } catch (e) {
+    console.error(e);
+    vdErroEl.textContent = e && e.message ? e.message : String(e);
+  } finally {
+    btnFinalizarVenda.disabled = false;
+    btnFinalizarVenda.textContent = "Finalizar venda";
+  }
+}
+
+async function carregarVendas() {
+  vdMensagem(listaVendasEl, "Carregando vendas...");
+
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) {
+      vdMensagem(listaVendasEl, "Entre na sua conta para ver as vendas.");
+      return;
+    }
+
+    const respostas = await Promise.all([
+      cliente.from("customers").select("id, name").order("name", { ascending: true }),
+      cliente.from("products").select("id, name, sale_price, stock_quantity").order("name", { ascending: true }),
+      cliente.from("sales")
+        .select("id, customer_id, subtotal, discount, total, payment_method, status, notes, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30)
+    ]);
+    respostas.forEach(function (r) { if (r.error) throw r.error; });
+
+    vdClientes = respostas[0].data || [];
+    vdProdutos = respostas[1].data || [];
+    vdVendas = respostas[2].data || [];
+    await carregarGrade();
+
+    vdItensPorVenda = {};
+    if (vdVendas.length > 0) {
+      const ids = vdVendas.map(function (v) { return v.id; });
+      const itensResp = await cliente
+        .from("sale_items")
+        .select("sale_id, product_name, variant_label, quantity, total")
+        .in("sale_id", ids);
+      if (itensResp.error) throw itensResp.error;
+      (itensResp.data || []).forEach(function (i) {
+        i.product_name = nomeComVariacao(i.product_name, i.variant_label);
+        if (!vdItensPorVenda[i.sale_id]) vdItensPorVenda[i.sale_id] = [];
+        vdItensPorVenda[i.sale_id].push(i);
+      });
+    }
+
+    // Tira do carrinho itens que não existem mais
+    vdCarrinho = vdCarrinho.filter(function (x) {
+      return vdBuscarProduto(x.product_id) && (!x.variant_id || buscarVariacao(x.product_id, x.variant_id));
+    });
+
+    vdConfirmandoCancelId = null;
+    vdPreencherSelects();
+    vdAtualizarVariacoes();
+    vdDesenharCarrinho();
+    desenharVendas();
+  } catch (e) {
+    console.error(e);
+    vdMensagem(listaVendasEl, "Não foi possível carregar as vendas: " + (e.message || e));
+  }
+}
+
+// ---------- ORÇAMENTOS ----------
+const ocVarCampo = criarCampoVariacao("ocVariacao");
+selOcProduto.closest(".field-row").after(ocVarCampo);
+const selOcVariacao = document.getElementById("ocVariacao");
+
+function ocAtualizarVariacoes() {
+  // No orçamento as esgotadas aparecem (dá para orçar para encomenda)
+  preencherVariacoes(ocVarCampo, selOcVariacao, selOcProduto.value, false);
+}
+selOcProduto.addEventListener("change", ocAtualizarVariacoes);
+
+function ocAdicionarItem() {
+  ocErroEl.textContent = "";
+  const id = selOcProduto.value;
+  if (!id) {
+    ocErroEl.textContent = "Escolha um produto.";
+    return;
+  }
+  const texto = inOcQtd.value.trim() || "1";
+  if (!/^\d+$/.test(texto) || Number(texto) <= 0) {
+    ocErroEl.textContent = "Quantidade inválida. Use números inteiros (ex.: 2).";
+    return;
+  }
+  const p = ocProduto(id);
+  let variante = null;
+  if (variacoesDe(id).length) {
+    variante = selOcVariacao.value || null;
+    if (!variante) {
+      ocErroEl.textContent = "Escolha o tamanho/cor de \"" + p.name + "\".";
+      return;
+    }
+  }
+
+  const existente = ocCarrinho.find(function (x) { return mesmoItem(x, id, variante); });
+  if (existente) existente.quantity += Number(texto);
+  else ocCarrinho.push({ product_id: id, variant_id: variante, quantity: Number(texto) });
+
+  inOcQtd.value = "";
+  selOcProduto.value = "";
+  ocAtualizarVariacoes();
+  ocDesenharCarrinho();
+}
+
+function ocDesenharCarrinho() {
+  if (ocCarrinho.length === 0) {
+    ocVazio(ocItensEl, "Nenhum produto adicionado.");
+    ocAtualizarResumo();
+    return;
+  }
+  ocItensEl.innerHTML = "";
+  ocCarrinho.forEach(function (it) {
+    const p = ocProduto(it.product_id);
+    if (!p) return;
+    const v = it.variant_id ? buscarVariacao(it.product_id, it.variant_id) : null;
+
+    const linha = document.createElement("div");
+    linha.className = "list-item";
+    const info = document.createElement("div");
+    const nome = document.createElement("p");
+    nome.className = "item-title";
+    nome.textContent = nomeComVariacao(p.name, v ? rotuloVariacao(v) : "");
+    const sub = document.createElement("p");
+    sub.className = "item-sub";
+    sub.textContent = it.quantity + " × " + moeda(p.sale_price) + " = " + moeda(Number(p.sale_price) * it.quantity);
+    info.appendChild(nome);
+    info.appendChild(sub);
+
+    const acoes = document.createElement("div");
+    acoes.className = "item-actions";
+    acoes.appendChild(criarBotao("Remover", "btn btn-ghost btn-small", function () {
+      ocCarrinho = ocCarrinho.filter(function (x) { return !mesmoItem(x, it.product_id, it.variant_id); });
+      ocDesenharCarrinho();
+    }));
+    linha.appendChild(info);
+    linha.appendChild(acoes);
+    ocItensEl.appendChild(linha);
+  });
+  ocAtualizarResumo();
+}
+
+function ocLimparFormulario() {
+  ocCarrinho = [];
+  selOcCliente.value = "";
+  selOcProduto.value = "";
+  inOcQtd.value = "";
+  inOcDesconto.value = "";
+  inOcValidade.value = "";
+  inOcNotas.value = "";
+  ocErroEl.textContent = "";
+  ocAtualizarVariacoes();
+  ocDesenharCarrinho();
+}
+
+async function ocCriar() {
+  ocErroEl.textContent = "";
+  if (ocCarrinho.length === 0) {
+    ocErroEl.textContent = "Adicione pelo menos um produto ao orçamento.";
+    return;
+  }
+  const desc = lerNumero(inOcDesconto.value);
+  if (Number.isNaN(desc)) {
+    ocErroEl.textContent = "Desconto inválido. Use números, como 10,00.";
+    return;
+  }
+  if (desc > ocSubtotal()) {
+    ocErroEl.textContent = "O desconto não pode ser maior que o valor do orçamento.";
+    return;
+  }
+  const textoValidade = inOcValidade.value.trim() || "7";
+  if (!/^\d+$/.test(textoValidade) || Number(textoValidade) < 1 || Number(textoValidade) > 365) {
+    ocErroEl.textContent = "Validade inválida. Use de 1 a 365 dias.";
+    return;
+  }
+
+  btnOcCriar.disabled = true;
+  btnOcCriar.textContent = "Criando...";
+  try {
+    const cliente = await iniciarSupabase();
+    const r = await cliente.rpc("create_quote", {
+      p_items: ocCarrinho.map(function (x) {
+        const item = { product_id: x.product_id, quantity: x.quantity };
+        if (x.variant_id) item.variant_id = x.variant_id;
+        return item;
+      }),
+      p_customer_id: selOcCliente.value || null,
+      p_discount: desc,
+      p_notes: inOcNotas.value.trim() || null,
+      p_valid_days: Number(textoValidade)
+    });
+    if (r.error) throw r.error;
+    avisar("Orçamento criado.");
+    ocLimparFormulario();
+    painelOrcamento.hidden = true;
+    ocFiltro = "ativos";
+    await carregarOrcamentos();
+  } catch (e) {
+    console.error(e);
+    ocErroEl.textContent = e && e.message ? e.message : String(e);
+  } finally {
+    btnOcCriar.disabled = false;
+    btnOcCriar.textContent = "Criar orçamento";
+  }
+}
+
+async function carregarOrcamentos() {
+  ocVazio(listaOrcamentosEl, "Carregando orçamentos...");
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) {
+      ocVazio(listaOrcamentosEl, "Entre na sua conta para ver os orçamentos.");
+      return;
+    }
+
+    const respostas = await Promise.all([
+      cliente.from("customers").select("id, name, phone").order("name", { ascending: true }),
+      cliente.from("products").select("id, name, sale_price, stock_quantity").order("name", { ascending: true }),
+      cliente.from("quotes")
+        .select("id, customer_id, status, subtotal, discount, total, notes, valid_until, created_at")
+        .order("created_at", { ascending: false })
+        .limit(60)
+    ]);
+    respostas.forEach(function (r) { if (r.error) throw r.error; });
+
+    ocClientes = respostas[0].data || [];
+    ocProdutos = respostas[1].data || [];
+    ocOrcamentos = respostas[2].data || [];
+    await carregarGrade();
+
+    ocItensPorOrcamento = {};
+    if (ocOrcamentos.length) {
+      const r = await cliente.from("quote_items")
+        .select("quote_id, product_name, variant_label, quantity, total")
+        .in("quote_id", ocOrcamentos.map(function (o) { return o.id; }));
+      if (r.error) throw r.error;
+      (r.data || []).forEach(function (i) {
+        i.product_name = nomeComVariacao(i.product_name, i.variant_label);
+        if (!ocItensPorOrcamento[i.quote_id]) ocItensPorOrcamento[i.quote_id] = [];
+        ocItensPorOrcamento[i.quote_id].push(i);
+      });
+    }
+
+    ocCarrinho = ocCarrinho.filter(function (x) {
+      return ocProduto(x.product_id) && (!x.variant_id || buscarVariacao(x.product_id, x.variant_id));
+    });
+    ocConvertendoId = null;
+    ocConfirmandoExcluirId = null;
+    ocPreencherSelects();
+    ocAtualizarVariacoes();
+    ocDesenharCarrinho();
+    desenharOrcamentos();
+  } catch (e) {
+    console.error(e);
+    ocVazio(listaOrcamentosEl, "Não foi possível carregar os orçamentos: " + (e.message || e));
+  }
+}
+// FIM DA PARTE 24d
