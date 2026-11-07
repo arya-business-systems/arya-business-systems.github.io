@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>ARYA — Gestão inteligente para sua loja</title>
-<meta name="description" content="Vendas, estoque com grade, clientes, orçamentos pelo WhatsApp e o ARYA Pulso dizendo o que fazer para vender mais. Feito para lojas de roupas e pequenos comércios." />
+<meta name="description" content="Caixa rápido com código de barras, estoque com grade, clientes, orçamentos pelo WhatsApp, loja virtual conectada e o ARYA Pulso dizendo o que fazer para vender mais. Feito para lojas de roupas e pequenos comércios." />
 <meta name="theme-color" content="#000000" />
 <script>
   // Links do e-mail (recuperar senha / confirmar conta) chegam aqui: repassa para o app
@@ -374,6 +374,217 @@
   .revela { opacity: 0; transform: translateY(30px); transition: opacity .9s ease, transform .9s cubic-bezier(.2,.8,.2,1); }
   .revela.ver { opacity: 1; transform: none; }
 
+
+  /* ---------- NOVIDADES: Caixa rápido e Connect ---------- */
+  .novas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 60px; text-align: left; }
+  .nova { position: relative; border: 1px solid var(--linha); border-radius: 28px; overflow: hidden; background: var(--carvao); }
+  .nova .selo-novo { position: absolute; top: 18px; left: 18px; z-index: 2; font-size: 12px; font-weight: 600; background: var(--branco); color: var(--noite); border-radius: 999px; padding: 4px 11px; }
+  .nova-arte { height: 300px; position: relative; overflow: hidden; display: grid; place-items: center; border-bottom: 1px solid var(--linha);
+    background: radial-gradient(320px 220px at 50% 45%, rgba(255,255,255,.11), transparent 70%), #050505; }
+  .nova-txt { padding: 28px 28px 32px; }
+  .nova-txt h3 { font-size: 24px; letter-spacing: -.01em; }
+  .nova-txt p { margin-top: 10px; color: var(--nevoa); font-size: 15.5px; }
+  .nova-lista { list-style: none; margin-top: 16px; display: grid; gap: 8px; font-size: 15px; color: #d4d4d4; }
+  .nova-lista li { display: flex; gap: 10px; }
+  .nova-lista li::before { content: "✦"; color: var(--branco); flex-shrink: 0; }
+  /* arte 1: etiqueta + laser */
+  .etiqueta { width: 210px; background: #fff; color: #000; border-radius: 16px; padding: 18px 18px 14px; rotate: -6deg; box-shadow: 0 40px 60px -24px rgba(0,0,0,.9); position: relative; }
+  .etiqueta::before { content: ""; position: absolute; top: 12px; right: 14px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #d4d4d8; }
+  .etiqueta small { display: block; font-size: 11px; color: #71717a; }
+  .etiqueta strong { display: block; font-size: 16px; margin-top: 2px; }
+  .codigo { height: 62px; margin-top: 12px; border-radius: 4px;
+    background: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 4px, #000 4px 7px, transparent 7px 9px, #000 9px 10px, transparent 10px 13px); }
+  .etiqueta .num-cod { font-size: 10px; letter-spacing: .25em; text-align: center; margin-top: 5px; font-variant-numeric: tabular-nums; }
+  .laser { position: absolute; left: -12%; right: -12%; top: 50%; height: 2px; background: #ef4444; box-shadow: 0 0 14px 3px rgba(239,68,68,.7); animation: varre 2.4s ease-in-out infinite; }
+  @keyframes varre { 0%, 100% { transform: translateY(-34px); } 50% { transform: translateY(34px); } }
+  .bip { position: absolute; right: 9%; top: 22%; background: #fff; color: #000; border-radius: 14px; padding: 9px 13px; font-size: 13px; font-weight: 600;
+    box-shadow: 0 20px 40px -14px rgba(0,0,0,.9); animation: bipa 2.4s ease-in-out infinite; }
+  .bip span { display: block; font-weight: 400; color: #52525b; font-size: 12px; }
+  @keyframes bipa { 0%, 35% { opacity: 0; transform: translateY(10px) scale(.9); } 50%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  .tres { position: absolute; left: 8%; bottom: 20px; display: flex; gap: 6px; }
+  .tres span { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #525252; display: grid; place-items: center; font-size: 12px; color: var(--nevoa); animation: toque 2.4s ease-in-out infinite; }
+  .tres span:nth-child(2) { animation-delay: .3s; } .tres span:nth-child(3) { animation-delay: .6s; }
+  @keyframes toque { 40%, 60% { background: #fff; color: #000; border-color: #fff; } }
+  /* arte 2: fluxo site -> ARYA -> estoque */
+  .fluxo-arte { display: flex; align-items: center; gap: 0; width: 88%; max-width: 470px; }
+  .no-arte { flex-shrink: 0; width: 104px; border-radius: 18px; border: 1px solid #3f3f46; background: #0f0f0f; padding: 14px 10px; text-align: center; font-size: 12.5px; color: #d4d4d4; }
+  .no-arte b { display: block; font-size: 22px; color: #fff; margin-bottom: 4px; font-weight: 500; }
+  .no-arte.arya { background: #fff; color: #000; border-color: #fff; box-shadow: 0 0 50px -6px rgba(255,255,255,.5); }
+  .no-arte.arya svg { width: 40px; color: #000; display: block; margin: 2px auto 6px; }
+  .cabo { flex: 1; height: 2px; background: #262626; position: relative; overflow: hidden; }
+  .cabo i { position: absolute; top: -2px; left: -12px; width: 12px; height: 6px; border-radius: 6px; background: #fff; box-shadow: 0 0 10px #fff; animation: viaja 1.8s linear infinite; }
+  .cabo.b i { animation-delay: .9s; }
+  @keyframes viaja { to { left: 100%; } }
+  .pedido-arte { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; display: flex; align-items: center; gap: 10px; background: #fff; color: #000; border-radius: 14px; padding: 9px 14px; font-size: 13px; white-space: nowrap; box-shadow: 0 20px 40px -14px rgba(0,0,0,.9); }
+  .pedido-arte em { font-style: normal; background: #000; color: #fff; border-radius: 999px; padding: 2px 9px; font-size: 11.5px; font-weight: 600; }
+
+  /* ---------- EM TODAS AS TELAS ---------- */
+  .disp-abas { display: inline-flex; gap: 4px; margin-top: 34px; padding: 5px; border-radius: 999px; border: 1px solid var(--linha); background: var(--carvao); }
+  .disp-abas button { height: 42px; padding: 0 20px; border-radius: 999px; font-size: 15px; font-weight: 500; color: var(--nevoa); transition: background .25s ease, color .25s ease; }
+  .disp-abas button.ativo { background: var(--branco); color: var(--noite); }
+  .disp-dica { margin-top: 14px; font-size: 13.5px; color: var(--cinza); }
+  .disp-palco { position: relative; margin-top: 40px; height: 660px; transition: height .7s cubic-bezier(.2,.8,.2,1); }
+  .disp { position: absolute; left: 50%; top: 0; transform-origin: top center; transition: transform .7s cubic-bezier(.2,.8,.2,1); }
+  .disp-moldura { position: relative; margin: 0 auto; background: #000; width: 300px; height: 610px; border-radius: 46px; padding: 11px;
+    box-shadow: 0 0 0 1px #3f3f46, 0 60px 120px -30px rgba(255,255,255,.16), 0 40px 80px -20px rgba(0,0,0,.9);
+    transition: width .7s cubic-bezier(.2,.8,.2,1), height .7s cubic-bezier(.2,.8,.2,1), border-radius .7s ease, padding .7s ease; }
+  .disp-moldura::before { content: ""; position: absolute; top: 20px; left: 50%; translate: -50% 0; width: 88px; height: 25px; border-radius: 20px; background: #000; z-index: 5; transition: all .5s ease; }
+  .disp[data-disp="tab"] .disp-moldura { width: 860px; height: 600px; border-radius: 36px; padding: 18px; }
+  .disp[data-disp="tab"] .disp-moldura::before { width: 8px; height: 8px; top: 5px; background: #27272a; }
+  .disp[data-disp="note"] .disp-moldura { width: 940px; height: 580px; border-radius: 20px 20px 6px 6px; padding: 14px; background: #0a0a0a; box-shadow: 0 0 0 1px #3f3f46, 0 60px 120px -30px rgba(255,255,255,.12); }
+  .disp[data-disp="note"] .disp-moldura::before { width: 7px; height: 7px; top: 4px; background: #27272a; }
+  .disp-base { margin: 0 auto; width: 0; height: 0; opacity: 0; transition: all .6s ease; position: relative;
+    background: linear-gradient(#3f3f46, #18181b); border-radius: 2px 2px 18px 18px; }
+  .disp-base::before { content: ""; position: absolute; top: 0; left: 50%; translate: -50% 0; width: 120px; height: 7px; border-radius: 0 0 8px 8px; background: #18181b; }
+  .disp[data-disp="note"] .disp-base { width: 1060px; height: 20px; opacity: 1; }
+  .disp-tela { width: 100%; height: 100%; border-radius: 36px; overflow: hidden; background: var(--papel); color: #000; position: relative; transition: border-radius .7s ease; text-align: left; }
+  .disp[data-disp="tab"] .disp-tela { border-radius: 20px; }
+  .disp[data-disp="note"] .disp-tela { border-radius: 6px; }
+
+  /* mini app */
+  .app { display: flex; height: 100%; font-size: 11px; }
+  .app-lado { width: 0; overflow: hidden; flex-shrink: 0; background: #fff; border-right: 1px solid #e4e4e7; padding: 18px 0; transition: width .6s ease, padding .6s ease; }
+  .disp[data-disp="tab"] .app-lado { width: 168px; padding: 18px 12px; }
+  .disp[data-disp="note"] .app-lado { width: 190px; padding: 18px 14px; }
+  .app-marca { display: flex; align-items: center; gap: 8px; margin: 0 6px 18px; white-space: nowrap; }
+  .app-marca svg { width: 28px; color: #000; }
+  .app-marca span { font-family: var(--display); font-size: 10px; letter-spacing: .3em; }
+  .app-nav { display: grid; gap: 2px; }
+  .app-nav button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 9px; border-radius: 9px; font-size: 12px; color: #52525b; text-align: left; white-space: nowrap; }
+  .app-nav button i { font-style: normal; width: 16px; text-align: center; }
+  .app-nav button.ativo { background: #f4f4f5; color: #000; font-weight: 600; box-shadow: inset 2px 0 0 #000; }
+  .app-nav button.fixo { cursor: default; opacity: .55; }
+  .app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+  .app-topo { padding: 46px 15px 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; transition: padding .6s ease; }
+  .disp[data-disp="tab"] .app-topo, .disp[data-disp="note"] .app-topo { padding: 18px 20px 12px; }
+  .app-topo strong { font-size: 17px; letter-spacing: -.02em; }
+  .disp[data-disp="tab"] .app-topo strong, .disp[data-disp="note"] .app-topo strong { font-size: 19px; }
+  .app-views { flex: 1; min-height: 0; overflow: hidden; padding: 0 11px 70px; position: relative; }
+  .disp[data-disp="tab"] .app-views, .disp[data-disp="note"] .app-views { padding: 0 20px 18px; }
+  .av { display: none; animation: avEntra .45s ease; }
+  .av.ativo { display: grid; }
+  @keyframes avEntra { from { opacity: 0; transform: translateY(8px); } }
+  .app-baixo { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(255,255,255,.95); border-top: 1px solid #e4e4e7; padding: 7px 4px 14px; z-index: 4; }
+  .disp[data-disp="tab"] .app-baixo, .disp[data-disp="note"] .app-baixo { display: none; }
+  .app-baixo button { display: grid; justify-items: center; gap: 2px; font-size: 9.5px; color: #71717a; }
+  .app-baixo button i { font-style: normal; font-size: 14px; }
+  .app-baixo button.ativo { color: #000; font-weight: 600; }
+
+  /* telas do mini app */
+  .av-dash { gap: 8px; grid-template-columns: 1fr 1fr; }
+  .av-dash .mc.preto, .av-dash .graf, .av-dash .top, .av-dash .pul { grid-column: span 2; }
+  .disp[data-disp="tab"] .av-dash { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .disp[data-disp="tab"] .av-dash .mc.preto { grid-column: span 1; }
+  .disp[data-disp="tab"] .av-dash .graf { grid-column: span 2; }
+  .disp[data-disp="tab"] .av-dash .top { grid-column: span 1; }
+  .disp[data-disp="tab"] .av-dash .pul { grid-column: span 3; }
+  .disp[data-disp="note"] .av-dash { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .disp[data-disp="note"] .av-dash .mc.preto { grid-column: span 2; }
+  .disp[data-disp="note"] .av-dash .graf { grid-column: span 3; }
+  .disp[data-disp="note"] .av-dash .top { grid-column: span 1; }
+  .disp[data-disp="note"] .av-dash .pul { grid-column: span 4; }
+  .av .mc { min-width: 0; }
+  .av .barras { height: 70px; }
+  .disp[data-disp="tab"] .av .barras, .disp[data-disp="note"] .av .barras { height: 120px; }
+  .pul { display: flex; align-items: center; gap: 10px; }
+  .pul .pul-ic { width: 30px; height: 30px; border-radius: 9px; background: #000; color: #fff; display: grid; place-items: center; flex-shrink: 0; font-size: 13px; }
+  .pul p { font-size: 11px; line-height: 1.35; }
+  .pul b { display: block; font-size: 11.5px; }
+
+  .av-caixa { grid-template-columns: 1fr; gap: 10px; }
+  .disp[data-disp="tab"] .av-caixa, .disp[data-disp="note"] .av-caixa { grid-template-columns: 1fr 230px; gap: 14px; align-items: start; }
+  .cx-busca { display: flex; gap: 6px; }
+  .cx-busca span { flex: 1; background: #fff; border: 1px solid #e4e4e7; border-radius: 10px; padding: 9px 10px; color: #a1a1aa; }
+  .cx-busca b { background: #000; color: #fff; border-radius: 10px; padding: 9px 11px; font-weight: 500; }
+  .cx-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .disp[data-disp="tab"] .cx-grade { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .disp[data-disp="note"] .cx-grade { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .cx-tile { position: relative; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden; text-align: left; transition: transform .15s ease; }
+  .cx-tile:active { transform: scale(.95); }
+  .cx-tile .ft { aspect-ratio: 1 / .8; display: grid; place-items: center; font-family: var(--display); font-size: 13px; color: #a1a1aa; }
+  .cx-tile .ft.a { background: #e4e4e7; } .cx-tile .ft.b { background: #d4d4d8; } .cx-tile .ft.c { background: #f4f4f5; } .cx-tile .ft.d { background: #18181b; color: #fff; }
+  .cx-tile p { padding: 6px 8px 0; font-size: 10.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cx-tile strong { display: block; padding: 0 8px 8px; font-size: 11.5px; }
+  .cx-tile .qt { position: absolute; top: 6px; right: 6px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #000; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+  .cx-tile.pulou { animation: pula2 .35s ease; }
+  @keyframes pula2 { 50% { transform: scale(.93); } }
+  .cx-carrinho { background: #fff; border: 1px solid #e4e4e7; border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+  .disp[data-disp="cel"] .cx-carrinho { position: absolute; left: 10px; right: 10px; bottom: 64px; background: #000; color: #fff; border: 0; grid-template-columns: 1fr auto; align-items: center; padding: 11px 14px; z-index: 3; }
+  .disp[data-disp="cel"] .cx-itens, .disp[data-disp="cel"] .cx-pags, .disp[data-disp="cel"] .cx-tit { display: none; }
+  .cx-tit { font-weight: 600; font-size: 12.5px; }
+  .cx-itens { display: grid; gap: 5px; min-height: 40px; }
+  .cx-itens div { display: flex; justify-content: space-between; font-size: 10.5px; border-bottom: 1px solid #f4f4f5; padding-bottom: 4px; }
+  .cx-itens .vazio-cx { color: #a1a1aa; border: 0; }
+  .cx-pags { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .cx-pags span { text-align: center; border: 1px solid #e4e4e7; border-radius: 7px; padding: 5px 0; font-size: 9.5px; }
+  .cx-pags span:first-child { background: #000; color: #fff; border-color: #000; }
+  .cx-total { display: flex; justify-content: space-between; align-items: baseline; }
+  .cx-total b { font-size: 17px; letter-spacing: -.02em; }
+  .disp[data-disp="cel"] .cx-total { display: block; }
+  .disp[data-disp="cel"] .cx-total span { display: block; font-size: 10px; color: #a1a1aa; }
+  .cx-cobrar { background: #000; color: #fff; border-radius: 11px; padding: 11px; font-weight: 600; font-size: 12px; }
+  .disp[data-disp="cel"] .cx-cobrar { background: #fff; color: #000; padding: 9px 14px; }
+  .cx-ok { position: absolute; inset: 0; z-index: 6; background: #000; color: #fff; display: none; place-items: center; text-align: center; }
+  .cx-ok.ver { display: grid; animation: avEntra .3s ease; }
+  .cx-ok .ck { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #fff; display: grid; place-items: center; font-size: 24px; margin: 0 auto 10px; }
+  .cx-ok b { font-family: var(--display); font-size: 11px; letter-spacing: .1em; }
+  .cx-ok strong { display: block; font-size: 26px; margin-top: 4px; }
+
+  .av-con { gap: 10px; }
+  .disp[data-disp="tab"] .av-con, .disp[data-disp="note"] .av-con { grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .con-hero { background: #000; color: #fff; border-radius: 14px; padding: 14px; }
+  .con-hero small { font-family: var(--display); font-size: 8.5px; letter-spacing: .14em; color: #a1a1aa; }
+  .con-hero p { font-size: 13px; font-weight: 600; margin-top: 6px; line-height: 1.3; }
+  .con-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+  .con-nums div { background: rgba(255,255,255,.08); border-radius: 9px; padding: 7px; }
+  .con-nums span { display: block; font-size: 8.5px; color: #a1a1aa; }
+  .con-nums b { font-size: 14px; }
+  .con-lista { background: #fff; border: 1px solid #e4e4e7; border-radius: 14px; padding: 6px 12px; }
+  .con-ped { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-bottom: 1px solid #f4f4f5; animation: avEntra .4s ease; }
+  .con-ped:last-child { border-bottom: 0; }
+  .con-ped .pl { width: 26px; height: 26px; border-radius: 8px; background: #f4f4f5; display: grid; place-items: center; font-weight: 700; font-size: 10px; flex-shrink: 0; }
+  .con-ped div { flex: 1; min-width: 0; }
+  .con-ped b { display: block; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .con-ped em { font-style: normal; display: inline-block; margin-top: 2px; font-size: 9px; font-weight: 600; border-radius: 999px; padding: 1px 7px; background: #f4f4f5; color: #71717a; transition: all .3s ease; }
+  .con-ped em.ok { background: #000; color: #fff; }
+  .con-ped .vl { font-weight: 600; font-size: 11px; white-space: nowrap; }
+  .con-sim { background: #000; color: #fff; border-radius: 11px; padding: 10px; font-weight: 600; font-size: 11.5px; width: 100%; margin-top: 8px; }
+
+  .so-grande { display: none; }
+  .disp[data-disp="tab"] .so-grande, .disp[data-disp="note"] .so-grande { display: block; }
+  .cx-dia { display: grid; grid-template-columns: 70px 1fr 64px; gap: 8px; align-items: center; font-size: 10.5px; margin-top: 8px; }
+  .cx-dia i { height: 8px; border-radius: 8px; background: #f4f4f5; overflow: hidden; display: block; }
+  .cx-dia i::after { content: ""; display: block; height: 100%; width: var(--w); background: #000; border-radius: 8px; transition: width .8s ease; }
+  .cx-dia b { text-align: right; }
+  .av-pulso { gap: 10px; }
+  .disp[data-disp="tab"] .av-pulso, .disp[data-disp="note"] .av-pulso { grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .pu-nota { background: #000; color: #fff; border-radius: 14px; padding: 14px; text-align: center; }
+  .pu-nota svg { width: 150px; display: block; margin: 0 auto; }
+  .pu-nota path { fill: none; stroke-width: 14; stroke-linecap: round; }
+  .pu-nota .tr { stroke: #27272a; }
+  .pu-nota .ch { stroke: #fff; stroke-dasharray: 251.3; stroke-dashoffset: 251.3; transition: stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1); }
+  .pu-nota strong { display: block; font-size: 30px; margin-top: -30px; letter-spacing: -.03em; }
+  .pu-nota span { font-size: 9.5px; color: #a1a1aa; }
+  .pu-pilares { display: grid; gap: 6px; margin-top: 10px; text-align: left; }
+  .pu-pilares div { font-size: 9.5px; display: grid; grid-template-columns: 62px 1fr 26px; gap: 6px; align-items: center; color: #d4d4d8; }
+  .pu-pilares i { height: 5px; border-radius: 5px; background: #27272a; overflow: hidden; display: block; }
+  .pu-pilares i::after { content: ""; display: block; height: 100%; width: var(--w); background: #fff; border-radius: 5px; transition: width 1.2s ease; }
+  .pu-chat { background: #fff; border: 1px solid #e4e4e7; border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+  .pu-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pu-chips button { border: 1px solid #e4e4e7; border-radius: 999px; padding: 5px 9px; font-size: 10px; }
+  .pu-chips button.ativo { background: #000; color: #fff; border-color: #000; }
+  .pu-resp { background: #f4f4f5; border-radius: 12px 12px 12px 4px; padding: 10px 11px; font-size: 11px; line-height: 1.45; min-height: 54px; }
+
+  @media (max-width: 900px) {
+    .novas { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .disp-abas button { padding: 0 15px; font-size: 14px; }
+    .nova-arte { height: 260px; }
+    .fluxo-arte { width: 94%; }
+    .no-arte { width: 86px; font-size: 11.5px; }
+  }
+
   /* ---------- Telas menores ---------- */
   @media (max-width: 1080px) {
     .pilha { width: 280px; right: 0; }
@@ -436,6 +647,7 @@
     <a class="marca" href="#" aria-label="ARYA, início"><svg><use href="#simbolo"/></svg><span>ARYA</span></a>
     <nav aria-label="Seções">
       <a href="#pilares">Recursos</a>
+      <a href="#novidades">Novidades</a>
       <a href="#como">Como começar</a>
       <a href="#fundadora">Fundadora</a>
       <a href="#duvidas">Dúvidas</a>
@@ -489,7 +701,7 @@
       <div class="hero-texto">
         <span class="selo-pill">Gestão e inteligência para a sua loja</span>
         <h1><span>Sua loja</span> <span>pensa com</span> <span>você.</span></h1>
-        <p class="apoio">Vendas, estoque com tamanhos e cores, clientes e orçamentos pelo WhatsApp num só lugar. E o ARYA Pulso lendo os seus números para dizer o que fazer hoje para vender mais.</p>
+        <p class="apoio">Caixa rápido com código de barras, estoque com tamanhos e cores, clientes, orçamentos pelo WhatsApp e a sua loja virtual conectada. E o ARYA Pulso lendo os seus números para dizer o que fazer hoje para vender mais.</p>
         <div class="ctas">
           <a class="botao botao-luz botao-grande" href="app.html#criar">Quero organizar minha loja</a>
         </div>
@@ -566,7 +778,180 @@
         <article class="pilar"><div class="letra">M</div><h3>Management</h3><p>Vendas, estoque com grade, clientes, fornecedores e orçamentos num lugar só.</p></article>
         <article class="pilar"><div class="letra">P</div><h3>Pulso</h3><p>Lê seus números e diz o que fazer: repor, cobrar orçamento, chamar cliente de volta.</p></article>
         <article class="pilar"><div class="letra">C</div><h3>Cresce</h3><p>Programa de pontos e lembretes de recompra, calculados sozinhos a partir das vendas.</p></article>
-        <article class="pilar"><span class="breve">Em breve</span><div class="letra">C</div><h3>Connect</h3><p>Conexão entre a sua loja, clientes, fornecedores e novas oportunidades.</p></article>
+        <article class="pilar"><span class="breve">Novo</span><div class="letra">C</div><h3>Connect</h3><p>Sua loja virtual vendendo junto com a física: cada pedido pago no site vira venda e baixa o estoque sozinho.</p></article>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- NOVIDADES: CAIXA RÁPIDO E CONNECT -->
+  <section class="secao centro" id="novidades">
+    <div class="faixa">
+      <h2 class="titulo">Vende muito? A ARYA aguenta o ritmo.</h2>
+      <p class="texto">Na loja física, a venda sai em 3 toques. Na loja virtual, ela entra sozinha. Ninguém precisa digitar venda por venda.</p>
+      <div class="novas">
+        <article class="nova revela">
+          <span class="selo-novo">Novo</span>
+          <div class="nova-arte" aria-hidden="true">
+            <div class="etiqueta">
+              <small>Camiseta oversized</small>
+              <strong>M · Preto · R$ 79,90</strong>
+              <div class="codigo"></div>
+              <p class="num-cod">7 891000 100103</p>
+              <div class="laser"></div>
+            </div>
+            <div class="bip">+1 no carrinho<span>Camiseta M · R$ 79,90</span></div>
+            <div class="tres"><span>1</span><span>2</span><span>3</span></div>
+          </div>
+          <div class="nova-txt">
+            <h3>Caixa rápido</h3>
+            <p>Uma tela feita para a fila andar: os produtos que mais vendem aparecem primeiro, com foto, e a venda fecha em 3 toques.</p>
+            <ul class="nova-lista">
+              <li>Lê o código de barras pela câmera do celular ou com um leitor de loja</li>
+              <li>Escolhe tamanho e cor sem errar e não deixa vender o que não tem</li>
+              <li>Recibo na hora e “repetir última venda” com um toque</li>
+            </ul>
+          </div>
+        </article>
+        <article class="nova revela">
+          <span class="selo-novo">Novo</span>
+          <div class="nova-arte" aria-hidden="true">
+            <div class="fluxo-arte">
+              <div class="no-arte"><b>🛍</b>Loja virtual</div>
+              <div class="cabo"><i></i></div>
+              <div class="no-arte arya"><svg viewBox="0 0 387 213"><use href="#simbolo"/></svg>ARYA</div>
+              <div class="cabo b"><i></i></div>
+              <div class="no-arte"><b>−1</b>Estoque</div>
+            </div>
+            <div class="pedido-arte"><b>Pedido #1001</b> R$ 159,80 <em>✓ Virou venda</em></div>
+          </div>
+          <div class="nova-txt">
+            <h3>ARYA Connect</h3>
+            <p>Sua loja virtual vendendo junto com a física. Cada pedido pago no site vira venda na ARYA sozinho.</p>
+            <ul class="nova-lista">
+              <li>Funciona com Shopify, WooCommerce e outras plataformas</li>
+              <li>Baixa o estoque e cadastra o cliente automaticamente</li>
+              <li>Loja física e online no mesmo caixa, nos mesmos relatórios</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- EM TODAS AS TELAS -->
+  <section class="secao centro" id="telas" style="padding-top:40px;">
+    <div class="faixa">
+      <h2 class="titulo">Uma ARYA. Em todas as telas.</h2>
+      <p class="texto">Venda no celular, confira o caixa no iPad e veja os relatórios no notebook. Tudo atualizado em tempo real.</p>
+      <div class="disp-abas" role="tablist" aria-label="Escolha o aparelho">
+        <button type="button" class="ativo" data-disp="cel" role="tab" aria-selected="true">Celular</button>
+        <button type="button" data-disp="tab" role="tab" aria-selected="false">iPad</button>
+        <button type="button" data-disp="note" role="tab" aria-selected="false">Notebook</button>
+      </div>
+      <p class="disp-dica">✦ Toque na tela para experimentar: monte uma venda, receba um pedido online, pergunte ao Pulso.</p>
+      <div class="disp-palco" id="dispPalco">
+        <div class="disp" id="disp" data-disp="cel">
+          <div class="disp-moldura">
+            <div class="disp-tela">
+              <div class="app">
+                <aside class="app-lado">
+                  <div class="app-marca"><svg viewBox="0 0 387 213"><use href="#simbolo"/></svg><span>ARYA</span></div>
+                  <nav class="app-nav">
+                    <button type="button" class="ativo" data-av="dash"><i>▦</i>Dashboard</button>
+                    <button type="button" data-av="caixa"><i>◈</i>Caixa rápido</button>
+                    <button type="button" data-av="con"><i>⬡</i>Connect</button>
+                    <button type="button" data-av="pulso"><i>✦</i>Intelligence</button>
+                    <button type="button" class="fixo" tabindex="-1"><i>◉</i>Clientes</button>
+                    <button type="button" class="fixo" tabindex="-1"><i>▣</i>Produtos</button>
+                    <button type="button" class="fixo" tabindex="-1"><i>◎</i>Cresce</button>
+                  </nav>
+                </aside>
+                <div class="app-main">
+                  <div class="app-topo"><strong id="appTitulo">Dashboard</strong><span class="vivo">Tempo real</span></div>
+                  <div class="app-views">
+                    <div class="av av-dash ativo" data-av="dash">
+                      <div class="mc preto"><p class="mc-rot">Faturamento do mês</p><p class="mc-num" id="dFat">R$ 18.490</p></div>
+                      <div class="mc"><p class="mc-rot">Vendas</p><p class="mc-num" id="dVendas">142</p></div>
+                      <div class="mc"><p class="mc-rot">Ticket médio</p><p class="mc-num">R$ 130</p></div>
+                      <div class="mc graf"><p class="mc-rot">Últimos 7 dias</p><div class="barras" id="dBarras"><i style="height:42%"></i><i style="height:58%"></i><i style="height:88%"></i><i style="height:35%"></i><i style="height:50%"></i><i style="height:66%"></i><i style="height:94%"></i></div></div>
+                      <div class="mc top"><p class="mc-rot">Mais vendidos</p>
+                        <div class="li"><b>Camiseta oversized</b><span>38 un.</span></div>
+                        <div class="li"><b>Calça cargo</b><span>21 un.</span></div>
+                        <div class="li"><b>Boné aba reta</b><span>17 un.</span></div>
+                      </div>
+                      <div class="mc pul"><span class="pul-ic">✦</span><p><b>ARYA Pulso</b>Camiseta M / Preto está acabando: o estoque dura cerca de 2 dias.</p></div>
+                    </div>
+
+                    <div class="av av-caixa" data-av="caixa">
+                      <div>
+                        <div class="cx-busca"><span>Buscar ou bipar o código</span><b>▥ Ler</b></div>
+                        <div class="cx-grade" id="cxGrade"></div>
+                      </div>
+                      <div class="cx-carrinho">
+                        <p class="cx-tit">Venda atual</p>
+                        <div class="cx-itens" id="cxItens"><div class="vazio-cx">Toque num produto ✦</div></div>
+                        <div class="cx-pags"><span>Pix</span><span>Crédito</span><span>Dinheiro</span></div>
+                        <div class="cx-total"><span id="cxQtd">0 itens</span><b id="cxTotal">R$ 0,00</b></div>
+                        <button type="button" class="cx-cobrar" id="cxCobrar">Cobrar</button>
+                      </div>
+                      <div class="cx-ok" id="cxOk"><div><div class="ck">✓</div><b>VENDA REGISTRADA</b><strong id="cxOkValor">R$ 0,00</strong></div></div>
+                    </div>
+
+                    <div class="av av-con" data-av="con">
+                      <div style="display:grid; gap:12px;">
+                      <div class="con-hero">
+                        <small>✦ ARYA CONNECT</small>
+                        <p>Sua loja virtual vendendo junto com a física.</p>
+                        <div class="con-nums">
+                          <div><span>Pedidos</span><b id="conPed">3</b></div>
+                          <div><span>Viraram venda</span><b id="conVen">3</b></div>
+                          <div><span>Online</span><b id="conVal">R$ 569</b></div>
+                        </div>
+                      </div>
+                      <div class="mc so-grande"><p class="mc-rot">Hoje no caixa · física + online</p>
+                        <div class="cx-dia"><span>Loja física</span><i style="--w:68%"></i><b>R$ 1.240</b></div>
+                        <div class="cx-dia"><span>Loja virtual</span><i style="--w:32%"></i><b id="conHoje">R$ 569</b></div>
+                        <div class="li" style="margin-top:6px;"><b>Total do dia</b><span id="conTot">R$ 1.809</span></div>
+                      </div>
+                      </div>
+                      <div>
+                        <div class="con-lista" id="conLista"></div>
+                        <button type="button" class="con-sim" id="conSim">✦ Simular pedido no site</button>
+                      </div>
+                    </div>
+
+                    <div class="av av-pulso" data-av="pulso">
+                      <div class="pu-nota">
+                        <svg viewBox="0 0 200 110"><path class="tr" d="M20 100 A80 80 0 0 1 180 100"/><path class="ch" id="puArco" d="M20 100 A80 80 0 0 1 180 100"/></svg>
+                        <strong id="puNota">0</strong><span>Saúde da loja · de 100</span>
+                        <div class="pu-pilares">
+                          <div>Vendas <i style="--w:85%"></i>17</div>
+                          <div>Estoque <i style="--w:70%"></i>14</div>
+                          <div>Margem <i style="--w:90%"></i>18</div>
+                          <div>Clientes <i style="--w:80%"></i>16</div>
+                          <div>Orçamentos <i style="--w:85%"></i>17</div>
+                        </div>
+                      </div>
+                      <div class="pu-chat">
+                        <p class="mc-rot">✦ Pergunte ao Pulso</p>
+                        <div class="pu-chips" id="puChips"></div>
+                        <div class="pu-resp" id="puResp">Toque numa pergunta. O Pulso responde com os números da sua loja.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <nav class="app-baixo">
+                    <button type="button" class="ativo" data-av="dash"><i>▦</i>Início</button>
+                    <button type="button" data-av="caixa"><i>◈</i>Caixa</button>
+                    <button type="button" data-av="con"><i>⬡</i>Online</button>
+                    <button type="button" data-av="pulso"><i>✦</i>Pulso</button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="disp-base"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -578,10 +963,12 @@
         <div>
           <h2 class="titulo">Tudo que a sua loja precisa, na palma da mão.</h2>
           <div class="palma-lista">
-            <div class="palma-item"><b>Vendas em segundos</b><p>Carrinho, desconto e pagamento. O estoque baixa sozinho.</p></div>
+            <div class="palma-item"><b>Caixa rápido</b><p>Venda em 3 toques, com leitor de código de barras pela câmera.</p></div>
             <div class="palma-item"><b>Grade de tamanhos e cores</b><p>Cada variação com o próprio estoque.</p></div>
             <div class="palma-item"><b>Orçamento no WhatsApp</b><p>Monte, envie e transforme em venda com um toque.</p></div>
             <div class="palma-item"><b>Relatórios e meta</b><p>Lucro de verdade e quanto falta por dia para bater a meta.</p></div>
+            <div class="palma-item"><b>Loja virtual conectada</b><p>Pedido do site vira venda sozinho, sem digitar nada.</p></div>
+            <div class="palma-item"><b>Recibo e caixa do dia</b><p>Recibo pelo WhatsApp e o fechamento do caixa pronto.</p></div>
           </div>
           <a class="botao botao-luz botao-grande" href="app.html#criar">Quero organizar minha loja</a>
         </div>
@@ -634,6 +1021,7 @@
           <li><s>Planilha de estoque</s></li>
           <li><s>Orçamentos perdidos no WhatsApp</s></li>
           <li><s>Adivinhar quanto lucrou no mês</s></li>
+          <li><s>Digitar uma por uma as vendas do site</s></li>
         </ul>
         <div class="preco-valor">
           <p class="agora">Grátis agora</p>
@@ -706,6 +1094,8 @@
         <details><summary>Preciso instalar algum aplicativo?</summary><p>Não. A ARYA funciona direto no navegador do celular, do tablet ou do computador. É só entrar com o seu e-mail e senha.</p></details>
         <details><summary>Funciona para loja de roupas com tamanhos e cores?</summary><p>Sim. Você cria a grade de cada produto (P, M, G, GG e as cores) e cada variação tem o próprio estoque. Na venda, você escolhe o tamanho e a cor.</p></details>
         <details><summary>Meus dados ficam seguros?</summary><p>Cada loja só enxerga os próprios dados. A separação é feita direto no banco de dados, e você pode baixar suas informações em planilha quando quiser.</p></details>
+        <details><summary>Tenho loja virtual. Funciona junto?</summary><p>Sim. Com o ARYA Connect, cada pedido pago na sua loja virtual (Shopify, WooCommerce e outras) vira venda na ARYA sozinho, baixa o estoque e cadastra o cliente. A loja física e a online ficam no mesmo caixa e nos mesmos relatórios.</p></details>
+        <details><summary>Preciso comprar leitor de código de barras?</summary><p>Não. O Caixa rápido lê o código pela câmera do celular ou do tablet. Se preferir, um leitor de loja comum (USB ou Bluetooth) também funciona.</p></details>
         <details><summary>A ARYA emite nota fiscal?</summary><p>Ainda não. Por enquanto, a ARYA cuida da gestão, do estoque, dos clientes e dos relatórios da loja.</p></details>
         <details><summary>Posso usar com mais de uma pessoa da loja?</summary><p>O acesso para a equipe está em desenvolvimento. Hoje, cada conta é usada pela dona ou pelo dono da loja.</p></details>
       </div>
@@ -752,7 +1142,7 @@
       var b = document.querySelectorAll("#barras i")[i];
       setTimeout(function () { b.style.height = h + "%"; }, i * 90);
     });
-    contar(document.getElementById("numMod"), 14, false, 1400);
+    contar(document.getElementById("numMod"), 16, false, 1400);
     document.getElementById("numCard").classList.add("cheio");
   }, 900);
 
@@ -856,6 +1246,197 @@
   new MutationObserver(function () {
     if (anelNum.dataset.pct && !/%$/.test(anelNum.textContent)) anelNum.textContent = anelNum.textContent + "%";
   }).observe(anelNum, { childList: true, characterData: true, subtree: true });
+
+  // ===== Em todas as telas: celular, iPad e notebook =====
+  (function () {
+    var disp = document.getElementById("disp");
+    var palcoD = document.getElementById("dispPalco");
+    if (!disp) return;
+    var TAM = { cel: [300, 610], tab: [860, 600], note: [1060, 600] };
+    var modo = "cel", mexeu = false;
+
+    function ajustar() {
+      var t = TAM[modo];
+      var s = Math.min(1, (palcoD.clientWidth - 8) / t[0]);
+      disp.style.transform = "translateX(-50%) scale(" + s + ")";
+      palcoD.style.height = Math.ceil(t[1] * s + 24) + "px";
+    }
+    function trocarDisp(m) {
+      modo = m;
+      disp.dataset.disp = m;
+      document.querySelectorAll(".disp-abas button").forEach(function (b) {
+        var a = b.dataset.disp === m;
+        b.classList.toggle("ativo", a);
+        b.setAttribute("aria-selected", a ? "true" : "false");
+      });
+      ajustar();
+    }
+    document.querySelectorAll(".disp-abas button").forEach(function (b) {
+      b.addEventListener("click", function () { mexeu = true; trocarDisp(b.dataset.disp); });
+    });
+    window.addEventListener("resize", ajustar);
+    ajustar();
+
+    // Troca de aparelho sozinha enquanto ninguém mexe
+    var ordem = ["cel", "tab", "note"], idx = 0, visivel = false;
+    new IntersectionObserver(function (e) { visivel = e[0].isIntersecting; }, { threshold: .35 }).observe(palcoD);
+    if (!calmo) setInterval(function () {
+      if (mexeu || !visivel) return;
+      idx = (idx + 1) % ordem.length;
+      trocarDisp(ordem[idx]);
+    }, 4500);
+    disp.addEventListener("pointerdown", function () { mexeu = true; });
+
+    // Navegação do mini app
+    var titulosAv = { dash: "Dashboard", caixa: "Caixa rápido", con: "ARYA Connect", pulso: "ARYA Pulso" };
+    function abrirAv(v) {
+      document.querySelectorAll(".av").forEach(function (el) { el.classList.toggle("ativo", el.dataset.av === v); });
+      document.querySelectorAll(".app-nav [data-av], .app-baixo [data-av]").forEach(function (b) { b.classList.toggle("ativo", b.dataset.av === v); });
+      document.getElementById("appTitulo").textContent = titulosAv[v];
+      if (v === "pulso") animarPulso();
+    }
+    document.querySelectorAll(".app-nav [data-av], .app-baixo [data-av]").forEach(function (b) {
+      b.addEventListener("click", function () { abrirAv(b.dataset.av); });
+    });
+
+    function brl(n) { return "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+    // Caixa rápido
+    var prods = [["Camiseta oversized", 79.9, "a", "CO"], ["Calça cargo", 189.9, "b", "CC"], ["Boné aba reta", 59.9, "c", "BA"], ["Jaqueta corta-vento", 259.9, "d", "JC"]];
+    var carrinho = {};
+    var fat = 18490, vendas = 142;
+    var grade = document.getElementById("cxGrade");
+    prods.forEach(function (p, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "cx-tile";
+      b.innerHTML = '<div class="ft ' + p[2] + '">' + p[3] + '</div><p></p><strong>' + brl(p[1]) + '</strong>';
+      b.querySelector("p").textContent = p[0];
+      b.addEventListener("click", function () {
+        carrinho[i] = (carrinho[i] || 0) + 1;
+        b.classList.remove("pulou"); void b.offsetWidth; b.classList.add("pulou");
+        desenharCx();
+      });
+      grade.appendChild(b);
+    });
+    function totalCx() { var t = 0; Object.keys(carrinho).forEach(function (k) { t += prods[k][1] * carrinho[k]; }); return t; }
+    function desenharCx() {
+      var itens = document.getElementById("cxItens");
+      var qtd = 0;
+      itens.innerHTML = "";
+      Object.keys(carrinho).forEach(function (k) {
+        qtd += carrinho[k];
+        var d = document.createElement("div");
+        d.innerHTML = "<span></span><b>" + brl(prods[k][1] * carrinho[k]) + "</b>";
+        d.querySelector("span").textContent = carrinho[k] + "× " + prods[k][0];
+        itens.appendChild(d);
+      });
+      if (!qtd) itens.innerHTML = '<div class="vazio-cx">Toque num produto ✦</div>';
+      grade.querySelectorAll(".cx-tile").forEach(function (t, i) {
+        var q = t.querySelector(".qt");
+        if (carrinho[i]) { if (!q) { q = document.createElement("span"); q.className = "qt"; t.appendChild(q); } q.textContent = carrinho[i]; }
+        else if (q) q.remove();
+      });
+      document.getElementById("cxQtd").textContent = qtd + (qtd === 1 ? " item" : " itens");
+      document.getElementById("cxTotal").textContent = brl(totalCx());
+      document.getElementById("cxCobrar").textContent = qtd ? "Cobrar " + brl(totalCx()) : "Cobrar";
+    }
+    document.getElementById("cxCobrar").addEventListener("click", function () {
+      var t = totalCx();
+      if (!t) {
+        grade.querySelectorAll(".cx-tile").forEach(function (x) { x.classList.remove("pulou"); void x.offsetWidth; x.classList.add("pulou"); });
+        return;
+      }
+      document.getElementById("cxOkValor").textContent = brl(t);
+      var ok = document.getElementById("cxOk");
+      ok.classList.add("ver");
+      fat += t; vendas += 1;
+      document.getElementById("dFat").textContent = "R$ " + Math.round(fat).toLocaleString("pt-BR");
+      document.getElementById("dVendas").textContent = vendas;
+      carrinho = {};
+      desenharCx();
+      setTimeout(function () { ok.classList.remove("ver"); }, 1800);
+    });
+    desenharCx();
+
+    // Connect
+    var nomes = ["Gabi Nunes", "Helena Costa", "Igor Melo", "Júlia Reis", "Lucas Pinto", "Marina Sá"];
+    var fisica = 1240;
+    var plats = [["S", "Shopify"], ["W", "WooCommerce"], ["✦", "Site"]];
+    var nPed = 1003, cPed = 3, cVen = 3, vOn = 569;
+    var lista = document.getElementById("conLista");
+    function linhaPedido(num, nome, pl, valor, pronto) {
+      var d = document.createElement("div");
+      d.className = "con-ped";
+      d.innerHTML = '<span class="pl"></span><div><b></b><em></em></div><span class="vl"></span>';
+      d.querySelector(".pl").textContent = pl[0];
+      d.querySelector("b").textContent = "#" + num + " · " + nome;
+      var em = d.querySelector("em");
+      em.textContent = pronto ? "✓ Virou venda" : "Chegou · " + pl[1];
+      if (pronto) em.classList.add("ok");
+      d.querySelector(".vl").textContent = brl(valor);
+      return d;
+    }
+    [[1003, "Carla Dias", plats[0], 189.9], [1002, "Bruno Alves", plats[1], 219.9], [1001, "Ana Ribeiro", plats[0], 159.8]].forEach(function (p) {
+      lista.appendChild(linhaPedido(p[0], p[1], p[2], p[3], true));
+    });
+    function novoPedido() {
+      nPed += 1;
+      var valor = [79.9, 159.8, 189.9, 249.8, 59.9][nPed % 5];
+      var pl = plats[nPed % 3];
+      var d = linhaPedido(nPed, nomes[nPed % nomes.length], pl, valor, false);
+      lista.insertBefore(d, lista.firstChild);
+      while (lista.children.length > 4) lista.lastChild.remove();
+      cPed += 1;
+      document.getElementById("conPed").textContent = cPed;
+      setTimeout(function () {
+        var em = d.querySelector("em");
+        em.textContent = "✓ Virou venda";
+        em.classList.add("ok");
+        cVen += 1; vOn += valor; fat += valor; vendas += 1;
+        document.getElementById("conVen").textContent = cVen;
+        document.getElementById("conVal").textContent = "R$ " + Math.round(vOn).toLocaleString("pt-BR");
+        document.getElementById("conHoje").textContent = "R$ " + Math.round(vOn).toLocaleString("pt-BR");
+        document.getElementById("conTot").textContent = "R$ " + Math.round(vOn + fisica).toLocaleString("pt-BR");
+        var pct = Math.round(vOn / (vOn + fisica) * 100);
+        var barrasDia = document.querySelectorAll(".cx-dia i");
+        barrasDia[0].style.setProperty("--w", (100 - pct) + "%");
+        barrasDia[1].style.setProperty("--w", pct + "%");
+        document.getElementById("dFat").textContent = "R$ " + Math.round(fat).toLocaleString("pt-BR");
+        document.getElementById("dVendas").textContent = vendas;
+      }, 1400);
+    }
+    document.getElementById("conSim").addEventListener("click", novoPedido);
+    if (!calmo) setInterval(function () { if (visivel && document.querySelector(".av-con.ativo")) novoPedido(); }, 5000);
+
+    // Pulso
+    var pulsoFeito = false;
+    function animarPulso() {
+      if (pulsoFeito) return;
+      pulsoFeito = true;
+      var arco = document.getElementById("puArco");
+      requestAnimationFrame(function () { requestAnimationFrame(function () { arco.style.strokeDashoffset = String(251.3 * (1 - .82)); }); });
+      contar(document.getElementById("puNota"), 82, false, 1400);
+    }
+    var perguntas = [
+      ["Quanto lucrei este mês?", "Neste mês você faturou <b>R$ 18.490</b> em 142 vendas. Descontando o custo dos produtos, o lucro bruto foi de <b>R$ 7.320</b>, uma margem de 39%."],
+      ["O que devo repor?", "Repor primeiro: <b>Camiseta oversized M / Preto</b> (2 em estoque) e <b>Meia cano alto</b> (zerada)."],
+      ["Qual é o meu melhor dia?", "Seu melhor dia é <b>sábado</b>: 31% do faturamento. Programe posts e promoções para a sexta."]
+    ];
+    var chips = document.getElementById("puChips");
+    var resp = document.getElementById("puResp");
+    perguntas.forEach(function (p) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = p[0];
+      b.addEventListener("click", function () {
+        chips.querySelectorAll("button").forEach(function (x) { x.classList.toggle("ativo", x === b); });
+        resp.textContent = "Pensando...";
+        setTimeout(function () { resp.innerHTML = p[1]; }, 600);
+      });
+      chips.appendChild(b);
+    });
+  })();
 })();
 </script>
 </body>
