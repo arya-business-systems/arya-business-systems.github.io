@@ -7377,3 +7377,382 @@ function dbTexto(id, texto) {
   el._animacao = requestAnimationFrame(passo);
 }
 // FIM DA PARTE 27
+// ===== PARTE 28: Boas-vindas, banners animados e comemoração =====
+const ARYA_SEM_MOVIMENTO = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const estiloVida = document.createElement("style");
+estiloVida.textContent = `
+  /* ---------- Boas-vindas ---------- */
+  .bv-fundo {
+    position: fixed; inset: 0; z-index: 400; background: #000; color: #fff;
+    display: grid; place-items: center; text-align: center; padding: 24px;
+    transition: opacity .6s ease;
+  }
+  .bv-fundo.saindo { opacity: 0; pointer-events: none; }
+  .bv-simbolo { width: 120px; margin: 0 auto 26px; color: #fff; animation: bv-surge 1s cubic-bezier(.2,.8,.2,1) both; }
+  .bv-simbolo svg { width: 100%; height: auto; display: block; }
+  .bv-ola { font-family: var(--font-brand); font-size: clamp(24px, 4vw, 40px); line-height: 1.2; animation: bv-sobe .8s ease .35s both; }
+  .bv-loja { color: #a1a1aa; margin-top: 10px; font-size: 16px; animation: bv-sobe .8s ease .55s both; }
+  .bv-estrela { position: absolute; opacity: 0; animation: bv-brilho 2.4s ease-in-out infinite; }
+  @keyframes bv-surge { from { opacity: 0; transform: scale(.7) translateY(14px); } }
+  @keyframes bv-sobe { from { opacity: 0; transform: translateY(14px); } }
+  @keyframes bv-brilho { 0%, 100% { opacity: 0; transform: scale(.5) rotate(0); } 45% { opacity: 1; transform: scale(1) rotate(45deg); } }
+
+  /* ---------- Banner das telas ---------- */
+  .banner {
+    position: relative; overflow: hidden; margin-bottom: 16px;
+    background: radial-gradient(520px 260px at 85% 20%, rgba(255,255,255,.09), transparent 70%), #000;
+    color: #fff; border-radius: var(--radius); padding: 26px 28px;
+    display: grid; grid-template-columns: 1fr 220px; gap: 20px; align-items: center; min-height: 190px;
+  }
+  .banner h2 { font-family: var(--font-brand); font-weight: 400; font-size: clamp(18px, 2.2vw, 24px); line-height: 1.25; }
+  .banner .b-sub { color: #a1a1aa; font-size: 14px; margin-top: 6px; max-width: 46ch; }
+  .b-stats { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 18px; }
+  .b-stat { cursor: default; }
+  .b-stat strong { display: block; font-size: 26px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .b-stat span { color: #a1a1aa; font-size: 12.5px; }
+  .b-arte { position: relative; height: 150px; transition: transform .25s ease-out; }
+  @media (max-width: 700px) {
+    .banner { grid-template-columns: 1fr; padding: 22px; }
+    .b-arte { position: absolute; right: -20px; top: 10px; width: 150px; height: 120px; opacity: .35; }
+    .b-stats { gap: 20px; }
+    .b-stat strong { font-size: 22px; }
+  }
+
+  /* Clientes: órbita */
+  .orb-anel { position: absolute; inset: 10px 30px; border: 1px dashed rgba(255,255,255,.25); border-radius: 50%; animation: orb-gira 14s linear infinite; }
+  .orb-anel i { position: absolute; width: 30px; height: 30px; border-radius: 50%; background: #fff; color: #000; font-size: 12px; font-weight: 700; display: grid; place-items: center; font-style: normal; }
+  .orb-anel i:nth-child(1) { top: -15px; left: calc(50% - 15px); }
+  .orb-anel i:nth-child(2) { bottom: -15px; left: calc(50% - 15px); background: #22c55e; color: #fff; }
+  .orb-anel i:nth-child(3) { top: calc(50% - 15px); left: -15px; background: #3f3f46; color: #fff; }
+  .orb-anel i:nth-child(4) { top: calc(50% - 15px); right: -15px; }
+  .orb-anel i { animation: orb-contra 14s linear infinite; }
+  .orb-centro { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: 54px; height: 54px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); display: grid; place-items: center; font-size: 22px; animation: bv-brilho 3s ease-in-out infinite; opacity: 1; }
+  @keyframes orb-gira { to { transform: rotate(360deg); } }
+  @keyframes orb-contra { to { transform: rotate(-360deg); } }
+
+  /* Produtos: etiqueta balançando */
+  .tag-fio { position: absolute; left: 50%; top: 0; width: 2px; height: 34px; background: rgba(255,255,255,.4); }
+  .tag {
+    position: absolute; left: calc(50% - 55px); top: 30px; width: 110px; height: 96px;
+    background: #fff; color: #000; border-radius: 12px 12px 16px 16px;
+    transform-origin: 50% -4px; animation: tag-balanca 3.2s ease-in-out infinite;
+    display: grid; place-items: center; font-family: var(--font-brand); font-size: 13px;
+  }
+  .tag::before { content: ""; position: absolute; top: 8px; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #000; }
+  .tam { position: absolute; width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(255,255,255,.35); display: grid; place-items: center; font-size: 12px; font-weight: 600; animation: tam-pula 2.4s ease-in-out infinite; }
+  .tam.t1 { left: 4px; bottom: 6px; }
+  .tam.t2 { right: 4px; bottom: 26px; animation-delay: .4s; }
+  .tam.t3 { right: 34px; top: 4px; animation-delay: .8s; }
+  @keyframes tag-balanca { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(9deg); } }
+  @keyframes tam-pula { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+  /* Vendas: recibo e moedas */
+  .recibo {
+    position: absolute; left: calc(50% - 50px); bottom: 0; width: 100px; height: 130px;
+    background: #fff; border-radius: 8px 8px 0 0; padding: 14px 12px;
+    animation: recibo-sai 3.6s ease-in-out infinite;
+  }
+  .recibo i { display: block; height: 6px; border-radius: 3px; background: #e4e4e7; margin-bottom: 8px; }
+  .recibo i:nth-child(2) { width: 70%; }
+  .recibo i:nth-child(3) { width: 85%; }
+  .recibo b { display: block; margin-top: 12px; color: #16a34a; font-size: 22px; text-align: center; }
+  .moeda-anim { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: #fbbf24; color: #78350f; font-size: 12px; font-weight: 800; display: grid; place-items: center; top: -30px; animation: moeda-cai 2.4s ease-in infinite; }
+  .moeda-anim.m1 { left: 12px; }
+  .moeda-anim.m2 { right: 16px; animation-delay: .8s; }
+  .moeda-anim.m3 { left: 46%; animation-delay: 1.6s; }
+  @keyframes recibo-sai { 0% { transform: translateY(100%); } 25%, 80% { transform: translateY(0); } 100% { transform: translateY(100%); } }
+  @keyframes moeda-cai { 0% { transform: translateY(0) rotate(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(190px) rotate(320deg); opacity: 0; } }
+
+  /* Orçamentos: balões */
+  .balao { position: absolute; padding: 9px 12px; border-radius: 14px; font-size: 12px; line-height: 1.3; color: #000; opacity: 0; animation: balao-ciclo 6s ease infinite; white-space: nowrap; }
+  .balao.b1 { left: 0; top: 6px; background: #fff; }
+  .balao.b2 { right: 0; top: 56px; background: #d9fdd3; animation-delay: 1.2s; }
+  .balao.b3 { left: 14px; top: 108px; background: #fff; animation-delay: 2.4s; }
+  @keyframes balao-ciclo { 0% { opacity: 0; transform: translateY(8px) scale(.96); } 10%, 75% { opacity: 1; transform: none; } 90%, 100% { opacity: 0; transform: translateY(-6px); } }
+
+  /* Fornecedores: caminhão */
+  .estrada { position: absolute; left: 0; right: 0; bottom: 18px; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.45) 0 16px, transparent 16px 30px); animation: estrada-anda .8s linear infinite; }
+  .caminhao { position: absolute; bottom: 24px; left: 0; width: 110px; height: 60px; animation: caminhao-vai 7s ease-in-out infinite; }
+  .bau { position: absolute; left: 0; bottom: 12px; width: 70px; height: 46px; background: #fff; border-radius: 6px; display: grid; place-items: center; color: #000; font-family: var(--font-brand); font-size: 10px; }
+  .cabine { position: absolute; left: 72px; bottom: 12px; width: 34px; height: 32px; background: #a1a1aa; border-radius: 4px 12px 4px 4px; }
+  .roda { position: absolute; bottom: 0; width: 18px; height: 18px; border-radius: 50%; background: #000; border: 4px solid #fff; animation: roda-gira .6s linear infinite; }
+  .roda.r1 { left: 10px; } .roda.r2 { left: 80px; }
+  @keyframes estrada-anda { to { background-position: -30px 0; } }
+  @keyframes caminhao-vai { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(100px); } }
+  @keyframes roda-gira { to { transform: rotate(360deg); } }
+
+  /* ---------- Comemoração ---------- */
+  .festa { position: fixed; inset: 0; z-index: 350; pointer-events: none; display: grid; place-items: center; }
+  .festa-check {
+    width: 96px; height: 96px; border-radius: 50%; background: #000; color: #fff;
+    display: grid; place-items: center; font-size: 46px; font-weight: 700;
+    animation: festa-pop 1.1s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  .festa i { position: absolute; left: 50%; top: 50%; font-style: normal; font-size: 18px; color: #000; animation: festa-voa 1s ease-out forwards; }
+  @keyframes festa-pop { 0% { transform: scale(.3); opacity: 0; } 25% { transform: scale(1.08); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(.9); opacity: 0; } }
+  @keyframes festa-voa { from { transform: translate(-50%, -50%) scale(.4); opacity: 1; } to { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1) rotate(180deg); opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bv-simbolo, .bv-ola, .bv-loja, .bv-estrela, .orb-anel, .orb-anel i, .orb-centro, .tag, .tam,
+    .recibo, .moeda-anim, .balao, .estrada, .caminhao, .roda, .festa-check, .festa i { animation: none !important; }
+    .balao, .bv-estrela { opacity: 1; }
+    .moeda-anim { display: none; }
+  }
+`;
+document.head.appendChild(estiloVida);
+
+// ---------- Boas-vindas ----------
+async function mostrarBoasVindas() {
+  try {
+    if (sessionStorage.getItem("arya_boas_vindas") === "1") return;
+    sessionStorage.setItem("arya_boas_vindas", "1");
+  } catch (e) { /* segue mesmo sem sessionStorage */ }
+
+  let nome = "";
+  let loja = "";
+  try {
+    const cliente = await iniciarSupabase();
+    const usuario = await cliente.auth.getUser();
+    const perfil = await cliente.from("profiles")
+      .select("full_name, companies(name)")
+      .eq("id", usuario.data.user.id).maybeSingle();
+    if (perfil.data) {
+      nome = String(perfil.data.full_name || "").trim().split(" ")[0];
+      loja = perfil.data.companies ? perfil.data.companies.name : "";
+    }
+  } catch (e) { console.error(e); }
+
+  const hora = new Date().getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+
+  const fundo = document.createElement("div");
+  fundo.className = "bv-fundo";
+  fundo.innerHTML = `
+    <div>
+      <div class="bv-simbolo">${ARYA_SIMBOLO}</div>
+      <p class="bv-ola"></p>
+      <p class="bv-loja"></p>
+    </div>
+    <span class="bv-estrela" style="top:22%; left:24%; font-size:18px;">✦</span>
+    <span class="bv-estrela" style="top:30%; right:22%; font-size:12px; animation-delay:.6s;">✦</span>
+    <span class="bv-estrela" style="bottom:26%; left:40%; font-size:14px; animation-delay:1.1s;">✦</span>
+  `;
+  fundo.querySelector(".bv-ola").textContent = saudacao + (nome ? ", " + nome : "") + ".";
+  fundo.querySelector(".bv-loja").textContent = loja ? "Vamos fazer a " + loja + " crescer hoje." : "Vamos fazer sua loja crescer hoje.";
+  document.body.appendChild(fundo);
+
+  function fechar() {
+    fundo.classList.add("saindo");
+    setTimeout(function () { fundo.remove(); }, 650);
+  }
+  fundo.addEventListener("click", fechar);
+  setTimeout(fechar, ARYA_SEM_MOVIMENTO ? 900 : 2200);
+}
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (sessao && (evento === "SIGNED_IN" || evento === "INITIAL_SESSION")) {
+      setTimeout(mostrarBoasVindas, 0);
+    }
+    if (!sessao) {
+      try { sessionStorage.removeItem("arya_boas_vindas"); } catch (e) {}
+    }
+  });
+});
+
+// ---------- Banners ----------
+const BANNERS = {
+  clientes: {
+    titulo: "Quem compra com você.",
+    sub: "Cada cliente com histórico, favoritos e WhatsApp a um toque.",
+    arte: '<div class="orb-anel"><i>A</i><i>M</i><i>J</i><i>L</i></div><div class="orb-centro">✦</div>',
+    stats: ["Clientes", "Novos este mês", "Com WhatsApp"]
+  },
+  produtos: {
+    titulo: "Sua vitrine, organizada.",
+    sub: "Preço, custo, grade de tamanhos e cores, e o estoque sempre certo.",
+    arte: '<div class="tag-fio"></div><div class="tag">ARYA</div><span class="tam t1">P</span><span class="tam t2">M</span><span class="tam t3">G</span>',
+    stats: ["Produtos", "Peças em estoque", "Esgotados"]
+  },
+  vendas: {
+    titulo: "Cada venda conta.",
+    sub: "Registre em segundos. O estoque e os relatórios se atualizam sozinhos.",
+    arte: '<div class="recibo"><i></i><i></i><i></i><b>✓</b></div><span class="moeda-anim m1">$</span><span class="moeda-anim m2">$</span><span class="moeda-anim m3">$</span>',
+    stats: ["Vendido hoje", "Últimos 7 dias", "Ticket médio (7 dias)"]
+  },
+  orcamentos: {
+    titulo: "Negociação na palma da mão.",
+    sub: "Monte, envie pelo WhatsApp e transforme em venda com um toque.",
+    arte: '<div class="balao b1">Me passa um orçamento?</div><div class="balao b2">Segue: R$ 349,70 ✓✓</div><div class="balao b3">Fechado! 😍</div>',
+    stats: ["Em aberto", "Aceitos", "Em negociação"]
+  },
+  fornecedores: {
+    titulo: "Quem abastece a sua loja.",
+    sub: "Contatos e pedidos de reposição pelo WhatsApp, sem procurar número.",
+    arte: '<div class="estrada"></div><div class="caminhao"><div class="bau">ARYA</div><div class="cabine"></div><span class="roda r1"></span><span class="roda r2"></span></div>',
+    stats: ["Fornecedores"]
+  }
+};
+
+function contarAte(el, valor, ehMoeda) {
+  const final = ehMoeda ? moeda(valor) : Math.round(valor).toLocaleString("pt-BR");
+  if (ARYA_SEM_MOVIMENTO || valor === 0) { el.textContent = final; return; }
+  const inicio = performance.now();
+  function passo(agora) {
+    const p = Math.min(1, (agora - inicio) / 900);
+    const v = valor * (1 - Math.pow(1 - p, 3));
+    el.textContent = p < 1 ? (ehMoeda ? moeda(v) : Math.round(v).toLocaleString("pt-BR")) : final;
+    if (p < 1) requestAnimationFrame(passo);
+  }
+  requestAnimationFrame(passo);
+}
+
+Object.keys(BANNERS).forEach(function (view) {
+  const tela = document.getElementById("view-" + view);
+  if (!tela || document.getElementById("banner-" + view)) return;
+  const b = BANNERS[view];
+  const el = document.createElement("section");
+  el.className = "banner";
+  el.id = "banner-" + view;
+  el.innerHTML =
+    '<div><h2></h2><p class="b-sub"></p><div class="b-stats"></div></div>' +
+    '<div class="b-arte" aria-hidden="true">' + b.arte + "</div>";
+  el.querySelector("h2").textContent = b.titulo;
+  el.querySelector(".b-sub").textContent = b.sub;
+  const stats = el.querySelector(".b-stats");
+  b.stats.forEach(function (rotulo) {
+    const s = document.createElement("div");
+    s.className = "b-stat";
+    s.innerHTML = "<strong>—</strong><span></span>";
+    s.querySelector("span").textContent = rotulo;
+    stats.appendChild(s);
+  });
+  tela.insertBefore(el, tela.firstChild);
+
+  // A arte acompanha o dedo/mouse
+  const arte = el.querySelector(".b-arte");
+  if (!ARYA_SEM_MOVIMENTO) {
+    el.addEventListener("pointermove", function (e) {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - .5;
+      const y = (e.clientY - r.top) / r.height - .5;
+      arte.style.transform = "translate(" + (x * 18) + "px," + (y * 12) + "px)";
+    });
+    el.addEventListener("pointerleave", function () { arte.style.transform = ""; });
+  }
+});
+
+async function bnContar(consulta) {
+  const r = await consulta;
+  if (r.error) throw r.error;
+  return r.count || 0;
+}
+
+async function carregarBanner(view) {
+  const el = document.getElementById("banner-" + view);
+  if (!el) return;
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) return;
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const mes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const seteDias = new Date(hoje.getTime() - 6 * 86400000);
+    let valores = [];
+    let moedas = [];
+
+    if (view === "clientes") {
+      valores = await Promise.all([
+        bnContar(cliente.from("customers").select("id", { count: "exact", head: true })),
+        bnContar(cliente.from("customers").select("id", { count: "exact", head: true }).gte("created_at", mes.toISOString())),
+        bnContar(cliente.from("customers").select("id", { count: "exact", head: true }).not("phone", "is", null))
+      ]);
+      moedas = [false, false, false];
+    }
+    if (view === "produtos") {
+      const r = await cliente.from("products").select("stock_quantity");
+      if (r.error) throw r.error;
+      const lista = r.data || [];
+      valores = [
+        lista.length,
+        lista.reduce(function (s, p) { return s + Number(p.stock_quantity || 0); }, 0),
+        lista.filter(function (p) { return Number(p.stock_quantity) <= 0; }).length
+      ];
+      moedas = [false, false, false];
+    }
+    if (view === "vendas") {
+      const r = await cliente.from("sales").select("total, created_at")
+        .gte("created_at", seteDias.toISOString()).neq("status", "cancelled");
+      if (r.error) throw r.error;
+      const lista = r.data || [];
+      const hojeTotal = lista.filter(function (v) { return new Date(v.created_at) >= hoje; })
+        .reduce(function (s, v) { return s + Number(v.total); }, 0);
+      const semana = lista.reduce(function (s, v) { return s + Number(v.total); }, 0);
+      valores = [hojeTotal, semana, lista.length ? semana / lista.length : 0];
+      moedas = [true, true, true];
+    }
+    if (view === "orcamentos") {
+      const r = await cliente.from("quotes").select("status, total").in("status", ["open", "sent", "accepted"]);
+      if (r.error) throw r.error;
+      const lista = r.data || [];
+      valores = [
+        lista.filter(function (o) { return o.status !== "accepted"; }).length,
+        lista.filter(function (o) { return o.status === "accepted"; }).length,
+        lista.reduce(function (s, o) { return s + Number(o.total); }, 0)
+      ];
+      moedas = [false, false, true];
+    }
+    if (view === "fornecedores") {
+      valores = [await bnContar(cliente.from("suppliers").select("id", { count: "exact", head: true }))];
+      moedas = [false];
+    }
+
+    el.querySelectorAll(".b-stat strong").forEach(function (forte, i) {
+      contarAte(forte, valores[i] || 0, moedas[i]);
+    });
+  } catch (e) {
+    console.error("Banner " + view + ":", e);
+  }
+}
+
+Object.keys(BANNERS).forEach(function (view) {
+  document.querySelectorAll('[data-view="' + view + '"]').forEach(function (botao) {
+    botao.addEventListener("click", function () { setTimeout(function () { carregarBanner(view); }, 150); });
+  });
+});
+
+// ---------- Comemoração ----------
+function celebrar() {
+  if (ARYA_SEM_MOVIMENTO) return;
+  const festa = document.createElement("div");
+  festa.className = "festa";
+  festa.innerHTML = '<div class="festa-check">✓</div>';
+  for (let i = 0; i < 16; i++) {
+    const estrela = document.createElement("i");
+    const angulo = (Math.PI * 2 * i) / 16;
+    const dist = 110 + Math.random() * 90;
+    estrela.textContent = "✦";
+    estrela.style.setProperty("--x", Math.cos(angulo) * dist + "px");
+    estrela.style.setProperty("--y", Math.sin(angulo) * dist + "px");
+    estrela.style.animationDelay = (Math.random() * 0.15) + "s";
+    festa.appendChild(estrela);
+  }
+  document.body.appendChild(festa);
+  setTimeout(function () { festa.remove(); }, 1300);
+}
+
+// Esta versão de avisar substitui a anterior: mostra o aviso e comemora as conquistas.
+function avisar(mensagem) {
+  toastEl.textContent = mensagem;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () {
+    toastEl.classList.remove("show");
+  }, 2600);
+  if (/^(Venda registrada|Orçamento virou venda|Meta salva|Prêmio resgatado|Conta e empresa criadas)/.test(String(mensagem))) {
+    celebrar();
+  }
+}
+// FIM DA PARTE 28
