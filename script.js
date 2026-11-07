@@ -9307,4 +9307,413 @@ estilo33b.textContent = `
 `;
 document.head.appendChild(estilo33b);
 // FIM DA PARTE 33b
+// ===== PARTE 34: Caixa do dia e recibo da venda =====
+const estilo34 = document.createElement("style");
+estilo34.textContent = `
+  .cx-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .cx-dia { display: flex; align-items: center; gap: 8px; }
+  .cx-dia button.seta { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); font-size: 18px; }
+  .cx-dia button.seta:disabled { opacity: .35; cursor: default; }
+  .cx-dia strong { min-width: 150px; text-align: center; font-size: 15px; text-transform: capitalize; }
+  .cx-principal { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .cx-bloco { border: 1px solid var(--border); border-radius: 14px; padding: 16px; background: var(--surface); }
+  .cx-bloco.escuro { background: #000; color: #fff; border-color: #000; }
+  .cx-bloco.escuro .label { color: #a1a1aa; }
+  .cx-bloco .cx-num { font-size: 26px; font-weight: 600; letter-spacing: -.03em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .cx-bloco .hint { margin-top: 2px; }
+  .cx-pags { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .cx-pag { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--bg); }
+  .cx-pag.zero { opacity: .5; }
+  .cx-pag p { font-size: 12.5px; color: var(--muted); }
+  .cx-pag strong { display: block; font-size: 17px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .cx-pag small { font-size: 12px; color: var(--muted); }
+  .cx-rodape { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+
+  .rc-fundo { position: fixed; inset: 0; z-index: 360; background: rgba(10,10,10,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 20px; overflow-y: auto; }
+  .rc-fundo[hidden] { display: none; }
+  .rc-caixa { width: 100%; max-width: 380px; animation: rc-sobe .35s cubic-bezier(.2,.8,.2,1); }
+  .rc-papel {
+    background: #fff; color: #000; border-radius: 18px 18px 6px 6px; padding: 28px 24px 22px; position: relative;
+    box-shadow: 0 30px 70px -30px rgba(0,0,0,.7);
+    -webkit-mask: radial-gradient(circle 7px at 50% 100%, transparent 98%, #000) bottom / 18px 100% repeat-x;
+            mask: radial-gradient(circle 7px at 50% 100%, transparent 98%, #000) bottom / 18px 100% repeat-x;
+    padding-bottom: 34px;
+  }
+  .rc-marca { text-align: center; }
+  .rc-marca svg { width: 46px; height: auto; color: #000; display: block; margin: 0 auto 8px; }
+  .rc-loja { font-family: var(--font-brand); font-size: 15px; letter-spacing: .08em; }
+  .rc-sub { font-size: 12px; color: #71717a; margin-top: 4px; }
+  .rc-check { width: 46px; height: 46px; border-radius: 50%; background: #16a34a; color: #fff; display: grid; place-items: center; font-size: 22px; font-weight: 700; margin: 16px auto 6px; animation: rc-pop .5s ease .15s backwards; }
+  .rc-valor { text-align: center; font-size: 30px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .rc-linha-pont { border-top: 2px dashed #e4e4e7; margin: 16px 0; }
+  .rc-item { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; padding: 4px 0; }
+  .rc-item span:first-child { color: #3f3f46; }
+  .rc-item b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rc-item.total { font-size: 16px; padding-top: 8px; }
+  .rc-aviso { text-align: center; font-size: 11px; color: #a1a1aa; margin-top: 14px; }
+  .rc-obrigado { text-align: center; font-size: 13px; margin-top: 12px; }
+  .rc-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .rc-acoes .btn { width: 100%; }
+  .rc-acoes .rc-zap { grid-column: 1 / -1; text-decoration: none; }
+  .rc-acoes .btn-ghost { background: #fff; }
+  @keyframes rc-sobe { from { opacity: 0; transform: translateY(24px) scale(.98); } }
+  @keyframes rc-pop { from { transform: scale(.3); opacity: 0; } }
+  @media (max-width: 900px) { .cx-pags { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 640px) {
+    .cx-principal { grid-template-columns: 1fr 1fr; }
+    .cx-principal .cx-bloco.escuro { grid-column: 1 / -1; }
+    .cx-pags { grid-template-columns: 1fr 1fr; }
+    .cx-dia strong { min-width: 120px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .rc-caixa, .rc-check { animation: none; } }
+  @media print {
+    body > *:not(.rc-fundo) { display: none !important; }
+    .rc-fundo { position: static; background: none; padding: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .rc-papel { box-shadow: none; -webkit-mask: none; mask: none; }
+    .rc-acoes { display: none !important; }
+  }
+`;
+document.head.appendChild(estilo34);
+
+// ---------- Caixa do dia ----------
+const cxCard = document.createElement("article");
+cxCard.className = "card";
+cxCard.id = "cardCaixa";
+cxCard.style.marginBottom = "16px";
+cxCard.innerHTML = `
+  <div class="cx-topo">
+    <h2>Caixa do dia</h2>
+    <div class="cx-dia">
+      <button class="seta" type="button" id="cxAntes" aria-label="Dia anterior">‹</button>
+      <strong id="cxData">Hoje</strong>
+      <button class="seta" type="button" id="cxDepois" aria-label="Próximo dia">›</button>
+    </div>
+  </div>
+  <div class="cx-principal">
+    <div class="cx-bloco escuro"><p class="label">Total vendido</p><p class="cx-num" id="cxTotal">R$ 0,00</p><p class="hint" id="cxQtd">0 vendas</p></div>
+    <div class="cx-bloco"><p class="label">Descontos</p><p class="cx-num" id="cxDesc">R$ 0,00</p><p class="hint">concedidos</p></div>
+    <div class="cx-bloco"><p class="label">Cancelamentos</p><p class="cx-num" id="cxCanc">0</p><p class="hint" id="cxCancValor">R$ 0,00</p></div>
+  </div>
+  <div class="cx-pags" id="cxPags"></div>
+  <div class="cx-rodape">
+    <p class="item-sub" id="cxDinheiro"></p>
+    <a class="btn btn-ghost btn-small" id="cxResumo" href="#" target="_blank" rel="noopener" style="text-decoration:none;">Enviar fechamento no WhatsApp</a>
+  </div>
+`;
+const vdCardPrincipal = document.querySelector("#view-vendas > article.card.wide") || document.querySelector("#view-vendas .card");
+vdCardPrincipal.before(cxCard);
+
+let cxDia = new Date(); cxDia.setHours(0, 0, 0, 0);
+let cxTimer = null;
+
+function cxMesmoDia(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+
+function cxRotulo(d) {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const ontem = new Date(hoje.getTime() - 86400000);
+  if (cxMesmoDia(d, hoje)) return "Hoje";
+  if (cxMesmoDia(d, ontem)) return "Ontem";
+  return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }).replace(".", "");
+}
+
+async function carregarCaixa() {
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) return;
+
+    const fim = new Date(cxDia.getTime() + 86400000);
+    const r = await cliente.from("sales").select("total, discount, payment_method, status")
+      .gte("created_at", cxDia.toISOString()).lt("created_at", fim.toISOString());
+    if (r.error) throw r.error;
+    const todas = r.data || [];
+    const validas = todas.filter(function (v) { return v.status !== "cancelled"; });
+    const canceladas = todas.filter(function (v) { return v.status === "cancelled"; });
+    const total = validas.reduce(function (s, v) { return s + Number(v.total); }, 0);
+    const desc = validas.reduce(function (s, v) { return s + Number(v.discount || 0); }, 0);
+
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    document.getElementById("cxData").textContent = cxRotulo(cxDia);
+    document.getElementById("cxDepois").disabled = cxMesmoDia(cxDia, hoje);
+    const elTotal = document.getElementById("cxTotal");
+    if (typeof contarAte === "function") contarAte(elTotal, total, true); else elTotal.textContent = moeda(total);
+    document.getElementById("cxQtd").textContent = validas.length === 1 ? "1 venda" : validas.length + " vendas";
+    document.getElementById("cxDesc").textContent = moeda(desc);
+    document.getElementById("cxCanc").textContent = String(canceladas.length);
+    document.getElementById("cxCancValor").textContent = moeda(canceladas.reduce(function (s, v) { return s + Number(v.total); }, 0));
+
+    const porPag = {};
+    validas.forEach(function (v) {
+      const p = porPag[v.payment_method] || (porPag[v.payment_method] = { valor: 0, qtd: 0 });
+      p.valor += Number(v.total);
+      p.qtd += 1;
+    });
+    const area = document.getElementById("cxPags");
+    area.innerHTML = "";
+    ["pix", "dinheiro", "cartao_credito", "cartao_debito", "outro"].forEach(function (k) {
+      const p = porPag[k] || { valor: 0, qtd: 0 };
+      const bloco = document.createElement("div");
+      bloco.className = "cx-pag" + (p.qtd ? "" : " zero");
+      const nome = document.createElement("p");
+      nome.textContent = nomesPagamento[k];
+      const valor = document.createElement("strong");
+      valor.textContent = moeda(p.valor);
+      const qtd = document.createElement("small");
+      qtd.textContent = p.qtd === 1 ? "1 venda" : p.qtd + " vendas";
+      bloco.appendChild(nome);
+      bloco.appendChild(valor);
+      bloco.appendChild(qtd);
+      area.appendChild(bloco);
+    });
+
+    const dinheiro = porPag.dinheiro ? porPag.dinheiro.valor : 0;
+    document.getElementById("cxDinheiro").textContent = dinheiro > 0
+      ? "✦ Confira na gaveta: " + moeda(dinheiro) + " em dinheiro."
+      : "Nenhuma venda em dinheiro neste dia.";
+
+    const loja = document.querySelector(".sidebar-foot").textContent.trim();
+    const linhas = [
+      "*Fechamento de caixa · " + loja + "*",
+      cxDia.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }),
+      "",
+      "Total vendido: *" + moeda(total) + "* (" + validas.length + " vendas)"
+    ];
+    ["pix", "dinheiro", "cartao_credito", "cartao_debito", "outro"].forEach(function (k) {
+      if (porPag[k]) linhas.push("• " + nomesPagamento[k] + ": " + moeda(porPag[k].valor));
+    });
+    if (desc > 0) linhas.push("Descontos: " + moeda(desc));
+    if (canceladas.length) linhas.push("Cancelamentos: " + canceladas.length);
+    linhas.push("", "Enviado pela ARYA ✦");
+    document.getElementById("cxResumo").href = "https://wa.me/?text=" + encodeURIComponent(linhas.join("\n"));
+  } catch (e) {
+    console.error("Caixa do dia:", e);
+  }
+}
+
+function agendarCaixa() {
+  clearTimeout(cxTimer);
+  cxTimer = setTimeout(carregarCaixa, 250);
+}
+
+document.getElementById("cxAntes").addEventListener("click", function () {
+  cxDia = new Date(cxDia.getTime() - 86400000);
+  agendarCaixa();
+});
+document.getElementById("cxDepois").addEventListener("click", function () {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  if (cxMesmoDia(cxDia, hoje)) return;
+  cxDia = new Date(cxDia.getTime() + 86400000);
+  agendarCaixa();
+});
+
+// Toda vez que as vendas recarregam (nova venda, cancelamento), o caixa também atualiza
+const carregarVendasOriginal = carregarVendas;
+carregarVendas = async function () {
+  await carregarVendasOriginal();
+  agendarCaixa();
+};
+document.querySelectorAll('[data-view="vendas"]').forEach(function (botao) {
+  botao.addEventListener("click", function () {
+    cxDia = new Date(); cxDia.setHours(0, 0, 0, 0);
+    agendarCaixa();
+  });
+});
+
+// ---------- Recibo ----------
+const rcFundo = document.createElement("div");
+rcFundo.className = "rc-fundo";
+rcFundo.hidden = true;
+rcFundo.setAttribute("role", "dialog");
+rcFundo.setAttribute("aria-modal", "true");
+rcFundo.setAttribute("aria-label", "Recibo da venda");
+document.body.appendChild(rcFundo);
+
+function fecharRecibo() { rcFundo.hidden = true; rcFundo.innerHTML = ""; }
+rcFundo.addEventListener("click", function (e) { if (e.target === rcFundo) fecharRecibo(); });
+document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !rcFundo.hidden) fecharRecibo(); });
+
+function rcLinha(pai, esquerda, direita, classe) {
+  const l = document.createElement("div");
+  l.className = "rc-item" + (classe ? " " + classe : "");
+  const a = document.createElement("span");
+  a.textContent = esquerda;
+  const b = document.createElement("b");
+  b.textContent = direita;
+  l.appendChild(a);
+  l.appendChild(b);
+  pai.appendChild(l);
+}
+
+async function abrirRecibo(v) {
+  const loja = document.querySelector(".sidebar-foot").textContent.trim();
+  const itens = vdItensPorVenda[v.id] || [];
+  const quando = new Date(v.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const nomeCliente = v.customer_id && vdBuscarCliente(v.customer_id) ? vdBuscarCliente(v.customer_id).name : "";
+
+  rcFundo.innerHTML = "";
+  const caixa = document.createElement("div");
+  caixa.className = "rc-caixa";
+  const papel = document.createElement("div");
+  papel.className = "rc-papel";
+
+  const marca = document.createElement("div");
+  marca.className = "rc-marca";
+  marca.innerHTML = ARYA_SIMBOLO;
+  const nomeLoja = document.createElement("p");
+  nomeLoja.className = "rc-loja";
+  nomeLoja.textContent = loja;
+  const sub = document.createElement("p");
+  sub.className = "rc-sub";
+  sub.textContent = "Comprovante de compra · " + quando;
+  marca.appendChild(nomeLoja);
+  marca.appendChild(sub);
+  papel.appendChild(marca);
+
+  const check = document.createElement("div");
+  check.className = "rc-check";
+  check.textContent = "✓";
+  papel.appendChild(check);
+  const valor = document.createElement("p");
+  valor.className = "rc-valor";
+  valor.textContent = moeda(v.total);
+  papel.appendChild(valor);
+
+  papel.appendChild(Object.assign(document.createElement("div"), { className: "rc-linha-pont" }));
+  itens.forEach(function (i) {
+    rcLinha(papel, i.quantity + "× " + i.product_name, moeda(i.total));
+  });
+  papel.appendChild(Object.assign(document.createElement("div"), { className: "rc-linha-pont" }));
+  rcLinha(papel, "Subtotal", moeda(v.subtotal));
+  if (Number(v.discount) > 0) rcLinha(papel, "Desconto", "− " + moeda(v.discount));
+  rcLinha(papel, "Total", moeda(v.total), "total");
+  rcLinha(papel, "Pagamento", nomesPagamento[v.payment_method] || v.payment_method);
+  if (nomeCliente) rcLinha(papel, "Cliente", nomeCliente);
+
+  const obrigado = document.createElement("p");
+  obrigado.className = "rc-obrigado";
+  obrigado.textContent = "Obrigado pela preferência! ✦";
+  papel.appendChild(obrigado);
+  const aviso = document.createElement("p");
+  aviso.className = "rc-aviso";
+  aviso.textContent = "Este comprovante não é documento fiscal.";
+  papel.appendChild(aviso);
+  caixa.appendChild(papel);
+
+  // Texto para o WhatsApp
+  const texto = ["*" + loja + "*", "Comprovante de compra · " + quando, ""];
+  itens.forEach(function (i) { texto.push("• " + i.quantity + "x " + i.product_name + " — " + moeda(i.total)); });
+  texto.push("");
+  if (Number(v.discount) > 0) {
+    texto.push("Subtotal: " + moeda(v.subtotal));
+    texto.push("Desconto: " + moeda(v.discount));
+  }
+  texto.push("*Total: " + moeda(v.total) + "*");
+  texto.push("Pagamento: " + (nomesPagamento[v.payment_method] || v.payment_method));
+  texto.push("", "Obrigado pela preferência! ✦", "_Este comprovante não é documento fiscal._");
+
+  let telefone = "";
+  if (v.customer_id) {
+    try {
+      const cliente = await iniciarSupabase();
+      const r = await cliente.from("customers").select("phone").eq("id", v.customer_id).maybeSingle();
+      if (!r.error && r.data) telefone = String(r.data.phone || "").replace(/\D/g, "");
+    } catch (e) { console.error(e); }
+  }
+  if (telefone.length === 10 || telefone.length === 11) telefone = "55" + telefone;
+  const link = "https://wa.me/" + (telefone.length >= 12 ? telefone : "") + "?text=" + encodeURIComponent(texto.join("\n"));
+
+  const acoes = document.createElement("div");
+  acoes.className = "rc-acoes";
+  const zap = document.createElement("a");
+  zap.className = "btn rc-zap";
+  zap.href = link;
+  zap.target = "_blank";
+  zap.rel = "noopener";
+  zap.textContent = telefone.length >= 12 ? "Enviar para " + (nomeCliente.split(" ")[0] || "o cliente") + " no WhatsApp" : "Enviar no WhatsApp";
+  acoes.appendChild(zap);
+  acoes.appendChild(criarBotao("Imprimir", "btn btn-ghost", function () { window.print(); }));
+  acoes.appendChild(criarBotao("Fechar", "btn btn-ghost", fecharRecibo));
+  caixa.appendChild(acoes);
+
+  rcFundo.appendChild(caixa);
+  rcFundo.hidden = false;
+}
+
+// Esta versão de desenharVendas substitui a anterior: cada venda ganha o botão Recibo.
+function desenharVendas() {
+  if (vdVendas.length === 0) {
+    vdMensagem(listaVendasEl, "Nenhuma venda registrada ainda.");
+    return;
+  }
+
+  listaVendasEl.innerHTML = "";
+  vdVendas.forEach(function (v) {
+    const cancelada = v.status === "cancelled";
+    const linha = document.createElement("div");
+    linha.className = "list-item";
+    if (cancelada) linha.style.opacity = "0.55";
+
+    const info = document.createElement("div");
+    const titulo = document.createElement("p");
+    titulo.className = "item-title";
+    titulo.textContent = moeda(v.total) + (cancelada ? " · Cancelada" : "");
+    if (cancelada) titulo.style.textDecoration = "line-through";
+
+    const sub = document.createElement("p");
+    sub.className = "item-sub";
+    const data = new Date(v.created_at).toLocaleString("pt-BR", {
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
+    });
+    const c = v.customer_id ? vdBuscarCliente(v.customer_id) : null;
+    sub.textContent = data + " · " + (c ? c.name : "Sem cliente") + " · " +
+      (nomesPagamento[v.payment_method] || v.payment_method);
+
+    const itens = document.createElement("p");
+    itens.className = "item-sub";
+    const lista = vdItensPorVenda[v.id] || [];
+    itens.textContent = lista.length
+      ? lista.map(function (i) { return i.quantity + "× " + i.product_name; }).join(", ")
+      : "Sem itens";
+
+    info.appendChild(titulo);
+    info.appendChild(sub);
+    info.appendChild(itens);
+
+    const acoes = document.createElement("div");
+    acoes.className = "item-actions";
+    if (!cancelada) {
+      if (vdConfirmandoCancelId === v.id) {
+        const pergunta = document.createElement("span");
+        pergunta.className = "item-sub";
+        pergunta.textContent = "Cancelar? O estoque volta.";
+        acoes.appendChild(pergunta);
+        acoes.appendChild(criarBotao("Sim, cancelar", "btn btn-danger btn-small", function () { vdCancelar(v.id); }));
+        acoes.appendChild(criarBotao("Voltar", "btn btn-ghost btn-small", function () {
+          vdConfirmandoCancelId = null;
+          desenharVendas();
+        }));
+      } else {
+        acoes.appendChild(criarBotao("Recibo", "btn btn-small", function () { abrirRecibo(v); }));
+        acoes.appendChild(criarBotao("Cancelar venda", "btn btn-ghost btn-small", function () {
+          vdConfirmandoCancelId = v.id;
+          desenharVendas();
+        }));
+      }
+    }
+
+    linha.appendChild(info);
+    linha.appendChild(acoes);
+    listaVendasEl.appendChild(linha);
+  });
+}
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) {
+      clearTimeout(cxTimer);
+      fecharRecibo();
+    }
+  });
+});
+// FIM DA PARTE 34
 
