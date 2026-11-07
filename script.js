@@ -9278,3 +9278,33 @@ async function abrirFicha(c) {
   }
 }
 // FIM DA PARTE 33
+// ===== PARTE 33b: Ajustes de layout no celular =====
+const estilo33b = document.createElement("style");
+estilo33b.textContent = `
+  @media (max-width: 640px) {
+    #listaClientes .list-item,
+    #listaProdutos .list-item,
+    #listaVendas .list-item,
+    #listaOrcamentos .list-item,
+    #listaFornecedores .list-item {
+      flex-direction: column; align-items: stretch; gap: 12px;
+    }
+    #listaClientes .item-actions,
+    #listaProdutos .item-actions,
+    #listaVendas .item-actions,
+    #listaOrcamentos .item-actions,
+    #listaFornecedores .item-actions {
+      justify-content: flex-start;
+    }
+    #listaClientes .item-actions { padding-left: 58px; }
+    .c33-linha { width: 100%; }
+  }
+  @media (max-width: 700px) {
+    .banner > div:first-child { position: relative; z-index: 2; }
+    .banner .b-arte { z-index: 1; opacity: .18 !important; top: auto; bottom: -6px; right: -26px; }
+    .banner .b-sub { max-width: 30ch; }
+  }
+`;
+document.head.appendChild(estilo33b);
+// FIM DA PARTE 33b
+
