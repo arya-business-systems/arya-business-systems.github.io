@@ -10927,4 +10927,604 @@ iniciarSupabase().then(function (cliente) {
   });
 });
 // FIM DA PARTE 36
+// ===== PARTE 37: ARYA Connect · loja virtual vendendo junto com a física =====
+const estilo37 = document.createElement("style");
+estilo37.textContent = `
+  .cn-hero { position: relative; overflow: hidden; background: #000; color: #fff; border-radius: var(--radius); padding: 30px 28px; margin-bottom: 16px;
+    background: radial-gradient(520px 260px at 90% 0%, rgba(255,255,255,.12), transparent 70%), #000; }
+  .cn-selo { font-family: var(--font-brand); font-size: 12px; letter-spacing: .14em; color: #a1a1aa; }
+  .cn-hero h2 { font-size: 26px; letter-spacing: -.02em; margin: 10px 0 6px; max-width: 560px; line-height: 1.2; }
+  .cn-hero > p { color: #a1a1aa; max-width: 560px; font-size: 14.5px; line-height: 1.5; }
+  .cn-fluxo { display: flex; align-items: center; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+  .cn-no { padding: 9px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .cn-no.arya { background: #fff; color: #000; border-color: #fff; }
+  .cn-seta { flex: 1; min-width: 30px; max-width: 90px; height: 2px; background: rgba(255,255,255,.18); position: relative; overflow: hidden; border-radius: 2px; }
+  .cn-seta::after { content: ""; position: absolute; top: 0; left: -40%; width: 40%; height: 100%; background: #fff; animation: cn-corre 1.8s linear infinite; }
+  .cn-seta.b::after { animation-delay: .9s; }
+  @keyframes cn-corre { to { left: 100%; } }
+  .cn-numeros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 24px; }
+  .cn-numero { background: rgba(255,255,255,.06); border-radius: 14px; padding: 14px; }
+  .cn-numero span { display: block; font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+  .cn-numero strong { display: block; font-size: 22px; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .cn-abas { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .cn-aba { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--border); font-size: 14px; font-weight: 500; }
+  .cn-aba.ativo { background: #000; color: #fff; border-color: #000; }
+  .cn-link { display: flex; gap: 8px; align-items: stretch; }
+  .cn-link code { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); font-size: 12.5px; overflow-wrap: anywhere; line-height: 1.45; }
+  .cn-passos { margin: 16px 0 0 20px; display: grid; gap: 8px; font-size: 14px; line-height: 1.5; }
+  .cn-passos b { font-weight: 600; }
+  .cn-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .cn-status { font-size: 13px; color: var(--muted); }
+  .cn-pedido { border-bottom: 1px solid var(--border); padding: 14px 4px; }
+  .cn-pedido-topo { display: flex; align-items: center; gap: 12px; }
+  .cn-plat { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+  .cn-pedido-info { flex: 1; min-width: 0; }
+  .cn-pedido-valor { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cn-chip { display: inline-block; margin-top: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--surface-2); color: var(--muted); }
+  .cn-chip.ok { background: #000; color: #fff; }
+  .cn-chip.alerta { background: #fef3c7; color: #92400e; }
+  .cn-chip.erro { background: #fee2e2; color: #991b1b; }
+  .cn-detalhe { margin: 12px 0 0 52px; display: grid; gap: 10px; }
+  .cn-item-link { display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: var(--surface-2); font-size: 14px; }
+  .cn-item-link select { height: 42px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); padding: 0 10px; font: inherit; font-size: 14px; width: 100%; }
+  .cn-detalhe .item-actions { justify-content: flex-start; flex-wrap: wrap; }
+  .nav-item .cn-badge, .tab .cn-badge, .mais-item .cn-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #000; color: #fff; font-size: 11px; font-weight: 700; margin-left: auto; font-style: normal; }
+  .tab { position: relative; }
+  .tab .cn-badge { position: absolute; top: 0; right: 18%; margin: 0; }
+  .mais-item .cn-badge { margin-left: auto; }
+  .cn-badge[hidden] { display: none; }
+  @media (max-width: 860px) {
+    .cn-hero { padding: 24px 20px; }
+    .cn-hero h2 { font-size: 22px; }
+    .cn-numero strong { font-size: 18px; }
+    .cn-detalhe { margin-left: 0; }
+    .cn-link { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) { .cn-seta::after { animation: none; } }
+`;
+document.head.appendChild(estilo37);
+
+// ---------- Tela e menu ----------
+titulos.connect = "ARYA Connect";
+const cnView = document.createElement("section");
+cnView.className = "view";
+cnView.id = "view-connect";
+cnView.innerHTML = `
+  <div class="cn-hero">
+    <p class="cn-selo">✦ ARYA CONNECT</p>
+    <h2>Sua loja virtual vendendo junto com a loja física.</h2>
+    <p>Cada pedido pago no site vira venda na ARYA sozinho: baixa o estoque, cadastra o cliente e entra no Caixa e no Pulso. Sem digitar nada.</p>
+    <div class="cn-fluxo"><span class="cn-no">Pedido no site</span><span class="cn-seta"></span><span class="cn-no arya">✦ ARYA</span><span class="cn-seta b"></span><span class="cn-no">Venda + estoque</span></div>
+    <div class="cn-numeros">
+      <div class="cn-numero"><span>Pedidos (30 dias)</span><strong id="cnNumPedidos">—</strong></div>
+      <div class="cn-numero"><span>Viraram venda</span><strong id="cnNumVendas">—</strong></div>
+      <div class="cn-numero"><span>Vendido online</span><strong id="cnNumValor">—</strong></div>
+    </div>
+  </div>
+  <article class="card" style="margin-bottom:16px;">
+    <div class="card-head"><h2>Conectar a loja virtual</h2></div>
+    <div class="cn-abas" id="cnAbas"></div>
+    <p class="item-sub" style="margin-bottom:8px;">Seu link de conexão (é secreto, como uma senha):</p>
+    <div class="cn-link"><code id="cnLink">Carregando...</code><button class="btn" id="cnCopiar" type="button">Copiar link</button></div>
+    <ol class="cn-passos" id="cnPassos"></ol>
+    <div class="cn-acoes">
+      <button class="btn btn-ghost" id="cnTestar" type="button">✦ Testar conexão</button>
+      <button class="btn btn-ghost btn-small" id="cnNovoLink" type="button">Gerar novo link</button>
+      <span class="cn-status" id="cnStatus"></span>
+    </div>
+  </article>
+  <article class="card wide">
+    <div class="card-head"><h2>Pedidos online</h2><button class="btn btn-ghost btn-small" id="cnAtualizar" type="button">Atualizar</button></div>
+    <div id="cnLista"></div>
+  </article>
+`;
+document.querySelector("main.main").appendChild(cnView);
+
+function cnCriarBadge() {
+  const b = document.createElement("i");
+  b.className = "cn-badge";
+  b.hidden = true;
+  return b;
+}
+const cnNavDesk = document.querySelector("#navDesktop .nav-item.soon");
+if (cnNavDesk) {
+  cnNavDesk.disabled = false;
+  cnNavDesk.classList.remove("soon");
+  cnNavDesk.dataset.view = "connect";
+  cnNavDesk.innerHTML = '<span class="ico">⬡</span>Connect';
+  cnNavDesk.appendChild(cnCriarBadge());
+  cnNavDesk.addEventListener("click", function () { mostrarTela("connect"); });
+}
+// No celular, o Connect entra no menu "Mais"
+const cnMaisPainel = document.querySelector(".mais-painel");
+if (cnMaisPainel) {
+  const item = document.createElement("button");
+  item.type = "button";
+  item.className = "mais-item";
+  item.dataset.alvo = "connect";
+  item.innerHTML = '<span class="ico">⬡</span>Connect · Loja virtual';
+  item.appendChild(cnCriarBadge());
+  item.addEventListener("click", function () {
+    if (cnNavDesk) cnNavDesk.click(); else { mostrarTela("connect"); abrirConnect(); }
+    const tab = document.getElementById("tabMais");
+    if (tab) tab.classList.add("active");
+    const fundo = document.querySelector(".mais-fundo");
+    if (fundo) fundo.hidden = true;
+  });
+  const cfg = cnMaisPainel.querySelector('[data-alvo="configuracoes"]');
+  if (cfg) cfg.before(item); else cnMaisPainel.appendChild(item);
+  const tabMais = document.getElementById("tabMais");
+  if (tabMais) tabMais.appendChild(cnCriarBadge());
+}
+
+// ---------- Estado ----------
+const CN_URL_FUNCAO = SUPABASE_URL + "/functions/v1/arya-pedidos";
+let cnToken = null;
+let cnAba = "shopify";
+let cnPedidos = [];
+let cnImportando = false;
+let cnAbertoId = null;
+let cnSemTabela = false;
+const cnEl = function (id) { return document.getElementById(id); };
+
+const CN_PLATAFORMAS = {
+  shopify: { nome: "Shopify", sigla: "S", passos: [
+    "No painel da Shopify, vá em <b>Configurações → Notificações → Webhooks</b>.",
+    "Toque em <b>Criar webhook</b>. Em Evento, escolha <b>Pagamento do pedido</b> (Order payment). Formato: <b>JSON</b>.",
+    "Em URL, cole o link acima e salve.",
+    "Use o <b>mesmo SKU</b> da Shopify no código do produto da ARYA, ou vincule o produto no primeiro pedido."
+  ]},
+  woocommerce: { nome: "WooCommerce", sigla: "W", passos: [
+    "No WordPress, vá em <b>WooCommerce → Configurações → Avançado → Webhooks</b>.",
+    "Toque em <b>Adicionar webhook</b>. Status: <b>Ativo</b>. Tópico: <b>Pedido atualizado</b>.",
+    "Em URL de entrega, cole o link acima e salve.",
+    "Use o <b>mesmo SKU</b> do WooCommerce no código do produto da ARYA, ou vincule o produto no primeiro pedido."
+  ]},
+  outra: { nome: "Outra plataforma", sigla: "✦", passos: [
+    "Na sua plataforma (ou em ferramentas como Zapier e Make), procure por <b>Webhook</b> de pedido novo.",
+    "Cole o link acima e escolha o formato <b>JSON</b>.",
+    "O pedido precisa ter uma lista <b>items</b> com <b>name</b> (nome), <b>quantity</b> (quantidade), <b>price</b> (preço) e, se tiver, <b>sku</b>.",
+    "Nuvemshop: a conexão direta vem numa próxima etapa da ARYA."
+  ]}
+};
+
+function cnLinkDe(plataforma) {
+  return CN_URL_FUNCAO + "?token=" + (cnToken || "...") + "&plataforma=" + plataforma;
+}
+
+function cnDesenharAbas() {
+  const area = cnEl("cnAbas");
+  area.innerHTML = "";
+  Object.keys(CN_PLATAFORMAS).forEach(function (k) {
+    area.appendChild(criarBotao(CN_PLATAFORMAS[k].nome, "cn-aba" + (k === cnAba ? " ativo" : ""), function () {
+      cnAba = k;
+      cnDesenharAbas();
+    }));
+  });
+  cnEl("cnLink").textContent = cnToken ? cnLinkDe(cnAba) : (cnSemTabela ? "Rode primeiro o comando SQL da Parte 37 no Supabase." : "Carregando...");
+  cnEl("cnPassos").innerHTML = CN_PLATAFORMAS[cnAba].passos.map(function (p) { return "<li>" + p + "</li>"; }).join("");
+}
+
+async function cnCarregarToken(novo) {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.rpc("get_connect_token", { p_novo: Boolean(novo) });
+  if (r.error) { cnSemTabela = true; throw r.error; }
+  cnToken = r.data;
+  cnDesenharAbas();
+}
+
+cnEl("cnCopiar").addEventListener("click", async function () {
+  if (!cnToken) return;
+  const link = cnLinkDe(cnAba);
+  try { await navigator.clipboard.writeText(link); avisar("Link copiado ✦"); }
+  catch (e) {
+    const r = document.createRange(); r.selectNodeContents(cnEl("cnLink"));
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    avisar("Selecione e copie o link");
+  }
+});
+
+let cnConfirmarNovo = false;
+cnEl("cnNovoLink").addEventListener("click", async function () {
+  const b = cnEl("cnNovoLink");
+  if (!cnConfirmarNovo) {
+    cnConfirmarNovo = true;
+    b.textContent = "Tem certeza? O link antigo para de funcionar";
+    setTimeout(function () { cnConfirmarNovo = false; b.textContent = "Gerar novo link"; }, 5000);
+    return;
+  }
+  cnConfirmarNovo = false;
+  b.textContent = "Gerar novo link";
+  try { await cnCarregarToken(true); avisar("Novo link criado. Atualize-o na sua loja virtual."); }
+  catch (e) { avisar("Não foi possível gerar: " + (e.message || e)); }
+});
+
+cnEl("cnTestar").addEventListener("click", async function () {
+  const st = cnEl("cnStatus");
+  if (!cnToken) { st.textContent = "Rode primeiro o comando SQL da Parte 37."; return; }
+  st.textContent = "Enviando um pedido de teste...";
+  try {
+    const r = await fetch(CN_URL_FUNCAO + "?token=" + cnToken + "&plataforma=teste", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: "teste-" + Date.now(), number: "TESTE",
+        customer: { name: "Cliente de teste" },
+        total: 99.9, payment: "Pix",
+        items: [{ name: "Produto de teste", quantity: 1, price: 99.9 }]
+      })
+    });
+    const corpo = await r.json().catch(function () { return {}; });
+    if (!r.ok || !corpo.ok) throw new Error(corpo.erro || corpo.msg || ("código " + r.status));
+    st.textContent = "✦ Conexão funcionando! O pedido de teste chegou (ele não vira venda).";
+    await cnCarregarPedidos();
+  } catch (e) {
+    console.error(e);
+    st.textContent = "A conexão ainda não respondeu: " + (e.message || e) + ". Confira se a função arya-pedidos foi publicada e se a verificação JWT está desligada.";
+  }
+});
+
+// ---------- Casar itens do pedido com produtos da ARYA ----------
+async function cnContexto() {
+  const cliente = await iniciarSupabase();
+  let prod = await cliente.from("products").select("id, name, sale_price, stock_quantity, barcode");
+  if (prod.error) prod = await cliente.from("products").select("id, name, sale_price, stock_quantity");
+  if (prod.error) throw prod.error;
+  const r = await Promise.all([
+    cliente.from("online_links").select("external_key, product_id, variant_id"),
+    cliente.from("customers").select("id, name, email, phone"),
+    carregarGrade()
+  ]);
+  if (r[0].error) throw r[0].error;
+  if (r[1].error) throw r[1].error;
+  const links = {};
+  (r[0].data || []).forEach(function (l) { links[l.external_key] = l; });
+  return { produtos: prod.data || [], links: links, clientes: r[1].data || [] };
+}
+
+function cnBaixo(t) { return String(t || "").trim().toLowerCase(); }
+
+function cnCasar(item, ctx) {
+  const l = ctx.links[item.key];
+  if (l && ctx.produtos.some(function (p) { return p.id === l.product_id; })) return { product_id: l.product_id, variant_id: l.variant_id || null };
+  const sku = cnBaixo(item.sku);
+  if (sku) {
+    for (const p of ctx.produtos) {
+      const v = variacoesDe(p.id).find(function (x) { return x.sku && cnBaixo(x.sku) === sku; });
+      if (v) return { product_id: p.id, variant_id: v.id };
+    }
+    const p = ctx.produtos.find(function (x) { return x.barcode && cnBaixo(x.barcode) === sku; });
+    if (p && !variacoesDe(p.id).length) return { product_id: p.id, variant_id: null };
+  }
+  const nome = cnBaixo(item.name);
+  const p = ctx.produtos.find(function (x) { return cnBaixo(x.name) === nome; });
+  if (!p) return null;
+  const vars = variacoesDe(p.id);
+  if (!vars.length) return { product_id: p.id, variant_id: null };
+  const alvo = cnBaixo(item.variant).replace(/\s+/g, "");
+  if (!alvo) return null;
+  const v = vars.find(function (x) {
+    const a = cnBaixo(rotuloVariacao(x)).replace(/\s+/g, "");
+    const b = cnBaixo([x.color, x.size].filter(Boolean).join("/")).replace(/\s+/g, "");
+    return a === alvo || b === alvo;
+  });
+  return v ? { product_id: p.id, variant_id: v.id } : null;
+}
+
+function cnPagamento(texto) {
+  const t = cnBaixo(texto);
+  if (t.includes("pix")) return "pix";
+  if (t.includes("débito") || t.includes("debito") || t.includes("debit")) return "cartao_debito";
+  if (t.includes("crédito") || t.includes("credito") || t.includes("credit") || t.includes("cartão") || t.includes("cartao") || t.includes("card")) return "cartao_credito";
+  if (t.includes("dinheiro") || t.includes("cash")) return "dinheiro";
+  return "outro";
+}
+
+async function cnClienteDoPedido(o, ctx) {
+  const email = cnBaixo(o.customer_email);
+  const fone = String(o.customer_phone || "").replace(/\D/g, "");
+  let c = ctx.clientes.find(function (x) {
+    return (email && cnBaixo(x.email) === email) || (fone.length >= 8 && String(x.phone || "").replace(/\D/g, "").slice(-8) === fone.slice(-8));
+  });
+  if (c) return c.id;
+  if (!o.customer_name) return null;
+  const cliente = await iniciarSupabase();
+  const r = await cliente.from("customers").insert({
+    name: o.customer_name, email: o.customer_email || null, phone: o.customer_phone || null,
+    notes: "Cliente da loja virtual", company_id: await obterEmpresaId()
+  }).select("id, name, email, phone").single();
+  if (r.error) return null;
+  ctx.clientes.push(r.data);
+  return r.data.id;
+}
+
+async function cnImportarPendentes(silencioso) {
+  if (cnImportando || cnSemTabela) return 0;
+  cnImportando = true;
+  let feitos = 0;
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) return 0;
+    const r = await cliente.from("online_orders").select("*").eq("status", "pending").order("received_at", { ascending: true }).limit(20);
+    if (r.error) { cnSemTabela = true; return 0; }
+    if (!(r.data || []).length) return 0;
+    const ctx = await cnContexto();
+
+    for (const o of r.data) {
+      // "Pega" o pedido para não importar duas vezes em dois aparelhos
+      const pega = await cliente.from("online_orders").update({ status: "processing", updated_at: new Date().toISOString() })
+        .eq("id", o.id).eq("status", "pending").select("id");
+      if (pega.error || !(pega.data || []).length) continue;
+
+      const itens = Array.isArray(o.items) ? o.items : [];
+      const casados = itens.map(function (i) { return cnCasar(i, ctx); });
+      const faltam = casados.filter(function (c) { return !c; }).length;
+      if (!itens.length || faltam) {
+        await cliente.from("online_orders").update({
+          status: "needs_link", updated_at: new Date().toISOString(),
+          error: itens.length ? faltam + " item(ns) sem produto ligado na ARYA" : "Pedido sem itens"
+        }).eq("id", o.id);
+        continue;
+      }
+
+      const juntos = [];
+      casados.forEach(function (c, i) {
+        const q = Math.max(1, Math.round(Number(itens[i].quantity) || 1));
+        const ja = juntos.find(function (x) { return x.product_id === c.product_id && (x.variant_id || null) === (c.variant_id || null); });
+        if (ja) ja.quantity += q; else juntos.push({ product_id: c.product_id, variant_id: c.variant_id, quantity: q });
+      });
+      const subtotalArya = juntos.reduce(function (s, x) {
+        const p = ctx.produtos.find(function (pp) { return pp.id === x.product_id; });
+        return s + (p ? Number(p.sale_price) * x.quantity : 0);
+      }, 0);
+      const valorItensOnline = itens.reduce(function (s, i) { return s + Number(i.price || 0) * Number(i.quantity || 1); }, 0) - Number(o.discount || 0);
+      const desconto = Math.min(subtotalArya, Math.max(0, Math.round((subtotalArya - valorItensOnline) * 100) / 100));
+
+      try {
+        const idCliente = await cnClienteDoPedido(o, ctx);
+        const plat = CN_PLATAFORMAS[o.platform] ? CN_PLATAFORMAS[o.platform].nome : o.platform;
+        const venda = await cliente.rpc("create_sale", {
+          p_items: juntos.map(function (x) {
+            const it = { product_id: x.product_id, quantity: x.quantity };
+            if (x.variant_id) it.variant_id = x.variant_id;
+            return it;
+          }),
+          p_payment_method: cnPagamento(o.payment),
+          p_customer_id: idCliente,
+          p_discount: desconto,
+          p_notes: "Online · " + plat + " " + (o.order_number || "")
+        });
+        if (venda.error) throw venda.error;
+        const d = venda.data;
+        const idVenda = typeof d === "string" ? d : d && (d.id || d.sale_id) ? (d.id || d.sale_id) : null;
+        await cliente.from("online_orders").update({ status: "imported", sale_id: idVenda, error: null, updated_at: new Date().toISOString() }).eq("id", o.id);
+        feitos++;
+      } catch (e) {
+        await cliente.from("online_orders").update({ status: "error", error: (e && e.message) || String(e), updated_at: new Date().toISOString() }).eq("id", o.id);
+      }
+    }
+    if (feitos) {
+      avisar("✦ " + feitos + " pedido(s) online viraram venda");
+      if (typeof carregarVendas === "function") carregarVendas();
+    }
+  } catch (e) {
+    console.error("Connect:", e);
+  } finally {
+    cnImportando = false;
+    if (!cnSemTabela) cnCarregarPedidos(true);
+  }
+  return feitos;
+}
+
+// ---------- Lista de pedidos ----------
+async function cnCarregarPedidos(semImportar) {
+  const lista = cnEl("cnLista");
+  try {
+    const cliente = await iniciarSupabase();
+    const desde = new Date(Date.now() - 30 * 86400000).toISOString();
+    const r = await cliente.from("online_orders").select("*").gte("received_at", desde).order("received_at", { ascending: false }).limit(60);
+    if (r.error) { cnSemTabela = true; throw r.error; }
+    cnSemTabela = false;
+    cnPedidos = r.data || [];
+    cnDesenharPedidos();
+    cnAtualizarBadge();
+    if (!semImportar && cnPedidos.some(function (o) { return o.status === "pending"; })) cnImportarPendentes();
+  } catch (e) {
+    lista.innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = cnSemTabela ? "Para ativar o Connect, rode o comando SQL da Parte 37 no Supabase." : "Não foi possível carregar os pedidos: " + (e.message || e);
+    lista.appendChild(p);
+  }
+}
+
+function cnAtualizarBadge() {
+  const n = cnPedidos.filter(function (o) { return o.status === "needs_link" || o.status === "error"; }).length;
+  document.querySelectorAll(".cn-badge").forEach(function (b) { b.textContent = n; b.hidden = !n; });
+}
+
+const CN_STATUS = {
+  pending: ["Chegou · importando", ""], processing: ["Importando...", ""],
+  needs_link: ["Ligar produtos", "alerta"], imported: ["✓ Virou venda", "ok"],
+  ignored: ["Ignorado", ""], test: ["Teste recebido ✦", "ok"], error: ["Não importado", "erro"]
+};
+
+function cnDesenharPedidos() {
+  const lista = cnEl("cnLista");
+  lista.innerHTML = "";
+  const validos = cnPedidos.filter(function (o) { return o.status !== "test"; });
+  const importados = validos.filter(function (o) { return o.status === "imported"; });
+  cnEl("cnNumPedidos").textContent = validos.length;
+  cnEl("cnNumVendas").textContent = importados.length;
+  cnEl("cnNumValor").textContent = moedaCurta(importados.reduce(function (s, o) { return s + Number(o.total); }, 0));
+
+  if (!cnPedidos.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Nenhum pedido online ainda. Conecte a loja virtual acima e os pedidos aparecem aqui sozinhos.";
+    lista.appendChild(p);
+    return;
+  }
+  cnPedidos.forEach(function (o) {
+    const caixa = document.createElement("div");
+    caixa.className = "cn-pedido";
+    const topo = document.createElement("div");
+    topo.className = "cn-pedido-topo";
+    const plat = document.createElement("span");
+    plat.className = "cn-plat";
+    plat.textContent = CN_PLATAFORMAS[o.platform] ? CN_PLATAFORMAS[o.platform].sigla : o.platform === "teste" ? "T" : "✦";
+    const info = document.createElement("div");
+    info.className = "cn-pedido-info";
+    const t = document.createElement("p");
+    t.className = "item-title";
+    t.textContent = (o.order_number || "Pedido") + (o.customer_name ? " · " + o.customer_name : "");
+    const s = document.createElement("p");
+    s.className = "item-sub";
+    const qtd = (o.items || []).reduce(function (a, i) { return a + Number(i.quantity || 1); }, 0);
+    s.textContent = new Date(o.received_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) +
+      " · " + qtd + " item(ns)" + (o.error && o.status !== "imported" ? " · " + o.error : "");
+    const chip = document.createElement("span");
+    const st = CN_STATUS[o.status] || [o.status, ""];
+    chip.className = "cn-chip " + st[1];
+    chip.textContent = st[0];
+    info.appendChild(t);
+    info.appendChild(s);
+    info.appendChild(chip);
+    const valor = document.createElement("div");
+    valor.className = "cn-pedido-valor";
+    valor.textContent = moeda(o.total);
+    topo.appendChild(plat);
+    topo.appendChild(info);
+    topo.appendChild(valor);
+    caixa.appendChild(topo);
+
+    const det = document.createElement("div");
+    det.className = "cn-detalhe";
+    const acoes = document.createElement("div");
+    acoes.className = "item-actions";
+    if (o.status === "needs_link") {
+      if (cnAbertoId === o.id) cnDesenharVinculo(o, det);
+      else acoes.appendChild(criarBotao("Ligar produtos", "btn btn-small", function () { cnAbertoId = o.id; cnDesenharPedidos(); }));
+    }
+    if (o.status === "error") acoes.appendChild(criarBotao("Tentar de novo", "btn btn-small", function () { cnReabrir(o); }));
+    if (o.status === "needs_link" || o.status === "error") acoes.appendChild(criarBotao("Ignorar", "btn btn-ghost btn-small", function () { cnMudarStatus(o, "ignored"); }));
+    if (o.status === "test" || o.status === "ignored") acoes.appendChild(criarBotao("Apagar", "btn btn-ghost btn-small", function () { cnApagar(o); }));
+    if (acoes.children.length) det.appendChild(acoes);
+    if (det.children.length) caixa.appendChild(det);
+    lista.appendChild(caixa);
+  });
+}
+
+async function cnDesenharVinculo(o, det) {
+  det.innerHTML = '<p class="item-sub">Carregando produtos...</p>';
+  let ctx;
+  try { ctx = await cnContexto(); } catch (e) { det.textContent = "Erro: " + (e.message || e); return; }
+  det.innerHTML = "";
+  const intro = document.createElement("p");
+  intro.className = "item-sub";
+  intro.textContent = "Diga qual produto da ARYA é cada item. A ARYA lembra disso nos próximos pedidos.";
+  det.appendChild(intro);
+  const escolhas = [];
+  (o.items || []).forEach(function (item) {
+    if (cnCasar(item, ctx)) return;
+    const bloco = document.createElement("div");
+    bloco.className = "cn-item-link";
+    const n = document.createElement("b");
+    n.textContent = item.quantity + "× " + item.name + (item.variant ? " (" + item.variant + ")" : "") + (item.sku ? " · SKU " + item.sku : "");
+    const selP = document.createElement("select");
+    selP.innerHTML = '<option value="">Escolha o produto da ARYA</option>';
+    ctx.produtos.slice().sort(function (a, b) { return a.name.localeCompare(b.name, "pt-BR"); }).forEach(function (p) {
+      const op = document.createElement("option");
+      op.value = p.id;
+      op.textContent = p.name;
+      selP.appendChild(op);
+    });
+    const selV = document.createElement("select");
+    selV.hidden = true;
+    selP.addEventListener("change", function () {
+      const vars = variacoesDe(selP.value);
+      selV.innerHTML = '<option value="">Escolha a variação</option>';
+      vars.forEach(function (v) {
+        const op = document.createElement("option");
+        op.value = v.id;
+        op.textContent = rotuloVariacao(v) || "Padrão";
+        selV.appendChild(op);
+      });
+      selV.hidden = !vars.length;
+    });
+    bloco.appendChild(n);
+    bloco.appendChild(selP);
+    bloco.appendChild(selV);
+    det.appendChild(bloco);
+    escolhas.push({ item: item, selP: selP, selV: selV });
+  });
+  const erro = document.createElement("p");
+  erro.className = "form-error";
+  const acoes = document.createElement("div");
+  acoes.className = "item-actions";
+  acoes.appendChild(criarBotao("Salvar e importar", "btn btn-small", async function () {
+    erro.textContent = "";
+    for (const e of escolhas) {
+      if (!e.selP.value || (!e.selV.hidden && !e.selV.value)) { erro.textContent = "Escolha o produto (e a variação) de todos os itens."; return; }
+    }
+    try {
+      const cliente = await iniciarSupabase();
+      const empresa = await obterEmpresaId();
+      const linhas = escolhas.map(function (e) {
+        return { company_id: empresa, external_key: e.item.key, product_id: e.selP.value, variant_id: e.selV.hidden ? null : e.selV.value };
+      });
+      const r = await cliente.from("online_links").upsert(linhas, { onConflict: "company_id,external_key" });
+      if (r.error) throw r.error;
+      cnAbertoId = null;
+      await cnReabrir(o);
+    } catch (e) {
+      erro.textContent = e.message || String(e);
+    }
+  }));
+  acoes.appendChild(criarBotao("Cancelar", "btn btn-ghost btn-small", function () { cnAbertoId = null; cnDesenharPedidos(); }));
+  det.appendChild(erro);
+  det.appendChild(acoes);
+}
+
+async function cnMudarStatus(o, status) {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.from("online_orders").update({ status: status, updated_at: new Date().toISOString() }).eq("id", o.id);
+  if (r.error) { avisar("Erro: " + r.error.message); return; }
+  await cnCarregarPedidos(true);
+}
+async function cnReabrir(o) {
+  await cnMudarStatus(o, "pending");
+  await cnImportarPendentes();
+}
+async function cnApagar(o) {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.from("online_orders").delete().eq("id", o.id);
+  if (r.error) { avisar("Erro: " + r.error.message); return; }
+  await cnCarregarPedidos(true);
+}
+
+cnEl("cnAtualizar").addEventListener("click", function () { cnCarregarPedidos(); });
+
+async function abrirConnect() {
+  cnDesenharAbas();
+  try { if (!cnToken) await cnCarregarToken(false); } catch (e) { console.error(e); cnDesenharAbas(); }
+  await cnCarregarPedidos();
+}
+document.querySelectorAll('[data-view="connect"]').forEach(function (b) { b.addEventListener("click", abrirConnect); });
+
+// Importa sozinho: ao entrar, a cada minuto e ao voltar para o app
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) {
+      cnToken = null; cnPedidos = []; cnSemTabela = false; cnAbertoId = null;
+      cnAtualizarBadge();
+      return;
+    }
+    setTimeout(function () { cnImportarPendentes(true); }, 1500);
+  });
+});
+setInterval(function () { if (document.visibilityState === "visible") cnImportarPendentes(true); }, 60000);
+document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") cnImportarPendentes(true); });
+// FIM DA PARTE 37
 
