@@ -7197,3 +7197,9 @@ async function carregarOrcamentos() {
   }
 }
 // FIM DA PARTE 24d
+// ===== PARTE 25: abrir "Criar conta" vindo da página de apresentação =====
+if (window.location.hash === "#criar") {
+  definirModo(true);
+  history.replaceState(null, "", window.location.pathname);
+}
+// FIM DA PARTE 25
