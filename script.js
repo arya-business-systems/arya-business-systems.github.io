@@ -8959,3 +8959,322 @@ iniciarSupabase().then(function (cliente) {
   });
 });
 // FIM DA PARTE 32
+// ===== PARTE 33: Ficha do cliente (avatar, etiquetas, WhatsApp e gráfico de compras) =====
+const estilo33 = document.createElement("style");
+estilo33.textContent = `
+  .c33-linha { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
+  .c33-av {
+    width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; color: #fff;
+    display: grid; place-items: center; font-weight: 600; font-size: 15px; letter-spacing: .02em;
+  }
+  .c33-av.grande { width: 64px; height: 64px; font-size: 22px; }
+  .c33-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .c33-tag { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 9px; border: 1px solid var(--border); color: var(--muted); }
+  .c33-tag.vip { background: #000; color: #fff; border-color: #000; }
+  .c33-tag.fiel { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+  .c33-tag.novo { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+  .c33-tag.sumido { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+  .c33-resumo { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  a.c33-zap { text-decoration: none; }
+  .c33-topo { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .c33-topo h3 { margin: 0; font-size: 20px; letter-spacing: -.01em; }
+  .c33-topo .c33-acoes { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .c33-graf-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
+  .c33-graf { display: flex; align-items: flex-end; gap: 10px; height: 130px; margin-top: 10px; }
+  .c33-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; cursor: pointer; }
+  .c33-barra { width: 100%; max-width: 44px; min-height: 3px; border-radius: 7px 7px 3px 3px; background: var(--text); transform-origin: bottom; animation: c33-cresce .7s cubic-bezier(.2,.8,.2,1) backwards; }
+  .c33-barra.vazia { background: var(--border); }
+  .c33-col.sel .c33-barra { background: #16a34a; }
+  .c33-val { font-size: 11px; font-weight: 600; color: var(--muted); min-height: 14px; white-space: nowrap; }
+  .c33-mes { font-size: 12px; color: var(--muted); text-transform: capitalize; }
+  @keyframes c33-cresce { from { transform: scaleY(0); } }
+  @media (prefers-reduced-motion: reduce) { .c33-barra { animation: none; } }
+`;
+document.head.appendChild(estilo33);
+
+const C33_CORES = ["#0a0a0a", "#3f3f46", "#16a34a", "#2563eb", "#7c3aed", "#d97706", "#db2777", "#0891b2"];
+let c33Stats = {};
+
+function c33Cor(texto) {
+  let h = 0;
+  String(texto || "").split("").forEach(function (ch) { h = (h * 31 + ch.charCodeAt(0)) >>> 0; });
+  return C33_CORES[h % C33_CORES.length];
+}
+
+function c33Iniciais(nome) {
+  const partes = String(nome || "?").trim().split(/\s+/);
+  const a = partes[0] ? partes[0].charAt(0) : "?";
+  const b = partes.length > 1 ? partes[partes.length - 1].charAt(0) : "";
+  return (a + b).toUpperCase();
+}
+
+function c33Avatar(c, grande) {
+  const av = document.createElement("div");
+  av.className = "c33-av" + (grande ? " grande" : "");
+  av.style.background = c33Cor(c.id || c.name);
+  av.textContent = c33Iniciais(c.name);
+  av.setAttribute("aria-hidden", "true");
+  return av;
+}
+
+function c33Dias(data) {
+  const d = new Date(data); d.setHours(0, 0, 0, 0);
+  const h = new Date(); h.setHours(0, 0, 0, 0);
+  return Math.round((h - d) / 86400000);
+}
+
+function c33Etiquetas(c) {
+  const s = c33Stats[c.id];
+  const tags = [];
+  if (s && s.vip) tags.push(["VIP", "vip"]);
+  else if (s && s.qtd >= 3) tags.push(["Fiel", "fiel"]);
+  if (c33Dias(c.created_at) <= 30 && (!s || s.qtd <= 1)) tags.push(["Novo", "novo"]);
+  if (s && s.qtd > 0 && c33Dias(s.ultima) > 60) tags.push(["Sumido", "sumido"]);
+  if (!s && c33Dias(c.created_at) > 30) tags.push(["Sem compras", ""]);
+  return tags.slice(0, 2);
+}
+
+function c33Tags(c) {
+  const area = document.createElement("div");
+  area.className = "c33-tags";
+  c33Etiquetas(c).forEach(function (t) {
+    const s = document.createElement("span");
+    s.className = "c33-tag " + t[1];
+    s.textContent = t[0];
+    area.appendChild(s);
+  });
+  return area;
+}
+
+function c33Whats(c) {
+  let d = String(c.phone || "").replace(/\D/g, "");
+  if (d.length === 10 || d.length === 11) d = "55" + d;
+  if (d.length < 12) return null;
+  const loja = document.querySelector(".sidebar-foot").textContent.trim();
+  const msg = "Oi, " + String(c.name).trim().split(" ")[0] + "! Tudo bem? Aqui é da " + loja + ".";
+  return "https://wa.me/" + d + "?text=" + encodeURIComponent(msg);
+}
+
+function c33BotaoZap(c, classe) {
+  const link = c33Whats(c);
+  if (!link) return null;
+  const a = document.createElement("a");
+  a.className = classe + " c33-zap";
+  a.href = link;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = "WhatsApp";
+  return a;
+}
+
+// Esta versão de carregarClientes substitui a anterior: também calcula as compras de cada cliente.
+async function carregarClientes() {
+  mostrarMensagemLista("Carregando clientes...");
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) {
+      mostrarMensagemLista("Entre na sua conta para ver os clientes.");
+      return;
+    }
+    const umAno = new Date(Date.now() - 365 * 86400000);
+    const r = await Promise.all([
+      cliente.from("customers").select("id, name, phone, email, notes, created_at").order("created_at", { ascending: false }),
+      cliente.from("sales").select("customer_id, total, created_at")
+        .not("customer_id", "is", null).neq("status", "cancelled").gte("created_at", umAno.toISOString())
+    ]);
+    r.forEach(function (x) { if (x.error) throw x.error; });
+
+    const stats = {};
+    (r[1].data || []).forEach(function (v) {
+      const s = stats[v.customer_id] || (stats[v.customer_id] = { qtd: 0, total: 0, ultima: v.created_at });
+      s.qtd += 1;
+      s.total += Number(v.total);
+      if (new Date(v.created_at) > new Date(s.ultima)) s.ultima = v.created_at;
+    });
+    // VIP: os 10% que mais gastaram (pelo menos 1), com 2 compras ou mais
+    const ranking = Object.keys(stats).filter(function (id) { return stats[id].qtd >= 2; })
+      .sort(function (a, b) { return stats[b].total - stats[a].total; });
+    ranking.slice(0, Math.max(1, Math.ceil(ranking.length * 0.1))).forEach(function (id) { stats[id].vip = true; });
+
+    c33Stats = stats;
+    clientesCache = r[0].data || [];
+    confirmandoId = null;
+    desenharClientes();
+  } catch (e) {
+    console.error(e);
+    mostrarMensagemLista("Não foi possível carregar os clientes: " + (e.message || e));
+  }
+}
+
+// Esta versão de desenharClientes substitui a anterior.
+function desenharClientes() {
+  const termo = clBuscaEl.value.trim().toLowerCase();
+  const filtrados = clientesCache.filter(function (c) {
+    return c.name.toLowerCase().includes(termo);
+  });
+
+  if (filtrados.length === 0) {
+    mostrarMensagemLista(clientesCache.length === 0
+      ? "Nenhum cliente cadastrado ainda."
+      : "Nenhum cliente encontrado para essa pesquisa.");
+    return;
+  }
+
+  listaClientesEl.innerHTML = "";
+  filtrados.forEach(function (c) {
+    const s = c33Stats[c.id];
+    const linha = document.createElement("div");
+    linha.className = "list-item";
+
+    const esquerda = document.createElement("div");
+    esquerda.className = "c33-linha";
+    esquerda.appendChild(c33Avatar(c, false));
+    const info = document.createElement("div");
+    info.style.minWidth = "0";
+    const nome = document.createElement("p");
+    nome.className = "item-title";
+    nome.textContent = c.name;
+    const contato = document.createElement("p");
+    contato.className = "item-sub";
+    const partes = [c.phone, c.email].filter(Boolean);
+    contato.textContent = partes.length ? partes.join(" · ") : "Sem contato";
+    const resumo = document.createElement("p");
+    resumo.className = "c33-resumo";
+    resumo.textContent = s
+      ? moeda(s.total) + " em " + s.qtd + (s.qtd === 1 ? " compra" : " compras") +
+        " · última " + (c33Dias(s.ultima) === 0 ? "hoje" : "há " + c33Dias(s.ultima) + " dia(s)")
+      : "Nenhuma compra no último ano";
+    info.appendChild(nome);
+    info.appendChild(contato);
+    info.appendChild(c33Tags(c));
+    info.appendChild(resumo);
+    esquerda.appendChild(info);
+
+    const acoes = document.createElement("div");
+    acoes.className = "item-actions";
+    if (confirmandoId === c.id) {
+      const pergunta = document.createElement("span");
+      pergunta.className = "item-sub";
+      pergunta.textContent = "Excluir?";
+      acoes.appendChild(pergunta);
+      acoes.appendChild(criarBotao("Sim, excluir", "btn btn-danger btn-small", function () { excluirCliente(c.id); }));
+      acoes.appendChild(criarBotao("Cancelar", "btn btn-ghost btn-small", function () {
+        confirmandoId = null;
+        desenharClientes();
+      }));
+    } else {
+      const zap = c33BotaoZap(c, "btn btn-ghost btn-small");
+      if (zap) acoes.appendChild(zap);
+      acoes.appendChild(criarBotao("Ficha", "btn btn-small", function () {
+        confirmandoId = null;
+        abrirFicha(c);
+      }));
+      acoes.appendChild(criarBotao("Editar", "btn btn-ghost btn-small", function () {
+        confirmandoId = null;
+        fecharHistorico();
+        abrirFormulario(c);
+      }));
+      acoes.appendChild(criarBotao("Excluir", "btn btn-ghost btn-small", function () {
+        confirmandoId = c.id;
+        desenharClientes();
+      }));
+    }
+
+    linha.appendChild(esquerda);
+    linha.appendChild(acoes);
+    listaClientesEl.appendChild(linha);
+  });
+}
+
+// ---------- Ficha (o painel de histórico ganha topo e gráfico) ----------
+const c33Topo = document.createElement("div");
+c33Topo.className = "c33-topo";
+const hiCabecalho = document.getElementById("hiTitulo").closest(".card-head");
+hiCabecalho.after(c33Topo);
+document.getElementById("hiTitulo").textContent = "Ficha do cliente";
+
+const c33GrafCard = document.createElement("div");
+c33GrafCard.className = "c33-graf-card";
+c33GrafCard.innerHTML = '<p class="label">Compras nos últimos 6 meses</p><div class="c33-graf" id="c33Graf"></div>';
+document.querySelector("#painelHistorico .hi-stats").after(c33GrafCard);
+
+async function abrirFicha(c) {
+  abrirHistorico(c);
+  document.getElementById("hiTitulo").textContent = "Ficha do cliente";
+
+  c33Topo.innerHTML = "";
+  c33Topo.appendChild(c33Avatar(c, true));
+  const textos = document.createElement("div");
+  const h = document.createElement("h3");
+  h.textContent = c.name;
+  const sub = document.createElement("p");
+  sub.className = "item-sub";
+  sub.textContent = "Cliente desde " + new Date(c.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) +
+    ([c.phone, c.email].filter(Boolean).length ? " · " + [c.phone, c.email].filter(Boolean).join(" · ") : "");
+  textos.appendChild(h);
+  textos.appendChild(sub);
+  textos.appendChild(c33Tags(c));
+  c33Topo.appendChild(textos);
+  const acoes = document.createElement("div");
+  acoes.className = "c33-acoes";
+  const zap = c33BotaoZap(c, "btn btn-small");
+  if (zap) acoes.appendChild(zap);
+  acoes.appendChild(criarBotao("Editar", "btn btn-ghost btn-small", function () {
+    fecharHistorico();
+    abrirFormulario(c);
+  }));
+  c33Topo.appendChild(acoes);
+
+  // Gráfico de compras por mês
+  const graf = document.getElementById("c33Graf");
+  graf.innerHTML = "";
+  try {
+    const cliente = await iniciarSupabase();
+    const agora = new Date();
+    const inicio = new Date(agora.getFullYear(), agora.getMonth() - 5, 1);
+    const r = await cliente.from("sales").select("total, created_at")
+      .eq("customer_id", c.id).neq("status", "cancelled").gte("created_at", inicio.toISOString());
+    if (r.error) throw r.error;
+
+    const meses = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+      meses.push({ ano: d.getFullYear(), mes: d.getMonth(), rotulo: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""), total: 0 });
+    }
+    (r.data || []).forEach(function (v) {
+      const d = new Date(v.created_at);
+      const m = meses.find(function (x) { return x.ano === d.getFullYear() && x.mes === d.getMonth(); });
+      if (m) m.total += Number(v.total);
+    });
+    const maximo = Math.max.apply(null, meses.map(function (m) { return m.total; }).concat([0]));
+
+    meses.forEach(function (m, i) {
+      const col = document.createElement("div");
+      col.className = "c33-col";
+      col.title = m.rotulo + ": " + moeda(m.total);
+      const val = document.createElement("span");
+      val.className = "c33-val";
+      val.textContent = m.total > 0 ? moedaCurta(m.total) : "";
+      const barra = document.createElement("div");
+      barra.className = "c33-barra" + (m.total > 0 ? "" : " vazia");
+      barra.style.height = (maximo > 0 ? Math.max(3, Math.round(90 * m.total / maximo)) : 3) + "px";
+      barra.style.animationDelay = (i * 0.06) + "s";
+      const rot = document.createElement("span");
+      rot.className = "c33-mes";
+      rot.textContent = m.rotulo;
+      col.appendChild(val);
+      col.appendChild(barra);
+      col.appendChild(rot);
+      col.addEventListener("click", function () {
+        graf.querySelectorAll(".c33-col").forEach(function (x) { x.classList.remove("sel"); });
+        col.classList.add("sel");
+        val.textContent = moeda(m.total);
+      });
+      graf.appendChild(col);
+    });
+  } catch (e) {
+    console.error("Ficha do cliente:", e);
+  }
+}
+// FIM DA PARTE 33
