@@ -6097,3 +6097,133 @@ iniciarSupabase().then(function (cliente) {
   });
 });
 // FIM DA PARTE 22b
+// ===== PARTE 23: Botão "Mais" na barra de baixo (celular) =====
+const MAIS_ITENS = [
+  { view: "fornecedores", ico: "▤", nome: "Fornecedores" },
+  { view: "orcamentos", ico: "◇", nome: "Orçamentos" },
+  { view: "relatorios", ico: "▥", nome: "Relatórios" },
+  { view: "cresce", ico: "◎", nome: "Cresce" },
+  { view: "configuracoes", ico: "⚙", nome: "Configurações" }
+];
+
+const estiloMais = document.createElement("style");
+estiloMais.textContent = `
+  @media (max-width: 768px) {
+    .bottombar { grid-template-columns: repeat(6, 1fr) !important; }
+  }
+  .mais-fundo {
+    position: fixed; inset: 0; z-index: 90;
+    background: rgba(10, 10, 10, .35);
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  }
+  .mais-fundo[hidden] { display: none; }
+  .mais-painel {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
+    box-shadow: var(--shadow-lg);
+    animation: maisSobe .22s ease;
+  }
+  @keyframes maisSobe { from { transform: translateY(100%); } to { transform: none; } }
+  .mais-alca { width: 40px; height: 4px; border-radius: 999px; background: var(--border-strong); margin: 0 auto 14px; }
+  .mais-titulo { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0 4px 8px; }
+  .mais-item {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    padding: 14px 12px; border-radius: 12px;
+    font-size: 16px; font-weight: 500; text-align: left; color: var(--text);
+  }
+  .mais-item:active { background: var(--surface-2); }
+  .mais-item .ico { width: 22px; font-size: 18px; text-align: center; }
+  .mais-item.ativo { background: var(--surface-2); font-weight: 600; }
+`;
+document.head.appendChild(estiloMais);
+
+const barraBaixo = document.querySelector(".bottombar");
+if (barraBaixo && !document.getElementById("tabMais")) {
+  // Botão "Mais"
+  const tabMais = document.createElement("button");
+  tabMais.id = "tabMais";
+  tabMais.type = "button";
+  tabMais.className = "tab";
+  tabMais.setAttribute("aria-label", "Mais opções");
+  const icoMais = document.createElement("span");
+  icoMais.textContent = "⋯";
+  icoMais.style.fontSize = "16px";
+  tabMais.appendChild(icoMais);
+  tabMais.appendChild(document.createTextNode("Mais"));
+  barraBaixo.appendChild(tabMais);
+
+  // Painel que sobe de baixo
+  const maisFundo = document.createElement("div");
+  maisFundo.className = "mais-fundo";
+  maisFundo.hidden = true;
+  const maisPainel = document.createElement("div");
+  maisPainel.className = "mais-painel";
+  maisPainel.setAttribute("role", "dialog");
+  maisPainel.setAttribute("aria-label", "Mais opções");
+  maisPainel.appendChild(Object.assign(document.createElement("div"), { className: "mais-alca" }));
+  maisPainel.appendChild(Object.assign(document.createElement("p"), { className: "mais-titulo", textContent: "Mais" }));
+
+  let viewAtualMais = null;
+
+  MAIS_ITENS.forEach(function (it) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "mais-item";
+    item.dataset.alvo = it.view;
+    const ico = document.createElement("span");
+    ico.className = "ico";
+    ico.textContent = it.ico;
+    item.appendChild(ico);
+    item.appendChild(document.createTextNode(it.nome));
+    item.addEventListener("click", function () {
+      // Usa o mesmo botão do menu lateral, que já carrega os dados da tela
+      const original = document.querySelector('.nav [data-view="' + it.view + '"]');
+      if (original) original.click();
+      else mostrarTela(it.view);
+      viewAtualMais = it.view;
+      tabMais.classList.add("active");
+      fecharMais();
+    });
+    maisPainel.appendChild(item);
+  });
+
+  maisFundo.appendChild(maisPainel);
+  document.body.appendChild(maisFundo);
+
+  function abrirMais() {
+    maisPainel.querySelectorAll(".mais-item").forEach(function (b) {
+      b.classList.toggle("ativo", b.dataset.alvo === viewAtualMais && tabMais.classList.contains("active"));
+    });
+    maisFundo.hidden = false;
+  }
+  function fecharMais() {
+    maisFundo.hidden = true;
+  }
+
+  tabMais.addEventListener("click", function () {
+    if (maisFundo.hidden) abrirMais();
+    else fecharMais();
+  });
+  maisFundo.addEventListener("click", function (e) {
+    if (e.target === maisFundo) fecharMais();
+  });
+
+  // Ao tocar num botão normal da barra (Início, Clientes...), o "Mais" sai do destaque
+  barraBaixo.querySelectorAll(".tab[data-view]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      tabMais.classList.remove("active");
+      viewAtualMais = null;
+    });
+  });
+  const cfgTopo = document.getElementById("btnCfgTopo");
+  if (cfgTopo) {
+    cfgTopo.addEventListener("click", function () {
+      viewAtualMais = "configuracoes";
+      tabMais.classList.add("active");
+    });
+  }
+}
+// FIM DA PARTE 23
