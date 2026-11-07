@@ -8555,3 +8555,407 @@ iniciarSupabase().then(function (cliente) {
   });
 });
 // FIM DA PARTE 30
+// ===== PARTE 32: Dashboard completo (pagamentos, comparação e atividade de hoje) =====
+const estilo32 = document.createElement("style");
+estilo32.textContent = `
+  .d32-linha { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .d32-rosca { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .d32-centro { position: relative; width: 180px; height: 180px; flex-shrink: 0; }
+  .d32-centro svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .d32-centro circle { fill: none; stroke-width: 22; cursor: pointer; transition: stroke-dasharray .9s cubic-bezier(.2,.8,.2,1), opacity .2s ease; }
+  .d32-txt { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; }
+  .d32-txt strong { display: block; font-size: 18px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .d32-txt span { display: block; max-width: 116px; margin: 0 auto; font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+  .d32-legenda { display: grid; gap: 4px; flex: 1; min-width: 190px; }
+  .d32-leg { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; text-align: left; width: 100%; font-size: 14px; }
+  .d32-leg:hover, .d32-leg.ativo { background: var(--surface-2); }
+  .d32-leg i { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+  .d32-leg b { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .d32-comp { display: grid; gap: 20px; }
+  .d32-comp-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; font-weight: 500; }
+  .d32-var { font-weight: 600; font-size: 13px; color: var(--muted); }
+  .d32-var.sobe { color: var(--success); }
+  .d32-var.desce { color: var(--danger); }
+  .d32-barras { display: grid; gap: 6px; margin-top: 8px; }
+  .d32-b { display: grid; grid-template-columns: 90px 1fr auto; gap: 10px; align-items: center; font-size: 12px; color: var(--muted); }
+  .d32-b .t { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .d32-b .t i { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--text); transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .d32-b.antes .t i { background: var(--border-strong); }
+  .d32-b .v { font-variant-numeric: tabular-nums; color: var(--text); min-width: 86px; text-align: right; }
+  .d32-ev { display: grid; grid-template-columns: 52px 30px 1fr auto; gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); animation: d32-entra .4s ease backwards; }
+  .d32-ev:last-child { border-bottom: 0; }
+  .d32-hora { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .d32-ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; background: var(--surface-2); color: var(--text); }
+  .d32-ic.venda { background: #000; color: #fff; }
+  .d32-ic.ok { background: #dcfce7; color: #15803d; }
+  .d32-ic.canc { background: #fee2e2; color: #b91c1c; }
+  .d32-ev p { font-size: 14px; font-weight: 500; }
+  .d32-ev small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+  .d32-ev b { font-variant-numeric: tabular-nums; font-size: 14px; }
+  .d32-ev b.riscado { text-decoration: line-through; color: var(--muted); }
+  @keyframes d32-entra { from { opacity: 0; transform: translateY(8px); } }
+  @media (max-width: 900px) { .d32-linha { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) {
+    .d32-rosca { justify-content: center; }
+    .d32-ev { grid-template-columns: 44px 30px 1fr; }
+    .d32-ev b { grid-column: 3; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .d32-centro circle, .d32-b .t i { transition: none; }
+    .d32-ev { animation: none; }
+  }
+`;
+document.head.appendChild(estilo32);
+
+const d32Linha = document.createElement("div");
+d32Linha.className = "d32-linha";
+d32Linha.innerHTML = `
+  <article class="card">
+    <div class="card-head"><h2>Formas de pagamento</h2><span class="item-sub">Este mês</span></div>
+    <div class="d32-rosca">
+      <div class="d32-centro">
+        <svg viewBox="0 0 200 200" id="d32Svg" role="img" aria-label="Gráfico das formas de pagamento"></svg>
+        <div class="d32-txt"><div><strong id="d32Centro">—</strong><span id="d32CentroSub">no mês</span></div></div>
+      </div>
+      <div class="d32-legenda" id="d32Legenda"></div>
+    </div>
+  </article>
+  <article class="card">
+    <div class="card-head"><h2>Este mês x mês passado</h2><span class="item-sub" id="d32CompSub"></span></div>
+    <div class="d32-comp" id="d32Comp"></div>
+  </article>
+`;
+const d32Tempo = document.createElement("article");
+d32Tempo.className = "card";
+d32Tempo.style.marginBottom = "16px";
+d32Tempo.innerHTML = `
+  <div class="card-head"><h2 id="d32TempoTitulo">Hoje na loja</h2><span class="item-sub" id="d32TempoSub"></span></div>
+  <div id="d32Lista"></div>
+`;
+const d32Ancora = document.getElementById("dbGrafico").closest(".card");
+d32Ancora.after(d32Linha);
+d32Linha.after(d32Tempo);
+
+const D32_CORES = ["#0a0a0a", "#16a34a", "#71717a", "#a1a1aa", "#d4d4d8"];
+const D32_RAIO = 78;
+const D32_VOLTA = 2 * Math.PI * D32_RAIO;
+let d32Fatias = [];
+let d32TotalMes = 0;
+let d32Selecionada = null;
+let d32Timer = null;
+
+function d32Escrever(el, valor, ehMoeda) {
+  if (typeof contarAte === "function") contarAte(el, valor, ehMoeda);
+  else el.textContent = ehMoeda ? moeda(valor) : String(valor);
+}
+
+function d32Selecionar(chave) {
+  d32Selecionada = d32Selecionada === chave ? null : chave;
+  document.querySelectorAll("#d32Svg circle[data-chave]").forEach(function (c) {
+    c.style.opacity = d32Selecionada && c.dataset.chave !== d32Selecionada ? ".25" : "1";
+  });
+  document.querySelectorAll(".d32-leg").forEach(function (l) {
+    l.classList.toggle("ativo", l.dataset.chave === d32Selecionada);
+  });
+  const centro = document.getElementById("d32Centro");
+  const sub = document.getElementById("d32CentroSub");
+  const f = d32Fatias.find(function (x) { return x.chave === d32Selecionada; });
+  if (f) {
+    centro.textContent = moeda(f.valor);
+    sub.textContent = (nomesPagamento[f.chave] || f.chave) + " · " + Math.round(100 * f.valor / d32TotalMes) + "%";
+  } else {
+    centro.textContent = moeda(d32TotalMes);
+    sub.textContent = "no mês";
+  }
+}
+
+function d32DesenharRosca(vendasMes) {
+  const svg = document.getElementById("d32Svg");
+  const legenda = document.getElementById("d32Legenda");
+  svg.innerHTML = "";
+  legenda.innerHTML = "";
+  d32Selecionada = null;
+
+  const porPag = {};
+  vendasMes.forEach(function (v) {
+    porPag[v.payment_method] = (porPag[v.payment_method] || 0) + Number(v.total);
+  });
+  d32TotalMes = vendasMes.reduce(function (s, v) { return s + Number(v.total); }, 0);
+  d32Fatias = Object.keys(porPag)
+    .map(function (k) { return { chave: k, valor: porPag[k] }; })
+    .sort(function (a, b) { return b.valor - a.valor; });
+
+  const ns = "http://www.w3.org/2000/svg";
+  const fundo = document.createElementNS(ns, "circle");
+  fundo.setAttribute("cx", "100"); fundo.setAttribute("cy", "100"); fundo.setAttribute("r", String(D32_RAIO));
+  fundo.style.stroke = "var(--surface-2)";
+  svg.appendChild(fundo);
+
+  if (d32TotalMes <= 0) {
+    document.getElementById("d32Centro").textContent = "R$ 0,00";
+    document.getElementById("d32CentroSub").textContent = "sem vendas no mês";
+    const vazio = document.createElement("p");
+    vazio.className = "item-sub";
+    vazio.textContent = "Registre vendas para ver como seus clientes pagam.";
+    legenda.appendChild(vazio);
+    return;
+  }
+
+  let deslocamento = 0;
+  const espaco = d32Fatias.length > 1 ? 3 : 0;
+  d32Fatias.forEach(function (f, i) {
+    const cor = D32_CORES[i % D32_CORES.length];
+    const tamanho = Math.max(0, D32_VOLTA * f.valor / d32TotalMes - espaco);
+    const c = document.createElementNS(ns, "circle");
+    c.setAttribute("cx", "100"); c.setAttribute("cy", "100"); c.setAttribute("r", String(D32_RAIO));
+    c.dataset.chave = f.chave;
+    c.style.stroke = cor;
+    c.style.strokeDasharray = "0 " + D32_VOLTA;
+    c.style.strokeDashoffset = String(-deslocamento);
+    c.addEventListener("click", function () { d32Selecionar(f.chave); });
+    svg.appendChild(c);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { c.style.strokeDasharray = tamanho + " " + (D32_VOLTA - tamanho); });
+    });
+    deslocamento += tamanho + espaco;
+
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "d32-leg";
+    item.dataset.chave = f.chave;
+    const quadrado = document.createElement("i");
+    quadrado.style.background = cor;
+    const nome = document.createElement("span");
+    nome.textContent = (nomesPagamento[f.chave] || f.chave) + " · " + Math.round(100 * f.valor / d32TotalMes) + "%";
+    const valor = document.createElement("b");
+    valor.textContent = moeda(f.valor);
+    item.appendChild(quadrado);
+    item.appendChild(nome);
+    item.appendChild(valor);
+    item.addEventListener("click", function () { d32Selecionar(f.chave); });
+    legenda.appendChild(item);
+  });
+
+  document.getElementById("d32CentroSub").textContent = "no mês";
+  d32Escrever(document.getElementById("d32Centro"), d32TotalMes, true);
+}
+
+function d32Variacao(agora, antes) {
+  if (antes <= 0) return agora > 0 ? { texto: "novo", classe: "sobe" } : { texto: "—", classe: "" };
+  const pct = Math.round(100 * (agora - antes) / antes);
+  if (pct === 0) return { texto: "igual", classe: "" };
+  return { texto: (pct > 0 ? "▲ " : "▼ ") + Math.abs(pct) + "%", classe: pct > 0 ? "sobe" : "desce" };
+}
+
+function d32DesenharComparacao(mes, passado, diaLimite) {
+  const area = document.getElementById("d32Comp");
+  area.innerHTML = "";
+  document.getElementById("d32CompSub").textContent = "Até o dia " + diaLimite + " de cada mês";
+
+  function soma(lista) { return lista.reduce(function (s, v) { return s + Number(v.total); }, 0); }
+  const fatA = soma(mes), fatB = soma(passado);
+  const linhas = [
+    { nome: "Faturamento", a: fatA, b: fatB, moeda: true },
+    { nome: "Vendas", a: mes.length, b: passado.length, moeda: false },
+    { nome: "Ticket médio", a: mes.length ? fatA / mes.length : 0, b: passado.length ? fatB / passado.length : 0, moeda: true }
+  ];
+
+  linhas.forEach(function (l) {
+    const bloco = document.createElement("div");
+    const topo = document.createElement("div");
+    topo.className = "d32-comp-topo";
+    const nome = document.createElement("span");
+    nome.textContent = l.nome;
+    const variacao = d32Variacao(l.a, l.b);
+    const v = document.createElement("span");
+    v.className = "d32-var " + variacao.classe;
+    v.textContent = variacao.texto;
+    topo.appendChild(nome);
+    topo.appendChild(v);
+    bloco.appendChild(topo);
+
+    const barras = document.createElement("div");
+    barras.className = "d32-barras";
+    const maior = Math.max(l.a, l.b, 0.0001);
+    [["Este mês", l.a, ""], ["Mês passado", l.b, " antes"]].forEach(function (par) {
+      const linha = document.createElement("div");
+      linha.className = "d32-b" + par[2];
+      const rot = document.createElement("span");
+      rot.textContent = par[0];
+      const trilho = document.createElement("div");
+      trilho.className = "t";
+      const cheio = document.createElement("i");
+      trilho.appendChild(cheio);
+      const val = document.createElement("span");
+      val.className = "v";
+      val.textContent = l.moeda ? moeda(par[1]) : String(par[1]);
+      linha.appendChild(rot);
+      linha.appendChild(trilho);
+      linha.appendChild(val);
+      barras.appendChild(linha);
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { cheio.style.width = Math.round(100 * par[1] / maior) + "%"; });
+      });
+    });
+    bloco.appendChild(barras);
+    area.appendChild(bloco);
+  });
+}
+
+function d32Evento(lista, quando, icone, classe, titulo, detalhe, valor, riscado) {
+  lista.push({ quando: new Date(quando), icone: icone, classe: classe, titulo: titulo, detalhe: detalhe, valor: valor, riscado: riscado });
+}
+
+function d32DesenharTempo(eventos, soHoje) {
+  const area = document.getElementById("d32Lista");
+  area.innerHTML = "";
+  document.getElementById("d32TempoTitulo").textContent = soHoje ? "Hoje na loja" : "Últimas atividades";
+  document.getElementById("d32TempoSub").textContent = soHoje
+    ? eventos.length + (eventos.length === 1 ? " acontecimento" : " acontecimentos")
+    : "Nada hoje ainda. Veja os últimos 7 dias.";
+
+  if (eventos.length === 0) {
+    const vazio = document.createElement("div");
+    vazio.className = "empty";
+    vazio.textContent = "✦ Nenhuma atividade nos últimos 7 dias. Registre uma venda para começar.";
+    area.appendChild(vazio);
+    return;
+  }
+
+  eventos.slice(0, 10).forEach(function (e, i) {
+    const linha = document.createElement("div");
+    linha.className = "d32-ev";
+    linha.style.animationDelay = (i * 0.05) + "s";
+
+    const hora = document.createElement("span");
+    hora.className = "d32-hora";
+    hora.textContent = soHoje
+      ? e.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+      : e.quando.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+
+    const ic = document.createElement("span");
+    ic.className = "d32-ic " + e.classe;
+    ic.textContent = e.icone;
+
+    const texto = document.createElement("p");
+    texto.textContent = e.titulo;
+    const sub = document.createElement("small");
+    sub.textContent = e.detalhe;
+    texto.appendChild(sub);
+
+    linha.appendChild(hora);
+    linha.appendChild(ic);
+    linha.appendChild(texto);
+    if (e.valor !== null) {
+      const v = document.createElement("b");
+      if (e.riscado) v.className = "riscado";
+      v.textContent = moeda(e.valor);
+      linha.appendChild(v);
+    }
+    area.appendChild(linha);
+  });
+}
+
+async function carregarDashboardCompleto() {
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) return;
+
+    const agora = new Date();
+    const hoje = new Date(agora); hoje.setHours(0, 0, 0, 0);
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const inicioPassado = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+    const diasPassado = new Date(agora.getFullYear(), agora.getMonth(), 0).getDate();
+    const diaLimite = Math.min(agora.getDate(), diasPassado);
+    const fimPassado = new Date(agora.getFullYear(), agora.getMonth() - 1, diaLimite,
+      agora.getHours(), agora.getMinutes(), agora.getSeconds());
+    const seteDias = new Date(hoje.getTime() - 6 * 86400000);
+    const desde = inicioPassado < seteDias ? inicioPassado : seteDias;
+
+    const r = await Promise.all([
+      cliente.from("sales").select("id, customer_id, total, payment_method, status, created_at")
+        .gte("created_at", desde.toISOString()).order("created_at", { ascending: false }),
+      cliente.from("customers").select("id, name, created_at"),
+      cliente.from("quotes").select("id, customer_id, status, total, created_at, updated_at")
+        .gte("updated_at", seteDias.toISOString())
+    ]);
+    r.forEach(function (x) { if (x.error) throw x.error; });
+
+    const vendas = r[0].data || [];
+    const clientes = r[1].data || [];
+    const orcamentos = r[2].data || [];
+    const nomes = {};
+    clientes.forEach(function (c) { nomes[c.id] = c.name; });
+    function nomeCli(id) { return id && nomes[id] ? nomes[id] : "Sem cliente"; }
+
+    const validas = vendas.filter(function (v) { return v.status !== "cancelled"; });
+    const doMes = validas.filter(function (v) { return new Date(v.created_at) >= inicioMes; });
+    const doPassado = validas.filter(function (v) {
+      const d = new Date(v.created_at);
+      return d >= inicioPassado && d <= fimPassado;
+    });
+
+    d32DesenharRosca(doMes);
+    d32DesenharComparacao(doMes, doPassado, diaLimite);
+
+    // Linha do tempo
+    const eventos = [];
+    vendas.forEach(function (v) {
+      if (new Date(v.created_at) < seteDias) return;
+      if (v.status === "cancelled") {
+        d32Evento(eventos, v.created_at, "✕", "canc", "Venda cancelada", nomeCli(v.customer_id), Number(v.total), true);
+      } else {
+        d32Evento(eventos, v.created_at, "$", "venda", "Venda · " + nomeCli(v.customer_id),
+          nomesPagamento[v.payment_method] || v.payment_method, Number(v.total), false);
+      }
+    });
+    orcamentos.forEach(function (o) {
+      if (o.status === "converted") {
+        d32Evento(eventos, o.updated_at, "✓", "ok", "Orçamento virou venda", nomeCli(o.customer_id), Number(o.total), false);
+      } else if (o.status === "accepted") {
+        d32Evento(eventos, o.updated_at, "✓", "ok", "Orçamento aceito", nomeCli(o.customer_id), Number(o.total), false);
+      } else if (o.status === "rejected") {
+        d32Evento(eventos, o.updated_at, "✕", "canc", "Orçamento recusado", nomeCli(o.customer_id), Number(o.total), true);
+      } else if (new Date(o.created_at) >= seteDias) {
+        d32Evento(eventos, o.created_at, "◇", "", o.status === "sent" ? "Orçamento enviado" : "Orçamento criado",
+          nomeCli(o.customer_id), Number(o.total), false);
+      }
+    });
+    clientes.forEach(function (c) {
+      if (new Date(c.created_at) >= seteDias) {
+        d32Evento(eventos, c.created_at, "+", "", "Novo cliente", c.name, null, false);
+      }
+    });
+    eventos.sort(function (a, b) { return b.quando - a.quando; });
+
+    const deHoje = eventos.filter(function (e) { return e.quando >= hoje; });
+    d32DesenharTempo(deHoje.length ? deHoje : eventos, deHoje.length > 0);
+  } catch (e) {
+    console.error("Dashboard completo:", e);
+  }
+}
+
+function agendarDashboardCompleto() {
+  clearTimeout(d32Timer);
+  d32Timer = setTimeout(carregarDashboardCompleto, 450);
+}
+
+document.querySelectorAll('[data-view="dashboard"]').forEach(function (botao) {
+  botao.addEventListener("click", agendarDashboardCompleto);
+});
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (sessao) {
+      agendarDashboardCompleto();
+    } else {
+      clearTimeout(d32Timer);
+      document.getElementById("d32Svg").innerHTML = "";
+      document.getElementById("d32Legenda").innerHTML = "";
+      document.getElementById("d32Comp").innerHTML = "";
+      document.getElementById("d32Lista").innerHTML = "";
+    }
+  });
+});
+// FIM DA PARTE 32
