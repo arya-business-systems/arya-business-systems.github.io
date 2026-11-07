@@ -6042,3 +6042,58 @@ iniciarSupabase().then(function (cliente) {
   });
 });
 // FIM DA PARTE 21
+// ===== PARTE 22b: Aceite dos Termos no "Criar conta" =====
+const TERMOS_VERSAO = "2026-11";
+
+const termosCaixa = document.createElement("label");
+termosCaixa.id = "termosCaixa";
+termosCaixa.style.cssText = "display:flex; align-items:flex-start; gap:10px; margin:4px 0 14px; font-size:13px; color:var(--muted); line-height:1.4; cursor:pointer;";
+termosCaixa.innerHTML = `
+  <input id="termosAceite" type="checkbox" style="width:18px; height:18px; flex-shrink:0; margin-top:1px; accent-color:#0a0a0a;" />
+  <span>Li e aceito os <a href="termos.html" target="_blank" rel="noopener" style="color:var(--text); font-weight:600;">Termos de Uso</a>
+  e a <a href="termos.html#privacidade" target="_blank" rel="noopener" style="color:var(--text); font-weight:600;">Política de Privacidade</a> da ARYA.</span>
+`;
+fieldConfirma.after(termosCaixa);
+
+const termosAceite = document.getElementById("termosAceite");
+
+// A caixinha aparece junto com o campo "Confirmar senha" (só no Criar conta)
+function sincronizarTermos() {
+  termosCaixa.style.display = fieldConfirma.hidden ? "none" : "flex";
+  if (fieldConfirma.hidden) termosAceite.checked = false;
+}
+new MutationObserver(sincronizarTermos).observe(fieldConfirma, { attributes: true, attributeFilter: ["hidden"] });
+sincronizarTermos();
+
+// Bloqueia o cadastro sem o aceite (roda antes do envio normal do formulário)
+let termosPendentes = false;
+document.addEventListener("submit", function (evento) {
+  if (evento.target !== formAuth || !modoCadastro) return;
+  if (!termosAceite.checked) {
+    evento.preventDefault();
+    evento.stopPropagation();
+    authErro.textContent = "Para criar a conta, marque que leu e aceita os Termos de Uso e a Política de Privacidade.";
+    termosCaixa.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  termosPendentes = true;
+}, true);
+
+// Guarda na conta a data e a versão dos termos aceitos (comprovação para a LGPD)
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!termosPendentes || !sessao) return;
+    termosPendentes = false;
+    setTimeout(async function () {
+      try {
+        const r = await cliente.auth.updateUser({
+          data: { termos_aceitos_em: new Date().toISOString(), termos_versao: TERMOS_VERSAO }
+        });
+        if (r.error) throw r.error;
+      } catch (e) {
+        console.error("Não foi possível registrar o aceite dos termos:", e);
+      }
+    }, 0);
+  });
+});
+// FIM DA PARTE 22b
