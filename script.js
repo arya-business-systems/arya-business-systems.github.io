@@ -9711,9 +9711,416 @@ iniciarSupabase().then(function (cliente) {
   cliente.auth.onAuthStateChange(function (evento, sessao) {
     if (!sessao) {
       clearTimeout(cxTimer);
-      fecharRecibo();
+      fecharRecibo();h
     }
   });
 });
 // FIM DA PARTE 34
+// ===== PARTE 35: Pulso · Nota de saúde da loja e Pergunte ao Pulso =====
+const estilo35 = document.createElement("style");
+estilo35.textContent = `
+  .sd-card { background: #000; color: #fff; border-radius: var(--radius); padding: 28px; margin-bottom: 16px;
+    display: grid; grid-template-columns: 300px 1fr; gap: 32px; align-items: center;
+    background: radial-gradient(500px 260px at 15% 0%, rgba(255,255,255,.10), transparent 70%), #000; }
+  .sd-medidor { text-align: center; }
+  .sd-arco { position: relative; max-width: 280px; margin: 0 auto; }
+  .sd-medidor svg { width: 100%; max-width: 280px; display: block; margin: 0 auto; }
+  .sd-medidor path { fill: none; stroke-width: 18; stroke-linecap: round; }
+  .sd-trilho { stroke: #27272a; }
+  .sd-cheio { stroke: #fff; stroke-dasharray: 314.16; stroke-dashoffset: 314.16; transition: stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1), stroke .4s ease; }
+  .sd-nota { position: absolute; left: 0; right: 0; bottom: 0; }
+  .sd-nota span { display: block; margin-top: 2px; }
+  .sd-nota strong { display: block; font-size: 54px; font-weight: 600; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .sd-nota span { color: #a1a1aa; font-size: 13px; }
+  .sd-rotulo { margin-top: 14px; font-family: var(--font-brand); font-size: 14px; letter-spacing: .06em; }
+  .sd-pilares { display: grid; gap: 6px; }
+  .sd-pilar { width: 100%; text-align: left; color: #fff; padding: 10px 12px; border-radius: 12px; transition: background .2s ease; }
+  .sd-pilar:hover, .sd-pilar.aberto { background: rgba(255,255,255,.07); }
+  .sd-pilar-topo { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 500; }
+  .sd-pilar-topo b { font-variant-numeric: tabular-nums; color: #a1a1aa; font-weight: 500; }
+  .sd-barra { height: 6px; border-radius: 999px; background: #27272a; margin-top: 8px; overflow: hidden; }
+  .sd-barra i { display: block; height: 100%; width: 0; border-radius: 999px; background: #fff; transition: width 1.1s cubic-bezier(.2,.8,.2,1); }
+  .sd-dica { display: none; font-size: 13px; color: #d4d4d8; margin-top: 8px; line-height: 1.45; }
+  .sd-pilar.aberto .sd-dica { display: block; }
+
+  .pp-card { margin-bottom: 16px; }
+  .pp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .pp-chip { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-weight: 500; transition: background .15s ease, border-color .15s ease; }
+  .pp-chip:hover { border-color: var(--border-strong); }
+  .pp-chip.ativo { background: #000; color: #fff; border-color: #000; }
+  .pp-conversa { display: grid; gap: 10px; margin-top: 16px; }
+  .pp-bolha { max-width: 640px; padding: 13px 16px; border-radius: 18px; font-size: 14.5px; line-height: 1.5; animation: pp-entra .35s ease backwards; }
+  .pp-bolha.voce { justify-self: end; background: #000; color: #fff; border-bottom-right-radius: 6px; }
+  .pp-bolha.pulso { justify-self: start; background: var(--surface-2); border-bottom-left-radius: 6px; }
+  .pp-bolha.pulso b { font-weight: 600; }
+  .pp-bolha ul { margin: 8px 0 0 18px; }
+  .pp-digitando { display: inline-flex; gap: 4px; padding: 14px 16px; background: var(--surface-2); border-radius: 18px; justify-self: start; }
+  .pp-digitando i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: pp-pula 1s infinite; }
+  .pp-digitando i:nth-child(2) { animation-delay: .15s; } .pp-digitando i:nth-child(3) { animation-delay: .3s; }
+  @keyframes pp-entra { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes pp-pula { 50% { transform: translateY(-4px); } }
+  @media (max-width: 860px) { .sd-card { grid-template-columns: 1fr; gap: 18px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .sd-cheio, .sd-barra i { transition: none; }
+    .pp-bolha, .pp-digitando i { animation: none; }
+  }
+`;
+document.head.appendChild(estilo35);
+
+const sdCard = document.createElement("section");
+sdCard.className = "sd-card";
+sdCard.innerHTML = `
+  <div class="sd-medidor">
+    <div class="sd-arco">
+      <svg viewBox="0 0 240 130" aria-hidden="true">
+        <path class="sd-trilho" d="M20 120 A100 100 0 0 1 220 120" />
+        <path class="sd-cheio" id="sdArco" d="M20 120 A100 100 0 0 1 220 120" />
+      </svg>
+      <div class="sd-nota"><strong id="sdNota">—</strong><span>de 100</span></div>
+    </div>
+    <p class="sd-rotulo" id="sdRotulo">Saúde da loja</p>
+  </div>
+  <div>
+    <p class="item-sub" style="color:#a1a1aa; margin-bottom:10px;">A nota soma 5 pilares, cada um de 0 a 20. Toque num pilar para ver como melhorar.</p>
+    <div class="sd-pilares" id="sdPilares"></div>
+  </div>
+`;
+const ppCardPulso = document.createElement("article");
+ppCardPulso.className = "card pp-card";
+ppCardPulso.innerHTML = `
+  <div class="card-head" style="margin-bottom:10px;"><h2>✦ Pergunte ao Pulso</h2><span class="item-sub">Respostas com os números da sua loja</span></div>
+  <div class="pp-chips" id="ppChips"></div>
+  <div class="pp-conversa" id="ppConversa"></div>
+`;
+const puListaEl = document.getElementById("puLista");
+puListaEl.before(sdCard);
+puListaEl.before(ppCardPulso);
+
+let pu35Dados = null;
+const PU35_DIA = 86400000;
+
+async function pu35Itens(cliente, ids) {
+  let todos = [];
+  for (let i = 0; i < ids.length; i += 150) {
+    const r = await cliente.from("sale_items").select("sale_id, product_name, quantity, total, unit_cost").in("sale_id", ids.slice(i, i + 150));
+    if (r.error) throw r.error;
+    todos = todos.concat(r.data || []);
+  }
+  return todos;
+}
+
+async function pu35Carregar() {
+  const cliente = await iniciarSupabase();
+  const desde = new Date(Date.now() - 90 * PU35_DIA);
+  const r = await Promise.all([
+    cliente.from("sales").select("id, total, status, created_at, customer_id").gte("created_at", desde.toISOString()),
+    cliente.from("products").select("name, stock_quantity, min_stock, sale_price, cost_price"),
+    cliente.from("customers").select("id, name"),
+    cliente.from("quotes").select("status, total, updated_at")
+  ]);
+  r.forEach(function (x) { if (x.error) throw x.error; });
+  const vendas = (r[0].data || []).filter(function (v) { return v.status !== "cancelled"; });
+  const itens = vendas.length ? await pu35Itens(cliente, vendas.map(function (v) { return v.id; })) : [];
+  const porVenda = {};
+  vendas.forEach(function (v) { porVenda[v.id] = v; });
+  itens.forEach(function (i) { i.data = porVenda[i.sale_id] ? new Date(porVenda[i.sale_id].created_at) : null; });
+  const nomes = {};
+  (r[2].data || []).forEach(function (c) { nomes[c.id] = c.name; });
+  return { vendas: vendas, itens: itens, produtos: r[1].data || [], nomes: nomes, orcamentos: r[3].data || [] };
+}
+
+function pu35Entre(lista, ini, fim) {
+  return lista.filter(function (v) { const d = new Date(v.created_at); return d >= ini && d < fim; });
+}
+function pu35Soma(lista) { return lista.reduce(function (s, v) { return s + Number(v.total); }, 0); }
+function pu35Limitar(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+function pu35Pilares(d) {
+  const agora = new Date();
+  const ult30 = pu35Entre(d.vendas, new Date(agora - 30 * PU35_DIA), agora);
+  const ant30 = pu35Entre(d.vendas, new Date(agora - 60 * PU35_DIA), new Date(agora - 30 * PU35_DIA));
+  const fat30 = pu35Soma(ult30), fatAnt = pu35Soma(ant30);
+
+  // 1) Vendas
+  let pVendas, dVendas;
+  if (fat30 <= 0) { pVendas = 0; dVendas = "Nenhuma venda nos últimos 30 dias. Registre as vendas da loja para o Pulso começar a enxergar."; }
+  else if (fatAnt <= 0) { pVendas = 16; dVendas = "Você faturou " + moeda(fat30) + " em 30 dias. Ainda não há o mês anterior para comparar."; }
+  else {
+    const pct = (fat30 - fatAnt) / fatAnt * 100;
+    pVendas = Math.round(2 + (pu35Limitar(pct, -50, 30) + 50) / 80 * 18);
+    dVendas = (pct >= 0 ? "As vendas subiram " : "As vendas caíram ") + Math.abs(Math.round(pct)) + "% em relação aos 30 dias anteriores." +
+      (pct < 0 ? " Que tal uma campanha para clientes que sumiram, no Cresce?" : " Continue assim!");
+  }
+
+  // 2) Estoque
+  const comControle = d.produtos;
+  const baixos = comControle.filter(function (p) { return p.stock_quantity <= 0 || (p.min_stock > 0 && p.stock_quantity <= p.min_stock); });
+  let pEstoque, dEstoque;
+  if (!comControle.length) { pEstoque = 0; dEstoque = "Cadastre os seus produtos para a ARYA controlar o estoque."; }
+  else {
+    pEstoque = Math.round(20 * (1 - baixos.length / comControle.length));
+    dEstoque = baixos.length
+      ? baixos.length + " de " + comControle.length + " produto(s) estão zerados ou no limite. Peça reposição antes de perder vendas."
+      : "Nenhum produto zerado ou no limite. Estoque em dia!";
+  }
+
+  // 3) Margem
+  const itens30 = d.itens.filter(function (i) { return i.data && i.data >= new Date(agora - 30 * PU35_DIA); });
+  let receita = itens30.reduce(function (s, i) { return s + Number(i.total); }, 0);
+  let custo = itens30.reduce(function (s, i) { return s + Number(i.unit_cost || 0) * i.quantity; }, 0);
+  let base = "nas vendas dos últimos 30 dias";
+  if (receita <= 0) {
+    const ps = d.produtos.filter(function (p) { return Number(p.sale_price) > 0; });
+    receita = ps.reduce(function (s, p) { return s + Number(p.sale_price); }, 0);
+    custo = ps.reduce(function (s, p) { return s + Number(p.cost_price); }, 0);
+    base = "nos preços cadastrados";
+  }
+  let pMargem, dMargem;
+  if (receita <= 0) { pMargem = 0; dMargem = "Cadastre preço de custo e de venda para a ARYA calcular a sua margem."; }
+  else {
+    const m = (receita - custo) / receita;
+    pMargem = Math.round(pu35Limitar(m / 0.5, 0, 1) * 20);
+    dMargem = "Sua margem média é de " + Math.round(m * 100) + "% " + base + "." +
+      (m < 0.3 ? " Revise preços ou negocie um custo melhor com o fornecedor." : " Boa margem!");
+  }
+
+  // 4) Clientes
+  let pClientes, dClientes;
+  if (!ult30.length) { pClientes = 0; dClientes = "Sem vendas nos últimos 30 dias para avaliar os clientes."; }
+  else {
+    const ident = ult30.filter(function (v) { return v.customer_id; }).length / ult30.length;
+    const compras = {};
+    d.vendas.forEach(function (v) { if (v.customer_id) compras[v.customer_id] = (compras[v.customer_id] || 0) + 1; });
+    const ids = Object.keys(compras);
+    const recompra = ids.length ? ids.filter(function (id) { return compras[id] >= 2; }).length / ids.length : 0;
+    pClientes = Math.round(10 * ident + 10 * Math.min(1, recompra / 0.4));
+    dClientes = Math.round(ident * 100) + "% das vendas têm o cliente identificado e " + Math.round(recompra * 100) +
+      "% dos clientes voltaram a comprar em 90 dias." + (ident < 0.7 ? " Escolha o cliente na venda: é assim que a ARYA lembra dele depois." : "");
+  }
+
+  // 5) Orçamentos
+  const conv = d.orcamentos.filter(function (o) { return o.status === "converted"; }).length;
+  const rec = d.orcamentos.filter(function (o) { return o.status === "rejected"; }).length;
+  const aceitosParados = d.orcamentos.filter(function (o) { return o.status === "accepted"; }).length;
+  let pOrc, dOrc;
+  if (conv + rec >= 3) {
+    const taxa = conv / (conv + rec);
+    pOrc = Math.round(20 * taxa);
+    dOrc = Math.round(taxa * 100) + "% dos orçamentos finalizados viraram venda.";
+  } else {
+    pOrc = 12;
+    dOrc = "Ainda há poucos orçamentos para avaliar. Mande orçamentos pelo WhatsApp direto da ARYA.";
+  }
+  if (aceitosParados) {
+    pOrc = Math.max(0, pOrc - 3 * aceitosParados);
+    dOrc += " " + aceitosParados + " orçamento(s) aceito(s) ainda não viraram venda.";
+  }
+
+  return [
+    { nome: "Vendas", nota: pVendas, dica: dVendas },
+    { nome: "Estoque", nota: pEstoque, dica: dEstoque },
+    { nome: "Margem", nota: pMargem, dica: dMargem },
+    { nome: "Clientes", nota: pClientes, dica: dClientes },
+    { nome: "Orçamentos", nota: pOrc, dica: dOrc }
+  ];
+}
+
+function pu35Desenhar(pilares) {
+  const nota = pilares.reduce(function (s, p) { return s + p.nota; }, 0);
+  const arco = document.getElementById("sdArco");
+  arco.style.strokeDashoffset = "314.16";
+  arco.style.stroke = nota < 40 ? "#f87171" : nota < 70 ? "#fbbf24" : "#ffffff";
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { arco.style.strokeDashoffset = String(314.16 * (1 - nota / 100)); });
+  });
+  const el = document.getElementById("sdNota");
+  if (typeof contarAte === "function") contarAte(el, nota, false); else el.textContent = String(nota);
+  document.getElementById("sdRotulo").textContent =
+    nota >= 90 ? "✦ Excelente" : nota >= 70 ? "Saudável" : nota >= 40 ? "No caminho" : "Precisa de atenção";
+
+  const area = document.getElementById("sdPilares");
+  area.innerHTML = "";
+  pilares.forEach(function (p) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "sd-pilar";
+    const topo = document.createElement("div");
+    topo.className = "sd-pilar-topo";
+    const n = document.createElement("span");
+    n.textContent = p.nome;
+    const v = document.createElement("b");
+    v.textContent = p.nota + " / 20";
+    topo.appendChild(n);
+    topo.appendChild(v);
+    const barra = document.createElement("div");
+    barra.className = "sd-barra";
+    const cheio = document.createElement("i");
+    barra.appendChild(cheio);
+    const dica = document.createElement("p");
+    dica.className = "sd-dica";
+    dica.textContent = p.dica;
+    b.appendChild(topo);
+    b.appendChild(barra);
+    b.appendChild(dica);
+    b.addEventListener("click", function () { b.classList.toggle("aberto"); });
+    area.appendChild(b);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { cheio.style.width = (p.nota / 20 * 100) + "%"; });
+    });
+  });
+}
+
+// ---------- Pergunte ao Pulso ----------
+const PU35_PERGUNTAS = [
+  ["lucro", "Quanto lucrei este mês?"],
+  ["repor", "O que devo repor?"],
+  ["clientes", "Quem são meus melhores clientes?"],
+  ["produto", "Qual meu produto mais vendido?"],
+  ["dia", "Qual é o meu melhor dia?"],
+  ["semana", "Como foi esta semana?"]
+];
+
+function pu35Responder(chave, d) {
+  const agora = new Date();
+  if (chave === "lucro") {
+    const ini = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const doMes = pu35Entre(d.vendas, ini, new Date(agora.getTime() + 1000));
+    const fat = pu35Soma(doMes);
+    const ids = {};
+    doMes.forEach(function (v) { ids[v.id] = true; });
+    const custo = d.itens.filter(function (i) { return ids[i.sale_id]; })
+      .reduce(function (s, i) { return s + Number(i.unit_cost || 0) * i.quantity; }, 0);
+    if (fat <= 0) return "Ainda não há vendas registradas neste mês.";
+    const lucro = fat - custo;
+    return "Neste mês você faturou <b>" + moeda(fat) + "</b> em " + doMes.length + " venda(s). Descontando o custo dos produtos, o lucro bruto foi de <b>" +
+      moeda(lucro) + "</b>, uma margem de " + Math.round(lucro / fat * 100) + "%. <br><small>O lucro bruto não desconta aluguel, salários e taxas.</small>";
+  }
+  if (chave === "repor") {
+    const baixos = d.produtos.filter(function (p) { return p.stock_quantity <= 0 || (p.min_stock > 0 && p.stock_quantity <= p.min_stock); })
+      .sort(function (a, b) { return a.stock_quantity - b.stock_quantity; });
+    if (!baixos.length) return "✦ Nenhum produto está zerado ou no limite agora. Seu estoque está em dia!";
+    return "Estes produtos precisam de reposição:<ul>" + baixos.slice(0, 6).map(function (p) {
+      return "<li><b>" + pu35Esc(p.name) + "</b>: " + (p.stock_quantity <= 0 ? "zerado" : p.stock_quantity + " em estoque, mínimo " + p.min_stock) + "</li>";
+    }).join("") + "</ul>";
+  }
+  if (chave === "clientes") {
+    const tot = {};
+    d.vendas.forEach(function (v) { if (v.customer_id) tot[v.customer_id] = (tot[v.customer_id] || 0) + Number(v.total); });
+    const top = Object.keys(tot).sort(function (a, b) { return tot[b] - tot[a]; }).slice(0, 3);
+    if (!top.length) return "Ainda não há vendas com cliente escolhido. Na próxima venda, selecione o cliente para a ARYA aprender quem compra mais.";
+    return "Seus clientes que mais compraram nos últimos 90 dias:<ul>" + top.map(function (id, i) {
+      return "<li>" + (i + 1) + ". <b>" + pu35Esc(d.nomes[id] || "Cliente") + "</b>: " + moeda(tot[id]) + "</li>";
+    }).join("") + "</ul>Que tal um mimo para eles no ARYA Cresce?";
+  }
+  if (chave === "produto") {
+    const lim = new Date(agora - 30 * PU35_DIA);
+    const qtd = {};
+    d.itens.forEach(function (i) { if (i.data && i.data >= lim) qtd[i.product_name] = (qtd[i.product_name] || 0) + i.quantity; });
+    const top = Object.keys(qtd).sort(function (a, b) { return qtd[b] - qtd[a]; }).slice(0, 3);
+    if (!top.length) return "Ainda não há vendas nos últimos 30 dias.";
+    return "Nos últimos 30 dias, o mais vendido foi <b>" + pu35Esc(top[0]) + "</b>, com " + qtd[top[0]] + " unidade(s)." +
+      (top.length > 1 ? "<ul>" + top.slice(1).map(function (n, i) { return "<li>" + (i + 2) + ". " + pu35Esc(n) + ": " + qtd[n] + " un.</li>"; }).join("") + "</ul>" : "");
+  }
+  if (chave === "dia") {
+    if (d.vendas.length < 5) return "Preciso de pelo menos 5 vendas nos últimos 90 dias para descobrir o seu melhor dia. Hoje há " + d.vendas.length + ".";
+    const nomes = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+    const soma = [0, 0, 0, 0, 0, 0, 0];
+    d.vendas.forEach(function (v) { soma[new Date(v.created_at).getDay()] += Number(v.total); });
+    const melhor = soma.indexOf(Math.max.apply(null, soma));
+    const total = soma.reduce(function (a, b) { return a + b; }, 0);
+    return "Seu melhor dia é <b>" + nomes[melhor] + "</b>: " + moeda(soma[melhor]) + " nos últimos 90 dias, " +
+      Math.round(soma[melhor] / total * 100) + "% do faturamento. Programe posts e promoções para a véspera.";
+  }
+  if (chave === "semana") {
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const ini = new Date(hoje.getTime() - 6 * PU35_DIA);
+    const esta = pu35Entre(d.vendas, ini, new Date(agora.getTime() + 1000));
+    const antes = pu35Entre(d.vendas, new Date(ini.getTime() - 7 * PU35_DIA), ini);
+    const a = pu35Soma(esta), b = pu35Soma(antes);
+    let txt = "Nos últimos 7 dias você vendeu <b>" + moeda(a) + "</b> em " + esta.length + " venda(s).";
+    if (b > 0) {
+      const pct = Math.round((a - b) / b * 100);
+      txt += " Isso é " + Math.abs(pct) + "% " + (pct >= 0 ? "a mais" : "a menos") + " que nos 7 dias anteriores (" + moeda(b) + ").";
+    } else {
+      txt += " Não houve vendas nos 7 dias anteriores para comparar.";
+    }
+    return txt;
+  }
+  return "";
+}
+
+function pu35Esc(t) {
+  return String(t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
+}
+
+function pu35Perguntar(chave, texto, botao) {
+  document.querySelectorAll(".pp-chip").forEach(function (c) { c.classList.toggle("ativo", c === botao); });
+  const conversa = document.getElementById("ppConversa");
+  conversa.innerHTML = "";
+  const voce = document.createElement("div");
+  voce.className = "pp-bolha voce";
+  voce.textContent = texto;
+  conversa.appendChild(voce);
+  const digitando = document.createElement("div");
+  digitando.className = "pp-digitando";
+  digitando.innerHTML = "<i></i><i></i><i></i>";
+  conversa.appendChild(digitando);
+
+  const pronto = pu35Dados ? Promise.resolve(pu35Dados) : pu35Carregar().then(function (d) { pu35Dados = d; return d; });
+  Promise.all([pronto, new Promise(function (r) { setTimeout(r, 700); })]).then(function (res) {
+    digitando.remove();
+    const resp = document.createElement("div");
+    resp.className = "pp-bolha pulso";
+    resp.innerHTML = pu35Responder(chave, res[0]);
+    conversa.appendChild(resp);
+  }).catch(function (e) {
+    console.error(e);
+    digitando.remove();
+    const resp = document.createElement("div");
+    resp.className = "pp-bolha pulso";
+    resp.textContent = "Não consegui buscar os dados agora. Tente de novo em instantes.";
+    conversa.appendChild(resp);
+  });
+}
+
+PU35_PERGUNTAS.forEach(function (p) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "pp-chip";
+  chip.textContent = p[1];
+  chip.addEventListener("click", function () { pu35Perguntar(p[0], p[1], chip); });
+  document.getElementById("ppChips").appendChild(chip);
+});
+
+async function carregarSaude() {
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) return;
+    pu35Dados = await pu35Carregar();
+    pu35Desenhar(pu35Pilares(pu35Dados));
+  } catch (e) {
+    console.error("Saúde da loja:", e);
+  }
+}
+
+document.querySelectorAll('[data-view="intelligence"]').forEach(function (botao) {
+  botao.addEventListener("click", function () {
+    document.getElementById("ppConversa").innerHTML = "";
+    document.querySelectorAll(".pp-chip").forEach(function (c) { c.classList.remove("ativo"); });
+    carregarSaude();
+  });
+});
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) {
+      pu35Dados = null;
+      document.getElementById("ppConversa").innerHTML = "";
+      document.getElementById("sdPilares").innerHTML = "";
+      document.getElementById("sdNota").textContent = "—";
+    }
+  });
+});
+// FIM DA PARTE 35
 
