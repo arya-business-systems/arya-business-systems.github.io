@@ -6227,3 +6227,506 @@ if (barraBaixo && !document.getElementById("tabMais")) {
   }
 }
 // FIM DA PARTE 23
+// ===== PARTE 24c: Grade de tamanhos e cores (tela de Produtos) =====
+const gradePainel = document.createElement("div");
+gradePainel.className = "form-panel";
+gradePainel.id = "painelGrade";
+gradePainel.hidden = true;
+gradePainel.innerHTML = `
+  <div class="card-head" style="margin-bottom:8px;">
+    <h3 id="grTitulo" style="margin:0;">Grade</h3>
+    <button class="btn btn-ghost btn-small" id="btnGrFechar" type="button">Fechar</button>
+  </div>
+  <p class="item-sub" id="grResumo"></p>
+  <p class="item-sub" id="grAviso" style="color:#b45309; margin-top:6px;" hidden></p>
+  <div id="grLista" class="list"></div>
+
+  <div id="grMov" hidden>
+    <h3 style="margin-top:18px;">Movimentar estoque</h3>
+    <div class="field">
+      <label for="grMovVar">Variação</label>
+      <select id="grMovVar"></select>
+    </div>
+    <div class="form-actions" id="grMovTipos">
+      <button class="btn btn-small" type="button" data-tipo="in">Entrada</button>
+      <button class="btn btn-ghost btn-small" type="button" data-tipo="out">Saída</button>
+      <button class="btn btn-ghost btn-small" type="button" data-tipo="adjustment">Ajuste</button>
+    </div>
+    <p class="item-sub" id="grMovDica"></p>
+    <div class="field-row">
+      <div class="field">
+        <label for="grMovQtd" id="grMovQtdLabel">Quantidade</label>
+        <input id="grMovQtd" type="text" inputmode="numeric" placeholder="0" />
+      </div>
+      <div class="field">
+        <label for="grMovMotivo">Motivo (opcional)</label>
+        <input id="grMovMotivo" type="text" placeholder="Ex.: Chegou mercadoria" />
+      </div>
+    </div>
+    <p class="form-error" id="grMovErro" role="alert"></p>
+    <div class="form-actions">
+      <button class="btn" id="btnGrMovConfirmar" type="button">Confirmar</button>
+    </div>
+  </div>
+
+  <h3 style="margin-top:18px;">Adicionar variações</h3>
+  <p class="item-sub" style="margin:-6px 0 12px;">Separe por vírgula para criar várias de uma vez. Ex.: tamanhos <strong>P, M, G</strong> e cores <strong>Preto, Branco</strong>.</p>
+  <div class="field-row">
+    <div class="field">
+      <label for="grTamanhos">Tamanhos</label>
+      <input id="grTamanhos" type="text" placeholder="Ex.: P, M, G, GG" />
+    </div>
+    <div class="field">
+      <label for="grCores">Cores</label>
+      <input id="grCores" type="text" placeholder="Ex.: Preto, Branco" />
+    </div>
+  </div>
+  <div class="field">
+    <label for="grQtd">Quantidade inicial de cada variação</label>
+    <input id="grQtd" type="text" inputmode="numeric" placeholder="0" />
+  </div>
+  <p class="form-error" id="grErro" role="alert"></p>
+  <div class="form-actions">
+    <button class="btn" id="btnGrAdicionar" type="button">Adicionar à grade</button>
+  </div>
+`;
+painelEstoque.after(gradePainel);
+
+let gradeCache = {};          // { id do produto: [variações] }
+let gradeProdutoId = null;
+let grMovTipo = "in";
+let grConfirmandoExcluir = null;
+
+function rotuloVariacao(v) {
+  return [v.size, v.color].filter(Boolean).join(" / ");
+}
+
+async function carregarGrade() {
+  const cliente = await iniciarSupabase();
+  const sessao = await cliente.auth.getSession();
+  if (!sessao.data || !sessao.data.session) {
+    gradeCache = {};
+    return;
+  }
+  const r = await cliente
+    .from("product_variants")
+    .select("id, product_id, size, color, sku, stock_quantity, created_at")
+    .order("created_at", { ascending: true });
+  if (r.error) throw r.error;
+  const mapa = {};
+  (r.data || []).forEach(function (v) {
+    if (!mapa[v.product_id]) mapa[v.product_id] = [];
+    mapa[v.product_id].push(v);
+  });
+  gradeCache = mapa;
+}
+
+function grTexto(id, texto) {
+  document.getElementById(id).textContent = texto;
+}
+
+function grDefinirTipo(tipo) {
+  grMovTipo = tipo;
+  document.querySelectorAll("#grMovTipos [data-tipo]").forEach(function (b) {
+    b.className = b.dataset.tipo === tipo ? "btn btn-small" : "btn btn-ghost btn-small";
+  });
+  grTexto("grMovDica", dicasTipo[tipo]);
+  grTexto("grMovQtdLabel", tipo === "adjustment" ? "Quantidade contada" : "Quantidade");
+  grTexto("grMovErro", "");
+}
+
+function desenharGrade() {
+  const p = produtosCache.find(function (x) { return x.id === gradeProdutoId; });
+  if (!p) return;
+  const vars = gradeCache[p.id] || [];
+
+  grTexto("grTitulo", "Grade: " + p.name);
+  grTexto("grResumo", vars.length
+    ? "Total em estoque: " + p.stock_quantity + " unidade(s) em " + vars.length + " variação(ões)."
+    : "Este produto ainda não tem grade.");
+
+  const aviso = document.getElementById("grAviso");
+  if (vars.length === 0 && p.stock_quantity > 0) {
+    aviso.textContent = "Este produto tem " + p.stock_quantity + " unidade(s) sem grade. Ao criar a grade, " +
+      "o estoque passa a ser a soma das variações: informe a quantidade de cada uma.";
+    aviso.hidden = false;
+  } else {
+    aviso.hidden = true;
+  }
+
+  const lista = document.getElementById("grLista");
+  lista.innerHTML = "";
+  if (vars.length === 0) {
+    const vazio = document.createElement("div");
+    vazio.className = "empty";
+    vazio.textContent = "Nenhuma variação ainda. Adicione tamanhos e/ou cores abaixo.";
+    lista.appendChild(vazio);
+  }
+
+  vars.forEach(function (v) {
+    const linha = document.createElement("div");
+    linha.className = "list-item";
+
+    const info = document.createElement("div");
+    const titulo = document.createElement("p");
+    titulo.className = "item-title";
+    titulo.textContent = rotuloVariacao(v);
+    const sub = document.createElement("p");
+    sub.className = "item-sub";
+    sub.textContent = "Estoque " + v.stock_quantity +
+      (v.stock_quantity <= 0 ? " · ⚠ esgotado" : "") +
+      (v.sku ? " · código " + v.sku : "");
+    info.appendChild(titulo);
+    info.appendChild(sub);
+
+    const acoes = document.createElement("div");
+    acoes.className = "item-actions";
+    if (grConfirmandoExcluir === v.id) {
+      const pergunta = document.createElement("span");
+      pergunta.className = "item-sub";
+      pergunta.textContent = v.stock_quantity > 0
+        ? "Excluir? " + v.stock_quantity + " un. saem do estoque."
+        : "Excluir?";
+      acoes.appendChild(pergunta);
+      acoes.appendChild(criarBotao("Sim, excluir", "btn btn-danger btn-small", function () {
+        grExcluir(v.id);
+      }));
+      acoes.appendChild(criarBotao("Cancelar", "btn btn-ghost btn-small", function () {
+        grConfirmandoExcluir = null;
+        desenharGrade();
+      }));
+    } else {
+      acoes.appendChild(criarBotao("Movimentar", "btn btn-ghost btn-small", function () {
+        document.getElementById("grMovVar").value = v.id;
+        document.getElementById("grMov").scrollIntoView({ behavior: "smooth", block: "center" });
+        document.getElementById("grMovQtd").focus();
+      }));
+      acoes.appendChild(criarBotao("Excluir", "btn btn-ghost btn-small", function () {
+        grConfirmandoExcluir = v.id;
+        desenharGrade();
+      }));
+    }
+
+    linha.appendChild(info);
+    linha.appendChild(acoes);
+    lista.appendChild(linha);
+  });
+
+  // Área de movimentação
+  const mov = document.getElementById("grMov");
+  const sel = document.getElementById("grMovVar");
+  mov.hidden = vars.length === 0;
+  const atual = sel.value;
+  sel.innerHTML = "";
+  vars.forEach(function (v) {
+    const o = document.createElement("option");
+    o.value = v.id;
+    o.textContent = rotuloVariacao(v) + " · estoque " + v.stock_quantity;
+    sel.appendChild(o);
+  });
+  if (vars.some(function (v) { return v.id === atual; })) sel.value = atual;
+}
+
+function abrirGrade(p) {
+  fecharFormProduto();
+  fecharEstoque();
+  fecharCategorias();
+  gradeProdutoId = p.id;
+  grConfirmandoExcluir = null;
+  ["grTamanhos", "grCores", "grQtd", "grMovQtd", "grMovMotivo"].forEach(function (id) {
+    document.getElementById(id).value = "";
+  });
+  grTexto("grErro", "");
+  grDefinirTipo("in");
+  desenharGrade();
+  gradePainel.hidden = false;
+  gradePainel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function fecharGrade() {
+  gradeProdutoId = null;
+  grConfirmandoExcluir = null;
+  gradePainel.hidden = true;
+}
+
+async function grRecarregar() {
+  await carregarGrade();
+  await carregarProdutos();
+  desenharGrade();
+}
+
+function grLista(texto) {
+  return texto.split(",").map(function (t) { return t.trim(); }).filter(Boolean);
+}
+
+async function grAdicionar() {
+  const erro = document.getElementById("grErro");
+  erro.textContent = "";
+  const tamanhos = grLista(document.getElementById("grTamanhos").value);
+  const cores = grLista(document.getElementById("grCores").value);
+  const textoQtd = document.getElementById("grQtd").value.trim();
+
+  if (tamanhos.length === 0 && cores.length === 0) {
+    erro.textContent = "Informe pelo menos um tamanho ou uma cor.";
+    return;
+  }
+  if (textoQtd && !/^\d+$/.test(textoQtd)) {
+    erro.textContent = "Quantidade inicial deve ser um número inteiro (ex.: 5).";
+    return;
+  }
+  const qtd = textoQtd ? Number(textoQtd) : 0;
+
+  // Todas as combinações de tamanho x cor
+  const combinacoes = [];
+  if (tamanhos.length && cores.length) {
+    tamanhos.forEach(function (t) { cores.forEach(function (c) { combinacoes.push([t, c]); }); });
+  } else if (tamanhos.length) {
+    tamanhos.forEach(function (t) { combinacoes.push([t, null]); });
+  } else {
+    cores.forEach(function (c) { combinacoes.push([null, c]); });
+  }
+  if (combinacoes.length > 60) {
+    erro.textContent = "São " + combinacoes.length + " combinações. Crie no máximo 60 de cada vez.";
+    return;
+  }
+
+  const botao = document.getElementById("btnGrAdicionar");
+  botao.disabled = true;
+  let criadas = 0;
+  const falhas = [];
+  try {
+    const cliente = await iniciarSupabase();
+    for (let i = 0; i < combinacoes.length; i++) {
+      botao.textContent = "Criando " + (i + 1) + " de " + combinacoes.length + "...";
+      const r = await cliente.rpc("create_variant", {
+        p_product_id: gradeProdutoId,
+        p_size: combinacoes[i][0],
+        p_color: combinacoes[i][1],
+        p_initial: qtd
+      });
+      if (r.error) falhas.push([combinacoes[i][0], combinacoes[i][1]].filter(Boolean).join(" / ") + ": " + r.error.message);
+      else criadas += 1;
+    }
+    document.getElementById("grTamanhos").value = "";
+    document.getElementById("grCores").value = "";
+    document.getElementById("grQtd").value = "";
+    await grRecarregar();
+    if (falhas.length) erro.textContent = falhas.length + " não criada(s). " + falhas[0];
+    if (criadas) avisar(criadas + " variação(ões) criada(s).");
+  } catch (e) {
+    console.error(e);
+    erro.textContent = "Não foi possível criar: " + (e.message || e);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Adicionar à grade";
+  }
+}
+
+async function grMovimentar() {
+  const erro = document.getElementById("grMovErro");
+  erro.textContent = "";
+  const variante = document.getElementById("grMovVar").value;
+  const texto = document.getElementById("grMovQtd").value.trim();
+
+  if (!variante) {
+    erro.textContent = "Escolha a variação.";
+    return;
+  }
+  if (!/^\d+$/.test(texto)) {
+    erro.textContent = "Digite a quantidade só com números inteiros (ex.: 5).";
+    return;
+  }
+  const quantidade = Number(texto);
+  if (grMovTipo !== "adjustment" && quantidade === 0) {
+    erro.textContent = "A quantidade precisa ser maior que zero.";
+    return;
+  }
+
+  const botao = document.getElementById("btnGrMovConfirmar");
+  botao.disabled = true;
+  botao.textContent = "Salvando...";
+  try {
+    const cliente = await iniciarSupabase();
+    const r = await cliente.rpc("adjust_variant_stock", {
+      p_variant_id: variante,
+      p_type: grMovTipo,
+      p_quantity: quantidade,
+      p_reason: document.getElementById("grMovMotivo").value.trim() || null
+    });
+    if (r.error) throw r.error;
+    avisar(nomesTipo[grMovTipo] + " registrada. Novo saldo da variação: " + r.data);
+    document.getElementById("grMovQtd").value = "";
+    document.getElementById("grMovMotivo").value = "";
+    await grRecarregar();
+  } catch (e) {
+    console.error(e);
+    erro.textContent = e && e.message ? e.message : String(e);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Confirmar";
+  }
+}
+
+async function grExcluir(id) {
+  try {
+    const cliente = await iniciarSupabase();
+    const r = await cliente.rpc("delete_variant", { p_variant_id: id });
+    if (r.error) throw r.error;
+    grConfirmandoExcluir = null;
+    avisar("Variação excluída.");
+    await grRecarregar();
+  } catch (e) {
+    console.error(e);
+    grConfirmandoExcluir = null;
+    avisar("Não foi possível excluir: " + (e.message || e));
+    desenharGrade();
+  }
+}
+
+document.getElementById("btnGrFechar").addEventListener("click", fecharGrade);
+document.getElementById("btnGrAdicionar").addEventListener("click", grAdicionar);
+document.getElementById("btnGrMovConfirmar").addEventListener("click", grMovimentar);
+document.querySelectorAll("#grMovTipos [data-tipo]").forEach(function (b) {
+  b.addEventListener("click", function () { grDefinirTipo(b.dataset.tipo); });
+});
+btnNovoProduto.addEventListener("click", fecharGrade);
+document.getElementById("btnCategorias").addEventListener("click", fecharGrade);
+
+// Nova versão da lista de produtos: filtros + resumo da grade + botão Grade
+// (substitui a anterior; o navegador usa a última)
+function desenharProdutos() {
+  atualizarOpcoesFiltro();
+
+  const termo = prBuscaEl.value.trim().toLowerCase();
+  const categoria = selFiltroCategoria.value;
+  const soBaixo = chkFiltroBaixo.checked;
+
+  const filtrados = produtosCache.filter(function (p) {
+    if (!p.name.toLowerCase().includes(termo)) return false;
+    if (categoria === "__sem__" && p.category_id) return false;
+    if (categoria && categoria !== "__sem__" && p.category_id !== categoria) return false;
+    if (soBaixo && !estaComEstoqueBaixo(p)) return false;
+    return true;
+  });
+
+  if (filtrados.length === 0) {
+    mostrarMensagemProdutos(
+      produtosCache.length === 0
+        ? "Nenhum produto cadastrado ainda."
+        : "Nenhum produto encontrado com esses filtros."
+    );
+    return;
+  }
+
+  listaProdutosEl.innerHTML = "";
+
+  filtrados.forEach(function (p) {
+    const vars = gradeCache[p.id] || [];
+    const linha = document.createElement("div");
+    linha.className = "list-item";
+
+    const info = document.createElement("div");
+    const nome = document.createElement("p");
+    nome.className = "item-title";
+    nome.textContent = p.name;
+
+    const detalhes = document.createElement("p");
+    detalhes.className = "item-sub";
+    let texto =
+      nomeCategoria(p.category_id) +
+      " · Venda " + moeda(p.sale_price) +
+      " · Custo " + moeda(p.cost_price) +
+      " · Estoque " + p.stock_quantity;
+    if (estaComEstoqueBaixo(p)) texto += " · ⚠ Estoque baixo";
+    detalhes.textContent = texto;
+
+    info.appendChild(nome);
+    info.appendChild(detalhes);
+
+    if (vars.length) {
+      const grade = document.createElement("p");
+      grade.className = "item-sub";
+      const mostrar = vars.slice(0, 8).map(function (v) {
+        return rotuloVariacao(v) + " " + v.stock_quantity;
+      }).join(" · ");
+      const esgotadas = vars.filter(function (v) { return v.stock_quantity <= 0; }).length;
+      grade.textContent = "Grade: " + mostrar +
+        (vars.length > 8 ? " · +" + (vars.length - 8) : "") +
+        (esgotadas ? " · ⚠ " + esgotadas + " esgotada(s)" : "");
+      info.appendChild(grade);
+    }
+
+    const acoes = document.createElement("div");
+    acoes.className = "item-actions";
+
+    if (confirmandoProdutoId === p.id) {
+      const pergunta = document.createElement("span");
+      pergunta.className = "item-sub";
+      pergunta.textContent = "Excluir?";
+      acoes.appendChild(pergunta);
+      acoes.appendChild(criarBotao("Sim, excluir", "btn btn-danger btn-small", function () {
+        excluirProduto(p.id);
+      }));
+      acoes.appendChild(criarBotao("Cancelar", "btn btn-ghost btn-small", function () {
+        confirmandoProdutoId = null;
+        desenharProdutos();
+      }));
+    } else {
+      if (!vars.length) {
+        acoes.appendChild(criarBotao("Estoque", "btn btn-ghost btn-small", function () {
+          confirmandoProdutoId = null;
+          fecharGrade();
+          abrirEstoque(p);
+        }));
+      }
+      acoes.appendChild(criarBotao("Grade", vars.length ? "btn btn-small" : "btn btn-ghost btn-small", function () {
+        confirmandoProdutoId = null;
+        abrirGrade(p);
+      }));
+      acoes.appendChild(criarBotao("Editar", "btn btn-ghost btn-small", function () {
+        confirmandoProdutoId = null;
+        fecharEstoque();
+        fecharCategorias();
+        fecharGrade();
+        abrirFormProduto(p);
+      }));
+      acoes.appendChild(criarBotao("Excluir", "btn btn-ghost btn-small", function () {
+        confirmandoProdutoId = p.id;
+        desenharProdutos();
+      }));
+    }
+
+    const bloco = document.createElement("div");
+    bloco.style.display = "flex";
+    bloco.style.alignItems = "center";
+    bloco.style.gap = "12px";
+    bloco.appendChild(criarMiniatura(p));
+    bloco.appendChild(info);
+
+    linha.appendChild(bloco);
+    linha.appendChild(acoes);
+    listaProdutosEl.appendChild(linha);
+  });
+}
+
+// Carrega a grade ao abrir Produtos
+document.querySelectorAll('[data-view="produtos"]').forEach(function (botao) {
+  botao.addEventListener("click", async function () {
+    try {
+      await carregarGrade();
+      if (produtosCache.length) desenharProdutos();
+    } catch (e) {
+      console.error("Grade:", e);
+    }
+  });
+});
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) {
+      gradeCache = {};
+      fecharGrade();
+    }
+  });
+});
+// FIM DA PARTE 24c
