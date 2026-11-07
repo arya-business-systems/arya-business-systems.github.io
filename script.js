@@ -12205,4 +12205,369 @@ document.querySelectorAll('[data-view="dashboard"]').forEach(function (b) {
   b.addEventListener("click", function () { if (dmDados) abrirMesa(true); });
 });
 // FIM DA PARTE 38
+// ===== PARTE 39: Assinatura da ARYA (R$ 49/mês) =====
+const AS_FUNCAO = "arya-assinatura";
+const estilo39 = document.createElement("style");
+estilo39.textContent = `
+  .as-faixa { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 14px; margin-bottom: 16px;
+    background: var(--surface); border: 1px solid var(--border); font-size: 14px; }
+  .as-faixa[hidden] { display: none; }
+  .as-faixa.alerta { background: #000; color: #fff; border-color: #000; }
+  .as-faixa b { font-weight: 600; }
+  .as-faixa .btn { margin-left: auto; }
+  .as-faixa.alerta .btn { background: #fff; color: #000; border-color: #fff; }
+
+  .as-plano { position: relative; overflow: hidden; color: #fff; border-radius: var(--radius); padding: 30px; margin-bottom: 16px;
+    background: radial-gradient(520px 280px at 100% 0%, rgba(255,255,255,.15), transparent 70%), #000;
+    display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; }
+  .as-selo { font-family: var(--font-brand); font-size: 12px; letter-spacing: .14em; color: #a1a1aa; }
+  .as-preco { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
+  .as-preco strong { font-size: 58px; letter-spacing: -.045em; line-height: 1; }
+  .as-preco span { color: #a1a1aa; font-size: 16px; }
+  .as-status { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.1); font-size: 13.5px; font-weight: 500; }
+  .as-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--c, #a1a1aa); }
+  .as-detalhe { color: #d4d4d8; font-size: 14px; margin-top: 12px; line-height: 1.5; }
+  .as-inclui { list-style: none; display: grid; gap: 9px; font-size: 14px; color: #e4e4e7; align-content: start; }
+  .as-inclui li { display: flex; gap: 10px; }
+  .as-inclui li::before { content: "✦"; color: #fff; flex: none; }
+  .as-form { display: grid; gap: 12px; max-width: 520px; }
+  .as-form label { display: grid; gap: 6px; font-size: 13.5px; font-weight: 500; }
+  .as-form input { height: 46px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); padding: 0 14px; font: inherit; font-size: 16px; }
+  .as-form input:focus { outline: none; border-color: #000; box-shadow: 0 0 0 4px rgba(10,10,10,.08); }
+  .as-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .as-pagar { height: 52px; padding: 0 26px; border-radius: 14px; background: #000; color: #fff; font-weight: 600; font-size: 16px; }
+  .as-pagar[disabled] { opacity: .5; }
+  .as-msg { font-size: 13.5px; color: var(--muted); min-height: 18px; }
+  .as-msg.erro { color: var(--danger); }
+  .as-seguro { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .as-cancelar { font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; margin-top: 18px; }
+
+  .as-trava { position: fixed; inset: 0; z-index: 190; background: #000; color: #fff; display: grid; place-items: center; padding: 24px; overflow-y: auto; }
+  .as-trava[hidden] { display: none; }
+  .as-trava-caixa { width: 100%; max-width: 460px; text-align: center; }
+  .as-trava svg { width: 70px; color: #fff; margin: 0 auto 18px; display: block; }
+  .as-trava h2 { font-size: 26px; letter-spacing: -.02em; }
+  .as-trava p { color: #a1a1aa; margin-top: 10px; line-height: 1.55; font-size: 15px; }
+  .as-trava .as-form { margin: 22px auto 0; text-align: left; }
+  .as-trava .as-form label { color: #d4d4d8; }
+  .as-trava .as-form input { background: #18181b; border-color: #3f3f46; color: #fff; }
+  .as-trava .as-pagar { background: #fff; color: #000; width: 100%; }
+  .as-trava .as-msg { color: #a1a1aa; text-align: center; }
+  .as-trava .as-sair { margin-top: 18px; color: #a1a1aa; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+
+  @media (max-width: 860px) {
+    .as-plano { grid-template-columns: 1fr; padding: 24px 20px; gap: 22px; }
+    .as-preco strong { font-size: 46px; }
+    .as-faixa .btn { margin-left: 0; }
+  }
+`;
+document.head.appendChild(estilo39);
+
+// ---------- Faixa de aviso no topo ----------
+const asFaixa = document.createElement("div");
+asFaixa.className = "as-faixa";
+asFaixa.hidden = true;
+const asMain = document.querySelector("main.main");
+const asPrimeiraTela = asMain.querySelector(".view");
+if (asPrimeiraTela) asPrimeiraTela.before(asFaixa); else asMain.prepend(asFaixa);
+
+// ---------- Tela de Assinatura ----------
+titulos.assinatura = "Assinatura";
+const asView = document.createElement("section");
+asView.className = "view";
+asView.id = "view-assinatura";
+asView.innerHTML = `
+  <div class="as-plano">
+    <div>
+      <p class="as-selo">✦ ARYA COMPLETA</p>
+      <div class="as-preco"><strong>R$ 49</strong><span>por mês</span></div>
+      <div class="as-status" id="asStatus"><i></i><span>Carregando...</span></div>
+      <p class="as-detalhe" id="asDetalhe"></p>
+    </div>
+    <ul class="as-inclui">
+      <li>Tudo da ARYA, sem limite de produtos, clientes ou vendas</li>
+      <li>Caixa rápido com código de barras</li>
+      <li>ARYA Connect: loja virtual vendendo junto</li>
+      <li>Dinheiro na mesa e ARYA Pulso</li>
+      <li>Grade de tamanhos e cores, orçamentos e recibos</li>
+      <li>Cancele quando quiser, sem multa</li>
+    </ul>
+  </div>
+  <article class="card wide">
+    <div class="card-head"><h2 id="asTituloForm">Assinar a ARYA</h2></div>
+    <div class="as-form" id="asForm">
+      <label>CPF ou CNPJ de quem vai pagar<input id="asDoc" inputmode="numeric" autocomplete="off" placeholder="Somente números" /></label>
+      <label>WhatsApp (opcional)<input id="asFone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" /></label>
+    </div>
+    <div class="as-acoes" style="margin-top:14px;">
+      <button class="as-pagar" id="asPagar" type="button">Assinar por R$ 49/mês</button>
+      <button class="btn btn-ghost" id="asAtualizar" type="button">Já paguei · atualizar</button>
+    </div>
+    <p class="as-msg" id="asMsg"></p>
+    <p class="as-seguro">🔒 O pagamento é feito numa página segura do Asaas: Pix, boleto ou cartão. A ARYA não vê nem guarda os dados do seu cartão.</p>
+    <button class="as-cancelar" id="asCancelar" type="button" hidden>Cancelar assinatura</button>
+  </article>
+`;
+asMain.appendChild(asView);
+
+// ---------- Trava (quando o acesso está pausado) ----------
+const asTrava = document.createElement("div");
+asTrava.className = "as-trava";
+asTrava.hidden = true;
+asTrava.innerHTML = `
+  <div class="as-trava-caixa">
+    ${ARYA_SIMBOLO}
+    <h2 id="asTravaTitulo">Seu teste grátis terminou</h2>
+    <p id="asTravaTexto">Para continuar usando a ARYA, assine por R$ 49/mês. Todos os seus produtos, clientes e vendas estão guardados.</p>
+    <div class="as-form">
+      <label>CPF ou CNPJ de quem vai pagar<input id="asTravaDoc" inputmode="numeric" autocomplete="off" placeholder="Somente números" /></label>
+      <button class="as-pagar" id="asTravaPagar" type="button">Assinar e liberar a ARYA</button>
+      <button class="btn btn-ghost" id="asTravaAtualizar" type="button" style="background:transparent; color:#fff; border:1px solid #3f3f46; height:48px; border-radius:14px;">Já paguei · atualizar</button>
+      <p class="as-msg" id="asTravaMsg"></p>
+    </div>
+    <button class="as-sair" id="asTravaSair" type="button">Sair da conta</button>
+  </div>
+`;
+document.body.appendChild(asTrava);
+
+// ---------- Menu ----------
+const asNav = document.createElement("button");
+asNav.type = "button";
+asNav.className = "nav-item";
+asNav.dataset.view = "assinatura";
+asNav.innerHTML = '<span class="ico">✦</span>Assinatura';
+const asNavCfg = document.querySelector('#navDesktop [data-view="configuracoes"]');
+if (asNavCfg) asNavCfg.before(asNav); else document.getElementById("navDesktop").appendChild(asNav);
+asNav.addEventListener("click", function () { mostrarTela("assinatura"); asAbrirTela(); });
+
+const asMais = document.querySelector(".mais-painel");
+if (asMais) {
+  const item = document.createElement("button");
+  item.type = "button";
+  item.className = "mais-item";
+  item.dataset.alvo = "assinatura";
+  item.innerHTML = '<span class="ico">✦</span>Assinatura';
+  item.addEventListener("click", function () {
+    asNav.click();
+    const tab = document.getElementById("tabMais");
+    if (tab) tab.classList.add("active");
+    const fundo = document.querySelector(".mais-fundo");
+    if (fundo) fundo.hidden = true;
+  });
+  const cfg = asMais.querySelector('[data-alvo="configuracoes"]');
+  if (cfg) cfg.before(item); else asMais.appendChild(item);
+}
+
+// ---------- Estado ----------
+let asBilling = null;
+let asSincronizou = false;
+const AS_TOLERANCIA = 3; // dias depois do vencimento antes de pausar
+const asEl = function (id) { return document.getElementById(id); };
+function asData(d) { return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }); }
+function asDiasAte(d) { return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000); }
+
+function asSituacao(b) {
+  if (!b) return { pode: true };
+  if (b.status === "lifetime") return { pode: true, tipo: "vitalicio" };
+  const agora = Date.now();
+  const pagoAte = b.paid_until ? new Date(b.paid_until).getTime() : 0;
+  const testeAte = new Date(b.trial_ends_at).getTime();
+  if (pagoAte > agora) return { pode: true, tipo: b.status === "canceled" ? "cancelada" : "ativa", ate: b.paid_until };
+  if (b.status === "trial" && testeAte > agora) return { pode: true, tipo: "teste", ate: b.trial_ends_at, dias: asDiasAte(b.trial_ends_at) };
+  const limite = Math.max(pagoAte, b.status === "trial" || !pagoAte ? testeAte : 0) + AS_TOLERANCIA * 86400000;
+  if (agora < limite) return { pode: true, tipo: "tolerancia", dias: Math.ceil((limite - agora) / 86400000) };
+  return { pode: false, tipo: pagoAte ? "atrasada" : "teste-fim" };
+}
+
+async function asChamar(corpo) {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.functions.invoke(AS_FUNCAO, { body: corpo });
+  if (r.error) {
+    let msg = r.error.message || "Erro na assinatura";
+    try { const j = await r.error.context.json(); if (j && j.erro) msg = j.erro; } catch (e) { /* sem detalhe */ }
+    throw new Error(msg);
+  }
+  if (r.data && r.data.ok === false) throw new Error(r.data.erro || "Erro na assinatura");
+  return r.data;
+}
+
+async function asCarregar(sincronizar) {
+  const cliente = await iniciarSupabase();
+  const r = await cliente.rpc("get_billing");
+  if (r.error) { console.error("Assinatura:", r.error); return; }
+  asBilling = Array.isArray(r.data) ? r.data[0] : r.data;
+  if (sincronizar && asBilling && asBilling.asaas_subscription_id) {
+    try { const s = await asChamar({ acao: "status" }); if (s.billing) asBilling = s.billing; } catch (e) { console.error(e); }
+  }
+  asAplicar();
+}
+
+function asAplicar() {
+  const s = asSituacao(asBilling);
+  // Faixa
+  asFaixa.hidden = true;
+  asFaixa.className = "as-faixa";
+  asFaixa.innerHTML = "";
+  let texto = "";
+  if (s.tipo === "teste" && s.dias <= 10) texto = "✦ Teste grátis: faltam <b>" + s.dias + " dia(s)</b>. Assine para não perder o acesso.";
+  if (s.tipo === "tolerancia") { texto = "Pagamento pendente. A ARYA pausa em <b>" + s.dias + " dia(s)</b>. Seus dados continuam guardados."; asFaixa.classList.add("alerta"); }
+  if (texto && !asView.classList.contains("active")) {
+    const sp = document.createElement("span");
+    sp.innerHTML = texto;
+    asFaixa.appendChild(sp);
+    asFaixa.appendChild(criarBotao(s.tipo === "tolerancia" ? "Pagar agora" : "Ver plano", "btn btn-small", function () { asNav.click(); }));
+    asFaixa.hidden = false;
+  }
+  // Trava
+  asTrava.hidden = s.pode;
+  if (!s.pode) {
+    asEl("asTravaTitulo").textContent = s.tipo === "atrasada" ? "Sua assinatura está pausada" : "Seu teste grátis terminou";
+    asEl("asTravaTexto").textContent = s.tipo === "atrasada"
+      ? "Não encontramos o pagamento deste mês. Pague para liberar a ARYA na hora. Todos os seus dados estão guardados."
+      : "Para continuar usando a ARYA, assine por R$ 49/mês. Todos os seus produtos, clientes e vendas estão guardados.";
+    asEl("asTravaPagar").textContent = asBilling && asBilling.last_payment_url ? "Pagar e liberar a ARYA" : "Assinar e liberar a ARYA";
+    asEl("asTravaDoc").parentElement.hidden = Boolean(asBilling && asBilling.asaas_customer_id && asBilling.status !== "canceled");
+  }
+  asDesenharTela();
+}
+
+function asDesenharTela() {
+  const b = asBilling;
+  if (!b) return;
+  const s = asSituacao(b);
+  const st = asEl("asStatus");
+  const mapa = {
+    vitalicio: ["Acesso de fundadora ✦", "#ffffff"],
+    ativa: ["Assinatura ativa", "#4ade80"],
+    cancelada: ["Cancelada · acesso até o fim do período", "#fbbf24"],
+    teste: ["Teste grátis", "#ffffff"],
+    tolerancia: ["Pagamento pendente", "#fbbf24"],
+    atrasada: ["Pausada por falta de pagamento", "#f87171"],
+    "teste-fim": ["Teste grátis encerrado", "#f87171"]
+  };
+  const m = mapa[s.tipo] || ["—", "#a1a1aa"];
+  st.style.setProperty("--c", m[1]);
+  st.querySelector("span").textContent = m[0];
+  let det = "";
+  if (s.tipo === "teste") det = "Seu teste grátis vai até " + asData(b.trial_ends_at) + ": faltam " + s.dias + " dia(s). Se assinar agora, a primeira cobrança só vence no fim do teste.";
+  if (s.tipo === "ativa") det = "Pago até " + asData(b.paid_until) + ". A próxima cobrança chega por e-mail e no seu WhatsApp.";
+  if (s.tipo === "cancelada") det = "Você continua com acesso até " + asData(b.paid_until) + ".";
+  if (s.tipo === "tolerancia" || s.tipo === "atrasada") det = "Pague a cobrança pendente para continuar. Assim que o Asaas confirmar, a ARYA libera sozinha.";
+  if (s.tipo === "teste-fim") det = "Assine para voltar a usar. Nenhum dado foi apagado.";
+  if (s.tipo === "vitalicio") det = "Esta conta tem acesso liberado para sempre.";
+  asEl("asDetalhe").textContent = det;
+
+  const temAssinatura = Boolean(b.asaas_subscription_id) && b.status !== "canceled";
+  asEl("asForm").hidden = Boolean(b.asaas_customer_id) && temAssinatura;
+  asEl("asTituloForm").textContent = temAssinatura ? "Sua assinatura" : "Assinar a ARYA";
+  const pagar = asEl("asPagar");
+  pagar.hidden = s.tipo === "vitalicio" || (temAssinatura && !b.last_payment_url);
+  pagar.textContent = temAssinatura ? "Pagar cobrança pendente" : "Assinar por R$ 49/mês";
+  asEl("asAtualizar").hidden = !temAssinatura;
+  asEl("asCancelar").hidden = !temAssinatura;
+}
+
+async function asAssinar(docInput, msgEl, botao) {
+  msgEl.className = "as-msg";
+  msgEl.textContent = "";
+  const precisaDoc = !(asBilling && asBilling.asaas_customer_id && asBilling.status !== "canceled");
+  const doc = docInput ? docInput.value.replace(/\D/g, "") : "";
+  if (precisaDoc && doc.length !== 11 && doc.length !== 14) {
+    msgEl.className = "as-msg erro";
+    msgEl.textContent = "Digite o CPF (11 números) ou o CNPJ (14 números) de quem vai pagar.";
+    return;
+  }
+  // Abre a janela antes (o iPhone bloqueia janelas abertas depois de esperar)
+  const janela = window.open("", "_blank");
+  botao.disabled = true;
+  const textoOriginal = botao.textContent;
+  botao.textContent = "Preparando o pagamento...";
+  try {
+    const r = await asChamar({ acao: "assinar", cpfCnpj: doc, telefone: asEl("asFone") ? asEl("asFone").value : "" });
+    if (r.billing) asBilling = r.billing;
+    if (r.url) {
+      if (janela) janela.location.href = r.url; else window.location.href = r.url;
+      msgEl.textContent = "✦ Abrimos a página de pagamento. Depois de pagar, volte aqui e toque em \"Já paguei · atualizar\".";
+    } else {
+      if (janela) janela.close();
+      msgEl.textContent = r.info || "Tudo certo ✦";
+    }
+    asAplicar();
+  } catch (e) {
+    if (janela) janela.close();
+    msgEl.className = "as-msg erro";
+    msgEl.textContent = e.message || String(e);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+}
+
+async function asAtualizarAgora(msgEl, botao) {
+  msgEl.className = "as-msg";
+  botao.disabled = true;
+  msgEl.textContent = "Conferindo o pagamento...";
+  try {
+    const r = await asChamar({ acao: "status" });
+    if (r.billing) asBilling = r.billing;
+    asAplicar();
+    const s = asSituacao(asBilling);
+    msgEl.textContent = s.tipo === "ativa" ? "✦ Pagamento confirmado! A ARYA está liberada." : "Ainda não recebemos a confirmação. Pix costuma cair em segundos; boleto pode levar até 3 dias úteis.";
+  } catch (e) {
+    msgEl.className = "as-msg erro";
+    msgEl.textContent = e.message || String(e);
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+asEl("asPagar").addEventListener("click", function () { asAssinar(asEl("asDoc"), asEl("asMsg"), asEl("asPagar")); });
+asEl("asAtualizar").addEventListener("click", function () { asAtualizarAgora(asEl("asMsg"), asEl("asAtualizar")); });
+asEl("asTravaPagar").addEventListener("click", function () { asAssinar(asEl("asTravaDoc"), asEl("asTravaMsg"), asEl("asTravaPagar")); });
+asEl("asTravaAtualizar").addEventListener("click", function () { asAtualizarAgora(asEl("asTravaMsg"), asEl("asTravaAtualizar")); });
+asEl("asTravaSair").addEventListener("click", async function () {
+  const cliente = await iniciarSupabase();
+  await cliente.auth.signOut();
+  asTrava.hidden = true;
+});
+
+let asConfirmarCancelar = false;
+asEl("asCancelar").addEventListener("click", async function () {
+  const b = asEl("asCancelar");
+  if (!asConfirmarCancelar) {
+    asConfirmarCancelar = true;
+    b.textContent = "Tem certeza? Toque de novo para cancelar";
+    setTimeout(function () { asConfirmarCancelar = false; b.textContent = "Cancelar assinatura"; }, 5000);
+    return;
+  }
+  asConfirmarCancelar = false;
+  b.textContent = "Cancelando...";
+  try {
+    const r = await asChamar({ acao: "cancelar" });
+    if (r.billing) asBilling = r.billing;
+    asAplicar();
+    asEl("asMsg").textContent = "Assinatura cancelada. Nenhuma nova cobrança será feita.";
+  } catch (e) {
+    asEl("asMsg").className = "as-msg erro";
+    asEl("asMsg").textContent = e.message || String(e);
+  } finally {
+    b.textContent = "Cancelar assinatura";
+  }
+});
+
+async function asAbrirTela() {
+  asFaixa.hidden = true;
+  await asCarregar(true);
+}
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) { asBilling = null; asSincronizou = false; asTrava.hidden = true; asFaixa.hidden = true; return; }
+    if (!asSincronizou) { asSincronizou = true; setTimeout(function () { asCarregar(true); }, 1200); }
+  });
+});
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "visible" && asBilling && !asSituacao(asBilling).pode) asCarregar(true);
+});
+// FIM DA PARTE 39
 
