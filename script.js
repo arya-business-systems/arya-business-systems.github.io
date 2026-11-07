@@ -12570,4 +12570,9 @@ document.addEventListener("visibilitychange", function () {
   if (document.visibilityState === "visible" && asBilling && !asSituacao(asBilling).pode) asCarregar(true);
 });
 // FIM DA PARTE 39
+// ===== PARTE 39b: esconde campos que não são usados na Assinatura =====
+const estilo39b = document.createElement("style");
+estilo39b.textContent = ".as-form[hidden], .as-form label[hidden], .as-pagar[hidden], #asAtualizar[hidden], .as-cancelar[hidden] { display: none !important; }";
+document.head.appendChild(estilo39b);
+// FIM DA PARTE 39b
 
