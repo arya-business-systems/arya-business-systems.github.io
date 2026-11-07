@@ -12575,4 +12575,341 @@ const estilo39b = document.createElement("style");
 estilo39b.textContent = ".as-form[hidden], .as-form label[hidden], .as-pagar[hidden], #asAtualizar[hidden], .as-cancelar[hidden] { display: none !important; }";
 document.head.appendChild(estilo39b);
 // FIM DA PARTE 39b
+// ===== PARTE 40: Assinatura em destaque (bonita e interativa) =====
+const estilo40 = document.createElement("style");
+estilo40.textContent = `
+  /* Selo no menu lateral */
+  .ap-selo { display: flex; align-items: center; gap: 10px; width: calc(100% - 24px); margin: 10px 12px 0; padding: 11px 12px; border-radius: 14px;
+    background: #000; color: #fff; text-align: left; transition: transform .2s ease; }
+  .ap-selo:hover { transform: translateY(-1px); }
+  .ap-selo[hidden] { display: none; }
+  .ap-selo-anel { position: relative; width: 34px; height: 34px; flex: none; }
+  .ap-selo-anel svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ap-selo-anel circle { fill: none; stroke-width: 4; }
+  .ap-selo-anel .f { stroke: #3f3f46; }
+  .ap-selo-anel .c { stroke: #fff; stroke-linecap: round; stroke-dasharray: 87.96; transition: stroke-dashoffset 1s ease; }
+  .ap-selo-anel b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; }
+  .ap-selo p { font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+  .ap-selo small { display: block; font-size: 11px; color: #a1a1aa; font-weight: 400; }
+
+  /* Cartão no Dashboard */
+  .ap-dash { display: flex; align-items: center; gap: 18px; padding: 18px 22px; border-radius: var(--radius); margin-bottom: 16px;
+    background: var(--surface); border: 1px solid var(--border); }
+  .ap-dash[hidden] { display: none; }
+  .ap-dash-anel { position: relative; width: 64px; height: 64px; flex: none; }
+  .ap-dash-anel svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ap-dash-anel circle { fill: none; stroke-width: 6; }
+  .ap-dash-anel .f { stroke: var(--surface-2); }
+  .ap-dash-anel .c { stroke: #000; stroke-linecap: round; stroke-dasharray: 175.9; transition: stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1); }
+  .ap-dash-anel div { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ap-dash-anel strong { font-size: 19px; line-height: 1; }
+  .ap-dash-anel span { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .ap-dash-txt { flex: 1; min-width: 0; }
+  .ap-dash-txt b { display: block; font-size: 15.5px; }
+  .ap-dash-txt p { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+
+  /* Jornada */
+  .ap-jornada { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 10px; position: relative; }
+  .ap-passo { text-align: center; padding: 0 12px; position: relative; }
+  .ap-passo::before { content: ""; position: absolute; top: 15px; left: -50%; width: 100%; height: 2px; background: var(--border); z-index: 0; }
+  .ap-passo:first-child::before { display: none; }
+  .ap-passo.feito::before { background: #000; }
+  .ap-bola { position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; margin: 0 auto 10px; display: grid; place-items: center;
+    background: var(--surface); border: 2px solid var(--border); font-size: 13px; font-weight: 700; color: var(--muted); }
+  .ap-passo.feito .ap-bola { background: #000; border-color: #000; color: #fff; }
+  .ap-passo.agora .ap-bola { border-color: #000; color: #000; box-shadow: 0 0 0 6px rgba(0,0,0,.06); animation: ap-pulsa 2s ease-in-out infinite; }
+  @keyframes ap-pulsa { 50% { box-shadow: 0 0 0 10px rgba(0,0,0,.03); } }
+  .ap-passo b { display: block; font-size: 14px; }
+  .ap-passo span { font-size: 12.5px; color: var(--muted); }
+
+  /* Valor */
+  .ap-valor { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .ap-v { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 16px; animation: ap-entra .5s ease backwards; }
+  .ap-v:nth-child(2) { animation-delay: .06s; } .ap-v:nth-child(3) { animation-delay: .12s; } .ap-v:nth-child(4) { animation-delay: .18s; }
+  @keyframes ap-entra { from { opacity: 0; transform: translateY(10px); } }
+  .ap-v.preto { background: #000; color: #fff; border-color: #000; }
+  .ap-v small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--muted); }
+  .ap-v.preto small { color: #a1a1aa; }
+  .ap-v strong { display: block; font-size: 24px; letter-spacing: -.03em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .ap-v p { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .ap-v.preto p { color: #a1a1aa; }
+
+  /* Calculadora */
+  .ap-calc { margin-bottom: 16px; }
+  .ap-calc-linha { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; }
+  .ap-calc input[type=range] { width: 100%; accent-color: #000; height: 28px; }
+  .ap-calc-res { text-align: right; }
+  .ap-calc-res strong { display: block; font-size: 30px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .ap-calc-res span { font-size: 12.5px; color: var(--muted); }
+  .ap-calc p.item-sub b { color: var(--text); }
+
+  /* Formas de pagamento */
+  .ap-metodos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0 4px; max-width: 640px; }
+  .ap-metodo { text-align: left; padding: 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); transition: border-color .2s ease, transform .15s ease; }
+  .ap-metodo:hover { transform: translateY(-1px); }
+  .ap-metodo.ativo { border-color: #000; box-shadow: 0 0 0 1px #000; }
+  .ap-metodo i { font-style: normal; font-size: 20px; display: block; }
+  .ap-metodo b { display: block; font-size: 14px; margin-top: 6px; }
+  .ap-metodo span { font-size: 12px; color: var(--muted); }
+
+  /* Perguntas */
+  .ap-faq details { border-bottom: 1px solid var(--border); padding: 14px 2px; }
+  .ap-faq details:last-child { border-bottom: 0; }
+  .ap-faq summary { cursor: pointer; font-weight: 500; font-size: 14.5px; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+  .ap-faq summary::-webkit-details-marker { display: none; }
+  .ap-faq summary::after { content: "+"; font-size: 18px; line-height: 1; transition: transform .2s ease; }
+  .ap-faq details[open] summary::after { transform: rotate(45deg); }
+  .ap-faq p { color: var(--muted); font-size: 14px; line-height: 1.55; margin-top: 8px; }
+
+  @media (max-width: 860px) {
+    .ap-valor { grid-template-columns: 1fr 1fr; }
+    .ap-metodos { gap: 6px; }
+    .ap-metodo { padding: 10px 8px; text-align: center; }
+    .ap-metodo i { font-size: 17px; }
+    .ap-metodo b { font-size: 13px; margin-top: 4px; }
+    .ap-metodo span { font-size: 10.5px; display: block; line-height: 1.3; }
+    .ap-jornada { padding: 18px 4px; }
+    .ap-passo { padding: 0 4px; }
+    .ap-passo b { font-size: 12.5px; }
+    .ap-passo span { font-size: 11px; }
+    .ap-dash { padding: 16px; gap: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ap-passo.agora .ap-bola, .ap-v { animation: none; }
+  }
+`;
+document.head.appendChild(estilo40);
+
+// ---------- Selo no menu lateral ----------
+const apSelo = document.createElement("button");
+apSelo.type = "button";
+apSelo.className = "ap-selo";
+apSelo.hidden = true;
+apSelo.innerHTML = '<span class="ap-selo-anel"><svg viewBox="0 0 34 34"><circle class="f" cx="17" cy="17" r="14"/><circle class="c" id="apSeloArco" cx="17" cy="17" r="14"/></svg><b id="apSeloNum">✦</b></span><p id="apSeloTxt">ARYA Completa<small>R$ 49/mês</small></p>';
+const apRodape = document.getElementById("assinaturaMenu") || document.querySelector(".sidebar-foot");
+if (apRodape) apRodape.after(apSelo);
+apSelo.addEventListener("click", function () { asNav.click(); });
+
+// ---------- Cartão no Dashboard ----------
+const apDash = document.createElement("div");
+apDash.className = "ap-dash";
+apDash.hidden = true;
+apDash.innerHTML = `
+  <div class="ap-dash-anel"><svg viewBox="0 0 64 64"><circle class="f" cx="32" cy="32" r="28"/><circle class="c" id="apDashArco" cx="32" cy="32" r="28"/></svg>
+    <div><strong id="apDashNum">30</strong><span>dias</span></div></div>
+  <div class="ap-dash-txt"><b id="apDashTitulo">Teste grátis</b><p id="apDashTexto"></p></div>
+`;
+const apDashBotao = criarBotao("Ver plano", "btn btn-small", function () { asNav.click(); });
+apDash.appendChild(apDashBotao);
+const apHero = document.getElementById("dashHero");
+if (apHero) apHero.after(apDash); else document.getElementById("view-dashboard").prepend(apDash);
+
+// ---------- Novas partes da tela de Assinatura ----------
+const apPlano = asView.querySelector(".as-plano");
+const apJornada = document.createElement("div");
+apJornada.className = "ap-jornada";
+apJornada.innerHTML = `
+  <div class="ap-passo" id="apP1"><div class="ap-bola">1</div><b>Teste grátis</b><span id="apP1t">30 dias para usar tudo</span></div>
+  <div class="ap-passo" id="apP2"><div class="ap-bola">2</div><b>Primeira cobrança</b><span id="apP2t">no fim do teste</span></div>
+  <div class="ap-passo" id="apP3"><div class="ap-bola">3</div><b>Todo mês</b><span id="apP3t">R$ 49, cancele quando quiser</span></div>
+`;
+apPlano.after(apJornada);
+
+const apValor = document.createElement("div");
+apValor.className = "ap-valor";
+apValor.innerHTML = `
+  <div class="ap-v preto"><small>Custa por dia</small><strong>R$ 1,63</strong><p>menos que um café</p></div>
+  <div class="ap-v"><small>Vendido com a ARYA</small><strong id="apVendido">—</strong><p>nos últimos 30 dias</p></div>
+  <div class="ap-v"><small>Dinheiro na mesa</small><strong id="apMesa">—</strong><p>encontrado na sua loja</p></div>
+  <div class="ap-v"><small>A ARYA custa</small><strong id="apPct">—</strong><p id="apPctTxt">do que você vendeu</p></div>
+`;
+apJornada.after(apValor);
+
+const apCalc = document.createElement("article");
+apCalc.className = "card ap-calc";
+apCalc.innerHTML = `
+  <div class="card-head"><h2>Quanto custa cada venda?</h2></div>
+  <div class="ap-calc-linha">
+    <div>
+      <p class="item-sub" style="margin-bottom:6px;">Arraste: quantas vendas a sua loja faz por dia? <b id="apCalcN">5</b></p>
+      <input type="range" id="apCalcR" min="1" max="60" value="5" aria-label="Vendas por dia" />
+    </div>
+    <div class="ap-calc-res"><strong id="apCalcV">R$ 0,33</strong><span>por venda</span></div>
+  </div>
+`;
+apValor.after(apCalc);
+function apCalcular() {
+  const n = Number(dmElSeguro("apCalcR").value);
+  dmElSeguro("apCalcN").textContent = n;
+  dmElSeguro("apCalcV").textContent = moeda(49 / (n * 30));
+}
+function dmElSeguro(id) { return document.getElementById(id); }
+dmElSeguro("apCalcR").addEventListener("input", apCalcular);
+apCalcular();
+
+// Formas de pagamento (dentro do cartão do formulário)
+const apMetodos = document.createElement("div");
+apMetodos.className = "ap-metodos";
+[["⚡", "Pix", "Libera na hora"], ["▤", "Boleto", "Até 3 dias úteis"], ["▭", "Cartão", "Cobra sozinho todo mês"]].forEach(function (m, i) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "ap-metodo" + (i === 0 ? " ativo" : "");
+  b.innerHTML = "<i>" + m[0] + "</i><b>" + m[1] + "</b><span>" + m[2] + "</span>";
+  b.addEventListener("click", function () {
+    apMetodos.querySelectorAll(".ap-metodo").forEach(function (x) { x.classList.toggle("ativo", x === b); });
+  });
+  apMetodos.appendChild(b);
+});
+const apFormCard = asEl("asForm").closest(".card");
+apFormCard.querySelector(".card-head").after(apMetodos);
+const apDica = document.createElement("p");
+apDica.className = "item-sub";
+apDica.style.margin = "0 0 14px";
+apDica.textContent = "Você escolhe a forma de pagamento na página segura do Asaas.";
+apMetodos.after(apDica);
+
+const apFaq = document.createElement("article");
+apFaq.className = "card ap-faq";
+apFaq.style.marginTop = "16px";
+apFaq.innerHTML = `
+  <div class="card-head"><h2>Dúvidas sobre a assinatura</h2></div>
+  <details><summary>Posso cancelar quando quiser?</summary><p>Sim, sem multa. Toque em "Cancelar assinatura" nesta tela. Você continua usando até o fim do mês que já pagou.</p></details>
+  <details><summary>Se eu assinar agora, pago agora?</summary><p>Não. Se você ainda estiver no teste grátis, a primeira cobrança só vence no último dia do teste. Você não perde nenhum dia grátis.</p></details>
+  <details><summary>O que acontece se eu esquecer de pagar?</summary><p>A ARYA avisa você e espera 3 dias. Depois disso, o acesso fica pausado até o pagamento. Nenhum produto, cliente ou venda é apagado.</p></details>
+  <details><summary>Meus dados de pagamento ficam na ARYA?</summary><p>Não. O pagamento é feito na página segura do Asaas, uma empresa de pagamentos autorizada pelo Banco Central. A ARYA nunca vê nem guarda os dados do seu cartão.</p></details>
+  <details><summary>Preciso de CNPJ para assinar?</summary><p>Não. Pode assinar com CPF ou CNPJ de quem vai pagar.</p></details>
+`;
+apFormCard.after(apFaq);
+
+// ---------- Atualização ----------
+let apValorCarregado = false;
+async function apCarregarValor() {
+  if (apValorCarregado) return;
+  apValorCarregado = true;
+  try {
+    const cliente = await iniciarSupabase();
+    const desde = new Date(Date.now() - 30 * 86400000).toISOString();
+    const r = await cliente.from("sales").select("total, status").gte("created_at", desde);
+    if (r.error) throw r.error;
+    const total = (r.data || []).filter(function (v) { return v.status !== "cancelled"; }).reduce(function (s, v) { return s + Number(v.total); }, 0);
+    if (typeof contarAte === "function") contarAte(dmElSeguro("apVendido"), total, true); else dmElSeguro("apVendido").textContent = moeda(total);
+    dmElSeguro("apPct").textContent = total > 0 ? (Math.max(0.1, Math.round(49 / total * 1000) / 10)).toLocaleString("pt-BR") + "%" : "—";
+    dmElSeguro("apPctTxt").textContent = total > 0 ? "do que você vendeu em 30 dias" : "registre vendas para calcular";
+    let mesa = 0;
+    if (typeof dmOps !== "undefined" && dmOps.length) mesa = dmOps.filter(function (o) { return !o.feito; }).reduce(function (s, o) { return s + o.valor; }, 0);
+    else if (typeof dmCarregar === "function") {
+      const d = await dmCarregar();
+      mesa = dmCalcular(d).filter(function (o) { return !o.feito; }).reduce(function (s, o) { return s + o.valor; }, 0);
+    }
+    if (typeof contarAte === "function") contarAte(dmElSeguro("apMesa"), mesa, true); else dmElSeguro("apMesa").textContent = moeda(mesa);
+  } catch (e) {
+    console.error("Assinatura (valor):", e);
+    apValorCarregado = false;
+  }
+}
+
+function apAtualizar() {
+  const b = asBilling;
+  if (!b) return;
+  const s = asSituacao(b);
+  const dia = 86400000;
+
+  // Selo do menu
+  const arco = dmElSeguro("apSeloArco");
+  let fracao = 1, num = "✦", titulo = "ARYA Completa", sub = "Assinatura ativa";
+  if (s.tipo === "teste") {
+    fracao = Math.max(0, Math.min(1, s.dias / 30));
+    num = String(s.dias);
+    titulo = "Teste grátis";
+    sub = "faltam " + s.dias + " dia(s) · assinar";
+  } else if (s.tipo === "tolerancia") { fracao = 0.1; num = "!"; titulo = "Pagamento pendente"; sub = "toque para pagar"; }
+  else if (s.tipo === "cancelada") { num = "✓"; titulo = "Cancelada"; sub = "acesso até " + new Date(b.paid_until).toLocaleDateString("pt-BR"); }
+  else if (s.tipo === "vitalicio") { num = "∞"; titulo = "Acesso de fundadora"; sub = "liberado para sempre"; }
+  else if (s.tipo === "ativa") { num = "✓"; sub = "ativa até " + new Date(b.paid_until).toLocaleDateString("pt-BR"); }
+  arco.style.strokeDashoffset = String(87.96 * (1 - fracao));
+  dmElSeguro("apSeloNum").textContent = num;
+  dmElSeguro("apSeloTxt").innerHTML = "";
+  dmElSeguro("apSeloTxt").appendChild(document.createTextNode(titulo));
+  const sm = document.createElement("small");
+  sm.textContent = sub;
+  dmElSeguro("apSeloTxt").appendChild(sm);
+  apSelo.hidden = false;
+
+  // Cartão do Dashboard: aparece no teste e quando falta pagar
+  const mostrarDash = s.tipo === "teste" || s.tipo === "tolerancia";
+  apDash.hidden = !mostrarDash;
+  if (mostrarDash) {
+    const darco = dmElSeguro("apDashArco");
+    darco.style.strokeDashoffset = "175.9";
+    const f = s.tipo === "teste" ? Math.max(0, Math.min(1, s.dias / 30)) : 0.1;
+    requestAnimationFrame(function () { requestAnimationFrame(function () { darco.style.strokeDashoffset = String(175.9 * (1 - f)); }); });
+    dmElSeguro("apDashNum").textContent = s.tipo === "teste" ? s.dias : s.dias;
+    dmElSeguro("apDashTitulo").textContent = s.tipo === "teste" ? "✦ Seu teste grátis da ARYA" : "Pagamento pendente";
+    dmElSeguro("apDashTexto").textContent = s.tipo === "teste"
+      ? "Assine agora e só pague em " + new Date(b.trial_ends_at).toLocaleDateString("pt-BR") + ". Você não perde nenhum dia grátis."
+      : "Pague para não pausar a ARYA. Seus dados estão guardados.";
+    apDashBotao.textContent = s.tipo === "teste" ? "Ver plano" : "Pagar agora";
+  }
+
+  // Jornada
+  const p1 = dmElSeguro("apP1"), p2 = dmElSeguro("apP2"), p3 = dmElSeguro("apP3");
+  [p1, p2, p3].forEach(function (p) { p.classList.remove("feito", "agora"); });
+  const fimTeste = new Date(b.trial_ends_at);
+  const diaCobranca = fimTeste.getDate();
+  dmElSeguro("apP1t").textContent = s.tipo === "teste" ? "faltam " + s.dias + " dia(s)" : "concluído";
+  dmElSeguro("apP2t").textContent = fimTeste.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) + " · R$ 49";
+  dmElSeguro("apP3t").textContent = "todo dia " + diaCobranca + " · cancele quando quiser";
+  if (s.tipo === "teste") { p1.classList.add("agora"); }
+  else if (s.tipo === "ativa" || s.tipo === "vitalicio") { p1.classList.add("feito"); p2.classList.add("feito"); p3.classList.add("feito", "agora"); }
+  else { p1.classList.add("feito"); p2.classList.add("agora"); }
+
+  if (asView.classList.contains("active")) apCarregarValor();
+}
+
+// A tela de Assinatura passa a atualizar também as partes novas
+function asDesenharTela() {
+  const b = asBilling;
+  if (!b) return;
+  const s = asSituacao(b);
+  const st = asEl("asStatus");
+  const mapa = {
+    vitalicio: ["Acesso de fundadora ✦", "#ffffff"],
+    ativa: ["Assinatura ativa", "#4ade80"],
+    cancelada: ["Cancelada · acesso até o fim do período", "#fbbf24"],
+    teste: ["Teste grátis", "#ffffff"],
+    tolerancia: ["Pagamento pendente", "#fbbf24"],
+    atrasada: ["Pausada por falta de pagamento", "#f87171"],
+    "teste-fim": ["Teste grátis encerrado", "#f87171"]
+  };
+  const m = mapa[s.tipo] || ["—", "#a1a1aa"];
+  st.style.setProperty("--c", m[1]);
+  st.querySelector("span").textContent = m[0];
+  let det = "";
+  if (s.tipo === "teste") det = "Seu teste grátis vai até " + asData(b.trial_ends_at) + ": faltam " + s.dias + " dia(s). Se assinar agora, a primeira cobrança só vence no fim do teste.";
+  if (s.tipo === "ativa") det = "Pago até " + asData(b.paid_until) + ". A próxima cobrança chega por e-mail e no seu WhatsApp.";
+  if (s.tipo === "cancelada") det = "Você continua com acesso até " + asData(b.paid_until) + ".";
+  if (s.tipo === "tolerancia" || s.tipo === "atrasada") det = "Pague a cobrança pendente para continuar. Assim que o Asaas confirmar, a ARYA libera sozinha.";
+  if (s.tipo === "teste-fim") det = "Assine para voltar a usar. Nenhum dado foi apagado.";
+  if (s.tipo === "vitalicio") det = "Esta conta tem acesso liberado para sempre.";
+  asEl("asDetalhe").textContent = det;
+
+  const temAssinatura = Boolean(b.asaas_subscription_id) && b.status !== "canceled";
+  asEl("asForm").hidden = Boolean(b.asaas_customer_id) && temAssinatura;
+  apMetodos.hidden = temAssinatura && !b.last_payment_url;
+  apDica.hidden = apMetodos.hidden;
+  asEl("asTituloForm").textContent = temAssinatura ? "Sua assinatura" : "Assinar a ARYA";
+  const pagar = asEl("asPagar");
+  pagar.hidden = s.tipo === "vitalicio" || (temAssinatura && !b.last_payment_url);
+  pagar.textContent = temAssinatura ? "Pagar cobrança pendente" : (s.tipo === "teste" ? "Assinar agora · pagar só em " + new Date(b.trial_ends_at).toLocaleDateString("pt-BR") : "Assinar por R$ 49/mês");
+  asEl("asAtualizar").hidden = !temAssinatura;
+  asEl("asCancelar").hidden = !temAssinatura;
+  apAtualizar();
+}
+const estilo40b = document.createElement("style");
+estilo40b.textContent = ".ap-metodos[hidden], .ap-dash[hidden], .ap-selo[hidden] { display: none !important; }";
+document.head.appendChild(estilo40b);
+
+asNav.addEventListener("click", function () { apValorCarregado = false; });
+if (asBilling) asDesenharTela();
+// FIM DA PARTE 40
 
