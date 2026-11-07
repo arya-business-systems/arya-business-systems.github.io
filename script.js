@@ -10123,4 +10123,808 @@ iniciarSupabase().then(function (cliente) {
   });
 });
 // FIM DA PARTE 35
+// ===== PARTE 36: Caixa rápido (vender em poucos toques + código de barras) =====
+const estilo36 = document.createElement("style");
+estilo36.textContent = `
+  .cr-abrir { gap: 6px; }
+  .cr-fundo { position: fixed; inset: 0; z-index: 150; background: var(--bg); display: flex; flex-direction: column;
+    animation: cr-entra .3s cubic-bezier(.2,.8,.2,1); }
+  .cr-fundo[hidden] { display: none; }
+  @keyframes cr-entra { from { opacity: 0; transform: translateY(14px); } }
+  .cr-topo { display: flex; align-items: center; gap: 14px; padding: 14px 20px; padding-top: max(14px, env(safe-area-inset-top));
+    background: #000; color: #fff; }
+  .cr-marca { font-family: var(--font-brand); font-size: 14px; letter-spacing: .06em; display: flex; align-items: center; gap: 8px; }
+  .cr-marca i { font-style: normal; display: inline-block; animation: cr-gira 6s linear infinite; }
+  @keyframes cr-gira { to { transform: rotate(360deg); } }
+  .cr-hoje { margin-left: auto; font-size: 13px; color: #a1a1aa; font-variant-numeric: tabular-nums; }
+  .cr-hoje b { color: #fff; font-weight: 600; }
+  .cr-fechar { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.1); color: #fff; font-size: 16px; flex: none; }
+  .cr-fechar:hover { background: rgba(255,255,255,.2); }
+
+  .cr-corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 380px; }
+  .cr-produtos { min-height: 0; overflow-y: auto; padding: 18px 20px 30px; }
+  .cr-busca { display: flex; gap: 8px; position: sticky; top: 0; z-index: 2; background: var(--bg); padding-bottom: 12px; }
+  .cr-busca input { flex: 1; min-width: 0; height: 50px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface);
+    padding: 0 16px; font: inherit; font-size: 16px; }
+  .cr-busca input:focus { outline: none; border-color: #000; box-shadow: 0 0 0 4px rgba(10,10,10,.08); }
+  .cr-cam { height: 50px; padding: 0 16px; border-radius: 14px; background: #000; color: #fff; font-weight: 500; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+  .cr-aviso { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2);
+    font-size: 14px; margin-bottom: 12px; animation: cr-entra .25s ease; }
+  .cr-aviso[hidden] { display: none; }
+  .cr-aviso.forte { background: #000; color: #fff; }
+  .cr-aviso button { padding: 7px 12px; border-radius: 999px; border: 1px solid currentColor; font-size: 13px; font-weight: 500; }
+  .cr-secao { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--muted); margin: 6px 2px 10px; }
+  .cr-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .cr-tile { position: relative; text-align: left; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 0; font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+    transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease; }
+  .cr-tile:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+  .cr-tile:active { transform: scale(.97); }
+  .cr-tile.pulou { animation: cr-pulo .4s ease; }
+  @keyframes cr-pulo { 40% { transform: scale(.94); } 70% { transform: scale(1.03); } }
+  .cr-tile[disabled] { opacity: .45; }
+  .cr-foto { aspect-ratio: 1 / 1; background: var(--surface-2); display: grid; place-items: center; overflow: hidden; }
+  .cr-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cr-foto span { font-family: var(--font-brand); font-size: 22px; color: var(--muted); }
+  .cr-info { padding: 10px 12px 12px; flex: 1; }
+  .cr-nome { font-size: 14px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 36px; }
+  .cr-preco { font-size: 15px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .cr-est { font-size: 12px; color: var(--muted); }
+  .cr-qtd { position: absolute; top: 8px; right: 8px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; background: #000; color: #fff;
+    font-size: 13px; font-weight: 600; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+  .cr-selo { position: absolute; top: 8px; left: 8px; padding: 4px 9px; border-radius: 999px; background: rgba(255,255,255,.92); font-size: 11px; font-weight: 600; }
+  .cr-vazio { padding: 40px 10px; text-align: center; color: var(--muted); }
+
+  .cr-carrinho { min-height: 0; border-left: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; position: relative; }
+  .cr-barra { display: none; }
+  .cr-painel { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 18px 18px 18px; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  .cr-painel-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cr-painel-topo h3 { font-size: 16px; }
+  .cr-link { font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+  .cr-itens { flex: 1; min-height: 80px; overflow-y: auto; margin: 0 -6px; }
+  .cr-item { display: flex; align-items: center; gap: 10px; padding: 10px 6px; border-bottom: 1px solid var(--border); animation: cr-entra .25s ease; }
+  .cr-item-info { flex: 1; min-width: 0; }
+  .cr-item-nome { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cr-item-sub { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cr-passo { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 999px; }
+  .cr-passo button { width: 34px; height: 34px; font-size: 17px; border-radius: 50%; }
+  .cr-passo span { min-width: 22px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cr-carrinho-vazio { padding: 34px 10px; text-align: center; color: var(--muted); font-size: 14px; display: grid; gap: 12px; justify-items: center; }
+  .cr-carrinho-vazio .estrela { font-size: 26px; color: var(--text); }
+  .cr-campos { display: grid; gap: 10px; padding-top: 12px; }
+  .cr-campos select, .cr-linha input { height: 44px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); padding: 0 12px; font: inherit; font-size: 15px; width: 100%; }
+  .cr-pags { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .cr-pag { height: 40px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; font-weight: 500; }
+  .cr-pag.ativo { background: #000; color: #fff; border-color: #000; }
+  .cr-linha { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+  .cr-linha input { width: 130px; margin-left: auto; text-align: right; }
+  .cr-total { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 2px 10px; }
+  .cr-total span { color: var(--muted); font-size: 14px; }
+  .cr-total strong { font-size: 30px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .cr-erro { color: var(--danger); font-size: 13px; min-height: 0; }
+  .cr-erro:empty { display: none; }
+  .cr-cobrar { height: 58px; border-radius: 16px; background: #000; color: #fff; font-size: 17px; font-weight: 600; margin-top: 6px; transition: transform .15s ease, opacity .2s ease; }
+  .cr-cobrar:active { transform: scale(.98); }
+  .cr-cobrar[disabled] { opacity: .35; }
+
+  .cr-ok { position: absolute; inset: 0; background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; padding: 24px; text-align: center; z-index: 3; animation: cr-entra .3s ease; }
+  .cr-ok[hidden] { display: none; }
+  .cr-ok-check { width: 84px; height: 84px; border-radius: 50%; border: 2px solid #fff; display: grid; place-items: center; font-size: 38px;
+    animation: cr-check .5s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes cr-check { from { transform: scale(.3); opacity: 0; } }
+  .cr-ok h3 { font-family: var(--font-brand); font-size: 15px; letter-spacing: .06em; margin-top: 8px; }
+  .cr-ok strong { font-size: 40px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .cr-ok p { color: #a1a1aa; font-size: 14px; }
+  .cr-ok-acoes { display: grid; gap: 8px; width: 100%; max-width: 280px; margin-top: 16px; }
+  .cr-ok-acoes button { height: 50px; border-radius: 14px; font-weight: 600; font-size: 15px; }
+  .cr-ok-acoes .claro { background: #fff; color: #000; }
+  .cr-ok-acoes .escuro { border: 1px solid rgba(255,255,255,.3); color: #fff; }
+
+  .cr-folha-fundo { position: fixed; inset: 0; z-index: 170; background: rgba(10,10,10,.5); display: flex; align-items: flex-end; justify-content: center; }
+  .cr-folha-fundo[hidden] { display: none; }
+  .cr-folha { width: 100%; max-width: 520px; background: var(--surface); border-radius: 22px 22px 0 0; padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom));
+    animation: cr-sobe .3s cubic-bezier(.2,.8,.2,1); }
+  @keyframes cr-sobe { from { transform: translateY(100%); } }
+  .cr-folha h3 { font-size: 17px; }
+  .cr-folha .item-sub { margin: 2px 0 14px; }
+  .cr-vars { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+  .cr-vars button { padding: 12px 10px; border-radius: 12px; border: 1px solid var(--border); text-align: center; font-weight: 500; font-size: 14px; }
+  .cr-vars button small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
+  .cr-vars button:hover { border-color: #000; }
+  .cr-vars button[disabled] { opacity: .4; text-decoration: line-through; }
+
+  .cr-cam-fundo { position: fixed; inset: 0; z-index: 180; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; color: #fff; padding: 20px; }
+  .cr-cam-fundo[hidden] { display: none; }
+  .cr-cam-video { position: relative; width: 100%; max-width: 520px; aspect-ratio: 4 / 3; border-radius: 22px; overflow: hidden; background: #111; }
+  .cr-cam-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cr-mira { position: absolute; left: 10%; right: 10%; top: 32%; bottom: 32%; border: 2px solid #fff; border-radius: 14px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); }
+  .cr-mira::after { content: ""; position: absolute; left: 6%; right: 6%; top: 50%; height: 2px; background: #fff; opacity: .8; animation: cr-laser 1.6s ease-in-out infinite; }
+  @keyframes cr-laser { 50% { transform: translateY(-26px); } }
+  .cr-cam-fundo p { color: #d4d4d8; font-size: 14px; text-align: center; max-width: 420px; }
+  .cr-cam-fundo button { height: 48px; padding: 0 26px; border-radius: 999px; background: #fff; color: #000; font-weight: 600; }
+
+  @media (max-width: 860px) {
+    .cr-corpo { grid-template-columns: 1fr; }
+    .cr-produtos { padding: 14px 14px 110px; }
+    .cr-grade { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    .cr-cam span { display: none; }
+    .cr-carrinho { position: fixed; left: 0; right: 0; bottom: 0; border-left: 0; background: transparent; z-index: 4; pointer-events: none; }
+    .cr-barra { pointer-events: auto; display: flex; align-items: center; gap: 10px; margin: 0 12px 12px; margin-bottom: max(12px, env(safe-area-inset-bottom));
+      height: 60px; padding: 0 20px; border-radius: 18px; background: #000; color: #fff; font-size: 15px; box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+    .cr-barra b { margin-left: auto; font-size: 17px; font-variant-numeric: tabular-nums; }
+    .cr-barra.pulou { animation: cr-pulo .4s ease; }
+    .cr-painel { display: none; }
+    .cr-carrinho.aberto { top: 0; background: rgba(10,10,10,.5); pointer-events: auto; display: flex; flex-direction: column; justify-content: flex-end; }
+    .cr-carrinho.aberto .cr-barra { display: none; }
+    .cr-carrinho.aberto .cr-painel { display: flex; background: var(--surface); border-radius: 22px 22px 0 0; max-height: 92%; animation: cr-sobe .3s cubic-bezier(.2,.8,.2,1); }
+    .cr-ok { position: fixed; z-index: 175; pointer-events: auto; }
+    .cr-hoje { display: none; }
+    .cr-fechar { margin-left: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cr-fundo, .cr-tile.pulou, .cr-barra.pulou, .cr-ok, .cr-ok-check, .cr-item, .cr-folha, .cr-mira::after, .cr-marca i { animation: none; }
+  }
+`;
+document.head.appendChild(estilo36);
+
+const crFundo = document.createElement("div");
+crFundo.className = "cr-fundo";
+crFundo.hidden = true;
+crFundo.innerHTML = `
+  <header class="cr-topo">
+    <div class="cr-marca"><i>✦</i> CAIXA RÁPIDO</div>
+    <div class="cr-hoje" id="crHoje"></div>
+    <button class="cr-fechar" id="crFechar" type="button" aria-label="Fechar caixa rápido">✕</button>
+  </header>
+  <div class="cr-corpo">
+    <section class="cr-produtos">
+      <div class="cr-busca">
+        <input id="crBusca" type="search" placeholder="Buscar produto ou bipar o código" autocomplete="off" enterkeyhint="go" />
+        <button class="cr-cam" id="crCamera" type="button" aria-label="Ler código de barras com a câmera">▥ <span>Ler código</span></button>
+      </div>
+      <div class="cr-aviso" id="crAviso" hidden></div>
+      <p class="cr-secao" id="crSecao">Mais vendidos primeiro</p>
+      <div class="cr-grade" id="crGrade"></div>
+    </section>
+    <aside class="cr-carrinho" id="crCarrinho">
+      <button class="cr-barra" id="crBarra" type="button"><span id="crBarraQtd">Carrinho vazio</span><b id="crBarraTotal">R$ 0,00</b></button>
+      <div class="cr-painel">
+        <div class="cr-painel-topo"><h3>Venda atual</h3><button class="cr-link" id="crLimpar" type="button">Limpar</button></div>
+        <div class="cr-itens" id="crItens"></div>
+        <div class="cr-campos">
+          <select id="crCliente" aria-label="Cliente"><option value="">Sem cliente</option></select>
+          <div class="cr-pags" id="crPags"></div>
+          <label class="cr-linha">Desconto (R$)<input id="crDesconto" inputmode="decimal" placeholder="0,00" /></label>
+        </div>
+        <div class="cr-total"><span>Total</span><strong id="crTotal">R$ 0,00</strong></div>
+        <p class="cr-erro" id="crErro"></p>
+        <button class="cr-cobrar" id="crCobrar" type="button" disabled>Cobrar</button>
+      </div>
+      <div class="cr-ok" id="crOk" hidden>
+        <div class="cr-ok-check">✓</div>
+        <h3>VENDA REGISTRADA</h3>
+        <strong id="crOkValor">R$ 0,00</strong>
+        <p id="crOkSub"></p>
+        <div class="cr-ok-acoes">
+          <button class="claro" id="crOkNova" type="button">Próxima venda</button>
+          <button class="escuro" id="crOkRecibo" type="button">Ver recibo</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <div class="cr-folha-fundo" id="crVarFundo" hidden>
+    <div class="cr-folha" role="dialog" aria-modal="true" aria-labelledby="crVarTitulo">
+      <h3 id="crVarTitulo">Escolha a variação</h3>
+      <p class="item-sub" id="crVarSub"></p>
+      <div class="cr-vars" id="crVars"></div>
+      <button class="btn btn-ghost" id="crVarCancelar" type="button" style="width:100%; margin-top:14px;">Cancelar</button>
+    </div>
+  </div>
+  <div class="cr-cam-fundo" id="crCamFundo" hidden>
+    <div class="cr-cam-video"><video id="crVideo" playsinline muted autoplay></video><div class="cr-mira"></div></div>
+    <p id="crCamTexto">Aponte a câmera para o código de barras da etiqueta.</p>
+    <button id="crCamFechar" type="button">Fechar câmera</button>
+  </div>
+`;
+document.body.appendChild(crFundo);
+
+const crBotaoAbrir = document.createElement("button");
+crBotaoAbrir.type = "button";
+crBotaoAbrir.className = "btn btn-ghost cr-abrir";
+crBotaoAbrir.textContent = "✦ Caixa rápido";
+document.getElementById("btnNovaVenda").before(crBotaoAbrir);
+crBotaoAbrir.parentElement.style.gap = "8px";
+
+let crProdutos = [];
+let crClientes = [];
+let crCarrinhoItens = [];   // { product_id, variant_id, quantity }
+let crPagamento = "pix";
+let crTemCodigo = true;     // a coluna "barcode" já existe no banco?
+let crVinculando = null;    // código esperando para ser ligado a um produto
+let crUltimaVenda = null;
+let crUltimoId = null;
+let crHojeTotal = 0, crHojeQtd = 0;
+let crCamControle = null;
+let crCamLendo = false;
+
+const crEl = function (id) { return document.getElementById(id); };
+
+function crIniciais(nome) {
+  return String(nome || "?").trim().split(/\s+/).slice(0, 2).map(function (p) { return p[0]; }).join("").toUpperCase();
+}
+function crProduto(id) { return crProdutos.find(function (p) { return p.id === id; }); }
+function crTemVariacoes(p) { return variacoesDe(p.id).length > 0; }
+function crEstoqueDe(pid, vid) {
+  if (vid) { const v = buscarVariacao(pid, vid); return v ? Number(v.stock_quantity) : 0; }
+  const p = crProduto(pid);
+  if (!p) return 0;
+  if (crTemVariacoes(p)) return variacoesDe(p.id).reduce(function (s, v) { return s + Number(v.stock_quantity); }, 0);
+  return Number(p.stock_quantity);
+}
+function crNoCarrinho(pid, vid) {
+  return crCarrinhoItens.filter(function (x) { return x.product_id === pid && (vid === undefined || mesmoItem(x, pid, vid)); })
+    .reduce(function (s, x) { return s + x.quantity; }, 0);
+}
+
+async function crCarregar() {
+  const cliente = await iniciarSupabase();
+  let prod = await cliente.from("products").select("id, name, sale_price, stock_quantity, image_url, barcode").order("name", { ascending: true });
+  if (prod.error) {
+    crTemCodigo = false;
+    prod = await cliente.from("products").select("id, name, sale_price, stock_quantity, image_url").order("name", { ascending: true });
+  } else {
+    crTemCodigo = true;
+  }
+  if (prod.error) throw prod.error;
+
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const desde = new Date(Date.now() - 30 * 86400000);
+  const r = await Promise.all([
+    cliente.from("customers").select("id, name").order("name", { ascending: true }),
+    cliente.from("sales").select("id, total, status, created_at").gte("created_at", desde.toISOString()),
+    carregarGrade()
+  ]);
+  if (r[0].error) throw r[0].error;
+  if (r[1].error) throw r[1].error;
+
+  const vendas = (r[1].data || []).filter(function (v) { return v.status !== "cancelled"; });
+  const deHoje = vendas.filter(function (v) { return new Date(v.created_at) >= hoje; });
+  crHojeQtd = deHoje.length;
+  crHojeTotal = deHoje.reduce(function (s, v) { return s + Number(v.total); }, 0);
+
+  // Ranking dos mais vendidos (30 dias)
+  const contagem = {};
+  const ids = vendas.map(function (v) { return v.id; });
+  for (let i = 0; i < ids.length; i += 150) {
+    const it = await cliente.from("sale_items").select("product_name, quantity").in("sale_id", ids.slice(i, i + 150));
+    if (it.error) break;
+    (it.data || []).forEach(function (x) { contagem[x.product_name] = (contagem[x.product_name] || 0) + Number(x.quantity); });
+  }
+  crProdutos = (prod.data || []).map(function (p) { p.vendidos = contagem[p.name] || 0; return p; });
+  crProdutos.sort(function (a, b) { return b.vendidos - a.vendidos || a.name.localeCompare(b.name, "pt-BR"); });
+  crClientes = r[0].data || [];
+
+  const sel = crEl("crCliente");
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Sem cliente</option>';
+  crClientes.forEach(function (c) {
+    const o = document.createElement("option");
+    o.value = c.id;
+    o.textContent = c.name;
+    sel.appendChild(o);
+  });
+  sel.value = atual;
+  crAtualizarHoje();
+}
+
+function crAtualizarHoje() {
+  crEl("crHoje").innerHTML = "Hoje: <b>" + moeda(crHojeTotal) + "</b> · " + crHojeQtd + " venda" + (crHojeQtd === 1 ? "" : "s");
+}
+
+function crFiltrados() {
+  const termo = crEl("crBusca").value.trim().toLowerCase();
+  if (!termo) return crProdutos;
+  return crProdutos.filter(function (p) {
+    if (p.name.toLowerCase().includes(termo)) return true;
+    if (p.barcode && String(p.barcode).toLowerCase() === termo) return true;
+    return variacoesDe(p.id).some(function (v) { return v.sku && String(v.sku).toLowerCase() === termo; });
+  });
+}
+
+function crDesenharGrade() {
+  const grade = crEl("crGrade");
+  const lista = crFiltrados();
+  const termo = crEl("crBusca").value.trim();
+  crEl("crSecao").textContent = crVinculando ? "Toque no produto que tem este código"
+    : termo ? lista.length + " resultado(s)" : "Mais vendidos primeiro";
+  grade.innerHTML = "";
+  if (!crProdutos.length) {
+    grade.innerHTML = '<p class="cr-vazio">Nenhum produto cadastrado ainda. Cadastre em Produtos para vender aqui.</p>';
+    return;
+  }
+  if (!lista.length) {
+    grade.innerHTML = '<p class="cr-vazio">Nenhum produto encontrado.</p>';
+    return;
+  }
+  lista.forEach(function (p, i) {
+    const est = crEstoqueDe(p.id);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cr-tile";
+    b.dataset.id = p.id;
+    b.disabled = !crVinculando && est <= 0;
+
+    const foto = document.createElement("div");
+    foto.className = "cr-foto";
+    if (p.image_url) {
+      const img = document.createElement("img");
+      img.src = p.image_url;
+      img.alt = "";
+      img.loading = "lazy";
+      foto.appendChild(img);
+    } else {
+      const s = document.createElement("span");
+      s.textContent = crIniciais(p.name);
+      foto.appendChild(s);
+    }
+    const info = document.createElement("div");
+    info.className = "cr-info";
+    const nome = document.createElement("p");
+    nome.className = "cr-nome";
+    nome.textContent = p.name;
+    const preco = document.createElement("p");
+    preco.className = "cr-preco";
+    preco.textContent = moeda(p.sale_price);
+    const e = document.createElement("p");
+    e.className = "cr-est";
+    e.textContent = crVinculando ? "Vincular código" : est <= 0 ? "Esgotado" : est + " em estoque" + (crTemVariacoes(p) ? " · " + variacoesDe(p.id).length + " variações" : "");
+    info.appendChild(nome);
+    info.appendChild(preco);
+    info.appendChild(e);
+    b.appendChild(foto);
+    b.appendChild(info);
+
+    if (!termo && !crVinculando && i < 3 && p.vendidos > 0) {
+      const selo = document.createElement("span");
+      selo.className = "cr-selo";
+      selo.textContent = "✦ Top " + (i + 1);
+      b.appendChild(selo);
+    }
+    const q = crNoCarrinho(p.id);
+    if (q > 0) {
+      const qe = document.createElement("span");
+      qe.className = "cr-qtd";
+      qe.textContent = q;
+      b.appendChild(qe);
+    }
+    b.addEventListener("click", function () { crTocarProduto(p, b); });
+    grade.appendChild(b);
+  });
+}
+
+function crTocarProduto(p, tile) {
+  if (crVinculando) { crVincular(p); return; }
+  if (crTemVariacoes(p)) { crAbrirVariacoes(p); return; }
+  crAdicionar(p.id, null, tile);
+}
+
+function crAdicionar(pid, vid, tile) {
+  const p = crProduto(pid);
+  if (!p) return;
+  crEl("crOk").hidden = true;
+  const est = crEstoqueDe(pid, vid);
+  const jaTem = crNoCarrinho(pid, vid || null);
+  if (jaTem + 1 > est) {
+    crMostrarAviso("Só há " + est + " em estoque de " + nomeComVariacao(p.name, vid ? rotuloVariacao(buscarVariacao(pid, vid)) : "") + ".");
+    return;
+  }
+  const item = crCarrinhoItens.find(function (x) { return mesmoItem(x, pid, vid); });
+  if (item) item.quantity += 1;
+  else crCarrinhoItens.push({ product_id: pid, variant_id: vid || null, quantity: 1 });
+  if (navigator.vibrate) { try { navigator.vibrate(25); } catch (e) {} }
+  crDesenharCarrinho();
+  crDesenharGrade();
+  const novo = tile ? crEl("crGrade").querySelector('[data-id="' + pid + '"]') : null;
+  if (novo) { novo.classList.add("pulou"); }
+  const barra = crEl("crBarra");
+  barra.classList.remove("pulou"); void barra.offsetWidth; barra.classList.add("pulou");
+}
+
+function crMudarQtd(item, delta) {
+  if (delta > 0 && crNoCarrinho(item.product_id, item.variant_id) + 1 > crEstoqueDe(item.product_id, item.variant_id)) {
+    crMostrarAviso("Não há mais unidades em estoque deste item.");
+    return;
+  }
+  item.quantity += delta;
+  if (item.quantity <= 0) crCarrinhoItens = crCarrinhoItens.filter(function (x) { return x !== item; });
+  crDesenharCarrinho();
+  crDesenharGrade();
+}
+
+function crSubtotal() {
+  return crCarrinhoItens.reduce(function (s, x) {
+    const p = crProduto(x.product_id);
+    return s + (p ? Number(p.sale_price) * x.quantity : 0);
+  }, 0);
+}
+function crDesconto() {
+  const t = crEl("crDesconto").value.trim();
+  if (!t) return 0;
+  return lerNumero(t);
+}
+
+function crDesenharCarrinho() {
+  const area = crEl("crItens");
+  area.innerHTML = "";
+  if (!crCarrinhoItens.length) {
+    const vazio = document.createElement("div");
+    vazio.className = "cr-carrinho-vazio";
+    vazio.innerHTML = '<span class="estrela">✦</span><span>Toque num produto ou bipe o código para começar.</span>';
+    if (crUltimaVenda) {
+      vazio.appendChild(criarBotao("↻ Repetir última venda", "btn btn-ghost btn-small", crRepetir));
+    }
+    area.appendChild(vazio);
+  }
+  crCarrinhoItens.forEach(function (x) {
+    const p = crProduto(x.product_id);
+    if (!p) return;
+    const v = x.variant_id ? buscarVariacao(x.product_id, x.variant_id) : null;
+    const linha = document.createElement("div");
+    linha.className = "cr-item";
+    const info = document.createElement("div");
+    info.className = "cr-item-info";
+    const n = document.createElement("p");
+    n.className = "cr-item-nome";
+    n.textContent = nomeComVariacao(p.name, v ? rotuloVariacao(v) : "");
+    const s = document.createElement("p");
+    s.className = "cr-item-sub";
+    s.textContent = moeda(p.sale_price) + " · " + moeda(Number(p.sale_price) * x.quantity);
+    info.appendChild(n);
+    info.appendChild(s);
+    const passo = document.createElement("div");
+    passo.className = "cr-passo";
+    const menos = criarBotao(x.quantity === 1 ? "×" : "−", "", function () { crMudarQtd(x, -1); });
+    menos.setAttribute("aria-label", "Diminuir");
+    const q = document.createElement("span");
+    q.textContent = x.quantity;
+    const mais = criarBotao("+", "", function () { crMudarQtd(x, 1); });
+    mais.setAttribute("aria-label", "Aumentar");
+    passo.appendChild(menos);
+    passo.appendChild(q);
+    passo.appendChild(mais);
+    linha.appendChild(info);
+    linha.appendChild(passo);
+    area.appendChild(linha);
+  });
+  crAtualizarTotal();
+}
+
+function crAtualizarTotal() {
+  const sub = crSubtotal();
+  const d = crDesconto();
+  const total = Math.max(0, sub - (Number.isNaN(d) ? 0 : d));
+  const qtd = crCarrinhoItens.reduce(function (s, x) { return s + x.quantity; }, 0);
+  crEl("crTotal").textContent = moeda(total);
+  crEl("crBarraTotal").textContent = moeda(total);
+  crEl("crBarraQtd").textContent = qtd ? qtd + " ite" + (qtd === 1 ? "m" : "ns") + " · ver venda" : "Carrinho vazio";
+  const cobrar = crEl("crCobrar");
+  cobrar.disabled = !qtd;
+  cobrar.textContent = qtd ? "Cobrar " + moeda(total) + " · " + nomesPagamento[crPagamento] : "Cobrar";
+  crEl("crErro").textContent = "";
+}
+
+function crDesenharPagamentos() {
+  const area = crEl("crPags");
+  area.innerHTML = "";
+  [["pix", "Pix"], ["dinheiro", "Dinheiro"], ["cartao_credito", "Crédito"], ["cartao_debito", "Débito"], ["outro", "Outro"]].forEach(function (par) {
+    const b = criarBotao(par[1], "cr-pag" + (par[0] === crPagamento ? " ativo" : ""), function () {
+      crPagamento = par[0];
+      crDesenharPagamentos();
+      crAtualizarTotal();
+    });
+    area.appendChild(b);
+  });
+}
+
+function crMostrarAviso(texto, botoes, forte) {
+  const a = crEl("crAviso");
+  a.innerHTML = "";
+  a.className = "cr-aviso" + (forte ? " forte" : "");
+  const t = document.createElement("span");
+  t.textContent = texto;
+  a.appendChild(t);
+  (botoes || []).forEach(function (b) { a.appendChild(criarBotao(b[0], "", b[1])); });
+  a.hidden = false;
+  clearTimeout(crMostrarAviso.timer);
+  if (!botoes) crMostrarAviso.timer = setTimeout(function () { a.hidden = true; }, 3500);
+}
+function crEsconderAviso() { crEl("crAviso").hidden = true; }
+
+// ---------- Variações (tamanho / cor) ----------
+function crAbrirVariacoes(p) {
+  crEl("crVarTitulo").textContent = p.name;
+  crEl("crVarSub").textContent = "Escolha o tamanho / cor · " + moeda(p.sale_price);
+  const area = crEl("crVars");
+  area.innerHTML = "";
+  variacoesDe(p.id).forEach(function (v) {
+    const livre = Number(v.stock_quantity) - crNoCarrinho(p.id, v.id);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.disabled = livre <= 0;
+    b.textContent = rotuloVariacao(v) || "Padrão";
+    const s = document.createElement("small");
+    s.textContent = livre <= 0 ? "esgotado" : livre + (livre === 1 ? " disponível" : " disponíveis");
+    b.appendChild(s);
+    b.addEventListener("click", function () {
+      crEl("crVarFundo").hidden = true;
+      crAdicionar(p.id, v.id, true);
+    });
+    area.appendChild(b);
+  });
+  crEl("crVarFundo").hidden = false;
+}
+crEl("crVarCancelar").addEventListener("click", function () { crEl("crVarFundo").hidden = true; });
+crEl("crVarFundo").addEventListener("click", function (e) { if (e.target === crEl("crVarFundo")) crEl("crVarFundo").hidden = true; });
+
+// ---------- Código de barras ----------
+function crBuscarCodigo(codigo) {
+  const c = String(codigo || "").trim();
+  if (!c) return;
+  const baixo = c.toLowerCase();
+  for (const p of crProdutos) {
+    const v = variacoesDe(p.id).find(function (x) { return x.sku && String(x.sku).toLowerCase() === baixo; });
+    if (v) { crLimparBusca(); crAdicionar(p.id, v.id, true); return; }
+  }
+  const p = crProdutos.find(function (x) { return x.barcode && String(x.barcode).toLowerCase() === baixo; });
+  if (p) { crLimparBusca(); crTocarProduto(p, true); return; }
+
+  const lista = crFiltrados();
+  if (lista.length === 1) { crLimparBusca(); crTocarProduto(lista[0], true); return; }
+  if (lista.length > 1) return;
+
+  // Código desconhecido: oferece vincular a um produto
+  crLimparBusca();
+  crMostrarAviso("O código " + c + " ainda não está cadastrado.", [
+    ["Vincular a um produto", function () { crComecarVinculo(c); }],
+    ["Ignorar", crEsconderAviso]
+  ], true);
+}
+
+function crComecarVinculo(c) {
+  if (!crTemCodigo) {
+    crMostrarAviso("Para vincular códigos, rode primeiro o comando SQL da Parte 36 no Supabase.", [["Ok", crEsconderAviso]]);
+    return;
+  }
+  crVinculando = c;
+  crMostrarAviso("Toque no produto que tem o código " + c + ".", [["Cancelar", function () { crVinculando = null; crEsconderAviso(); crDesenharGrade(); }]], true);
+  crDesenharGrade();
+}
+
+async function crVincular(p) {
+  const codigo = crVinculando;
+  crVinculando = null;
+  try {
+    const cliente = await iniciarSupabase();
+    const r = await cliente.from("products").update({ barcode: codigo }).eq("id", p.id);
+    if (r.error) throw r.error;
+    crProdutos.forEach(function (x) { if (x.barcode === codigo) x.barcode = null; });
+    p.barcode = codigo;
+    crMostrarAviso("✦ Pronto! O código ficou ligado a " + p.name + ". Da próxima vez é só bipar.");
+    crDesenharGrade();
+    crTocarProduto(p, true);
+  } catch (e) {
+    console.error(e);
+    crMostrarAviso("Não consegui salvar o código: " + (e.message || e), [["Ok", crEsconderAviso]]);
+    crDesenharGrade();
+  }
+}
+
+function crLimparBusca() {
+  crEl("crBusca").value = "";
+  crDesenharGrade();
+}
+
+crEl("crBusca").addEventListener("input", function () {
+  if (!crVinculando) crEsconderAviso();
+  crDesenharGrade();
+});
+crEl("crBusca").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    crBuscarCodigo(crEl("crBusca").value);
+  }
+});
+
+async function crAbrirCamera() {
+  crEl("crCamTexto").textContent = "Abrindo a câmera...";
+  crEl("crCamFundo").hidden = false;
+  crCamLendo = false;
+  try {
+    const m = await import("https://esm.sh/@zxing/browser@0.1.5");
+    const leitor = new m.BrowserMultiFormatReader();
+    crEl("crCamTexto").textContent = "Aponte a câmera para o código de barras da etiqueta.";
+    crCamControle = await leitor.decodeFromConstraints(
+      { video: { facingMode: "environment" } },
+      crEl("crVideo"),
+      function (resultado) {
+        if (!resultado || crCamLendo) return;
+        crCamLendo = true;
+        if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) {} }
+        crFecharCamera();
+        crBuscarCodigo(resultado.getText());
+      }
+    );
+  } catch (e) {
+    console.error("Câmera:", e);
+    crEl("crCamTexto").textContent = "Não consegui abrir a câmera. Confira se o navegador tem permissão para usar a câmera e tente de novo.";
+  }
+}
+function crFecharCamera() {
+  if (crCamControle) { try { crCamControle.stop(); } catch (e) {} crCamControle = null; }
+  const v = crEl("crVideo");
+  if (v.srcObject) { v.srcObject.getTracks().forEach(function (t) { t.stop(); }); v.srcObject = null; }
+  crEl("crCamFundo").hidden = true;
+}
+crEl("crCamera").addEventListener("click", crAbrirCamera);
+crEl("crCamFechar").addEventListener("click", crFecharCamera);
+
+// ---------- Cobrar ----------
+async function crCobrar() {
+  const erro = crEl("crErro");
+  erro.textContent = "";
+  if (!crCarrinhoItens.length) return;
+  const desconto = crDesconto();
+  if (Number.isNaN(desconto)) { erro.textContent = "Desconto inválido. Use números, como 10,00."; return; }
+  const sub = crSubtotal();
+  if (desconto > sub) { erro.textContent = "O desconto não pode ser maior que o valor da venda."; return; }
+
+  const botao = crEl("crCobrar");
+  botao.disabled = true;
+  botao.textContent = "Registrando...";
+  const itens = crCarrinhoItens.map(function (x) { return { product_id: x.product_id, variant_id: x.variant_id, quantity: x.quantity }; });
+  const pagamento = crPagamento;
+  const total = sub - desconto;
+  try {
+    const cliente = await iniciarSupabase();
+    const resp = await cliente.rpc("create_sale", {
+      p_items: itens.map(function (x) {
+        const item = { product_id: x.product_id, quantity: x.quantity };
+        if (x.variant_id) item.variant_id = x.variant_id;
+        return item;
+      }),
+      p_payment_method: pagamento,
+      p_customer_id: crEl("crCliente").value || null,
+      p_discount: desconto,
+      p_notes: null
+    });
+    if (resp.error) throw resp.error;
+    const d = resp.data;
+    crUltimoId = typeof d === "string" || typeof d === "number" ? d : d && (d.id || d.sale_id) ? (d.id || d.sale_id) : null;
+    crUltimaVenda = itens;
+
+    // Baixa o estoque na tela na hora (o banco já baixou de verdade)
+    itens.forEach(function (x) {
+      if (x.variant_id) { const v = buscarVariacao(x.product_id, x.variant_id); if (v) v.stock_quantity -= x.quantity; }
+      else { const p = crProduto(x.product_id); if (p) p.stock_quantity -= x.quantity; }
+      const p = crProduto(x.product_id);
+      if (p) p.vendidos += x.quantity;
+    });
+    crHojeTotal += total;
+    crHojeQtd += 1;
+    crAtualizarHoje();
+
+    crEl("crOkValor").textContent = moeda(total);
+    crEl("crOkSub").textContent = nomesPagamento[pagamento] + " · " + itens.reduce(function (s, x) { return s + x.quantity; }, 0) + " item(ns)";
+    crEl("crCarrinho").classList.remove("aberto");
+    crEl("crOk").hidden = false;
+    crCarrinhoItens = [];
+    crEl("crDesconto").value = "";
+    crEl("crCliente").value = "";
+    crDesenharCarrinho();
+    crDesenharGrade();
+    if (typeof carregarVendas === "function") carregarVendas();
+  } catch (e) {
+    console.error(e);
+    erro.textContent = e && e.message ? e.message : String(e);
+  } finally {
+    crAtualizarTotal();
+  }
+}
+crEl("crCobrar").addEventListener("click", crCobrar);
+
+function crRepetir() {
+  if (!crUltimaVenda) return;
+  crCarrinhoItens = [];
+  let faltou = false;
+  crUltimaVenda.forEach(function (x) {
+    const livre = crEstoqueDe(x.product_id, x.variant_id);
+    const q = Math.min(x.quantity, livre);
+    if (q < x.quantity) faltou = true;
+    if (q > 0 && crProduto(x.product_id)) crCarrinhoItens.push({ product_id: x.product_id, variant_id: x.variant_id, quantity: q });
+  });
+  if (faltou) crMostrarAviso("Alguns itens da última venda não têm estoque suficiente e ficaram de fora.");
+  crDesenharCarrinho();
+  crDesenharGrade();
+}
+
+crEl("crOkNova").addEventListener("click", function () {
+  crEl("crOk").hidden = true;
+  if (window.matchMedia("(pointer: fine)").matches) crEl("crBusca").focus();
+});
+crEl("crOkRecibo").addEventListener("click", async function () {
+  const b = crEl("crOkRecibo");
+  b.textContent = "Abrindo...";
+  try {
+    if (typeof carregarVendas === "function") await carregarVendas();
+    const v = (crUltimoId && vdVendas.find(function (x) { return String(x.id) === String(crUltimoId); })) || vdVendas[0];
+    if (v && typeof abrirRecibo === "function") abrirRecibo(v);
+  } finally {
+    b.textContent = "Ver recibo";
+  }
+});
+
+crEl("crLimpar").addEventListener("click", function () {
+  crCarrinhoItens = [];
+  crDesenharCarrinho();
+  crDesenharGrade();
+});
+crEl("crDesconto").addEventListener("input", crAtualizarTotal);
+crEl("crBarra").addEventListener("click", function () { crEl("crCarrinho").classList.add("aberto"); });
+crEl("crCarrinho").addEventListener("click", function (e) {
+  if (e.target === crEl("crCarrinho")) crEl("crCarrinho").classList.remove("aberto");
+});
+
+// ---------- Abrir e fechar ----------
+async function abrirCaixaRapido() {
+  crFundo.hidden = false;
+  document.body.style.overflow = "hidden";
+  crEl("crOk").hidden = true;
+  crEsconderAviso();
+  crEl("crGrade").innerHTML = '<p class="cr-vazio">Carregando produtos...</p>';
+  crDesenharPagamentos();
+  crDesenharCarrinho();
+  try {
+    await crCarregar();
+    crDesenharGrade();
+    crDesenharCarrinho();
+    if (window.matchMedia("(pointer: fine)").matches) crEl("crBusca").focus();
+  } catch (e) {
+    console.error(e);
+    crEl("crGrade").innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "cr-vazio";
+    p.textContent = "Não foi possível carregar os produtos: " + (e.message || e);
+    crEl("crGrade").appendChild(p);
+  }
+}
+function fecharCaixaRapido() {
+  crFecharCamera();
+  crFundo.hidden = true;
+  crEl("crCarrinho").classList.remove("aberto");
+  crEl("crVarFundo").hidden = true;
+  crVinculando = null;
+  document.body.style.overflow = "";
+}
+crBotaoAbrir.addEventListener("click", abrirCaixaRapido);
+crEl("crFechar").addEventListener("click", fecharCaixaRapido);
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Escape" || crFundo.hidden) return;
+  if (!crEl("crCamFundo").hidden) crFecharCamera();
+  else if (!crEl("crVarFundo").hidden) crEl("crVarFundo").hidden = true;
+  else if (crEl("crCarrinho").classList.contains("aberto")) crEl("crCarrinho").classList.remove("aberto");
+  else if (typeof rcFundo !== "undefined" && !rcFundo.hidden) return;
+  else fecharCaixaRapido();
+});
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) {
+      fecharCaixaRapido();
+      crCarrinhoItens = [];
+      crUltimaVenda = null;
+      crProdutos = [];
+    }
+  });
+});
+// FIM DA PARTE 36
 
