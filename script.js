@@ -8174,3 +8174,384 @@ iniciarSupabase().then(function (cliente) {
 
 vtAplicarModo();
 // FIM DA PARTE 29
+// ===== PARTE 30: Dashboard interativo (abertura, vitrine e gráfico) =====
+const SEM_MOV_30 = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const estiloDash = document.createElement("style");
+estiloDash.textContent = `
+  .dh {
+    position: relative; overflow: hidden; margin-bottom: 16px; border-radius: var(--radius);
+    background: radial-gradient(560px 300px at 88% 10%, rgba(255,255,255,.10), transparent 70%), #000;
+    color: #fff; padding: 28px; display: grid; grid-template-columns: 1fr 260px; gap: 20px; align-items: center;
+    min-height: 220px;
+  }
+  .dh h2 { font-family: var(--font-brand); font-weight: 400; font-size: clamp(20px, 2.6vw, 30px); line-height: 1.2; }
+  .dh-hoje { margin-top: 16px; }
+  .dh-hoje span { color: #a1a1aa; font-size: 13px; }
+  .dh-hoje strong { display: block; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .dh-dica {
+    margin-top: 16px; display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 999px; padding: 9px 16px; font-size: 14px; text-align: left; color: #fff;
+    transition: opacity .35s ease, transform .35s ease, background .2s ease;
+  }
+  .dh-dica:hover { background: rgba(255,255,255,.14); }
+  .dh-dica.trocando { opacity: 0; transform: translateY(6px); }
+  .dh-arte { position: relative; height: 180px; transition: transform .25s ease-out; }
+  .dh-arte .dh-simbolo { position: absolute; inset: 20px 0; color: #fff; animation: dh-flutua 6s ease-in-out infinite; }
+  .dh-arte .dh-simbolo svg { width: 100%; height: 100%; display: block; }
+  .dh-arte .dh-estrela { position: absolute; opacity: 0; animation: dh-brilho 3.2s ease-in-out infinite; }
+  @keyframes dh-flutua { 50% { translate: 0 -8px; } }
+  @keyframes dh-brilho { 0%, 100% { opacity: 0; transform: scale(.5) rotate(0); } 45% { opacity: 1; transform: scale(1) rotate(45deg); } }
+  @media (max-width: 700px) {
+    .dh { grid-template-columns: 1fr; padding: 22px; }
+    .dh-arte { position: absolute; right: -30px; top: 6px; width: 170px; height: 120px; opacity: .25; }
+  }
+
+  /* Vitrine dos mais vendidos */
+  .vv-card-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .vv-setas { display: flex; gap: 6px; }
+  .vv-setas button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); font-size: 18px; }
+  .vv-trilho { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: none; }
+  .vv-trilho::-webkit-scrollbar { display: none; }
+  .vv-item { flex: 0 0 180px; scroll-snap-align: start; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--surface); cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
+  .vv-item:hover { transform: translateY(-4px); box-shadow: 0 18px 36px -24px rgba(0,0,0,.5); }
+  .vv-foto { height: 180px; background: var(--surface-2); overflow: hidden; }
+  .vv-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+  .vv-item:hover .vv-foto img { transform: scale(1.07); }
+  .vv-texto { padding: 10px 12px; }
+  .vv-texto strong { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vv-texto span { font-size: 12.5px; color: var(--muted); }
+  .vv-pos { position: absolute; }
+
+  /* Gráfico que responde ao toque */
+  .db-col { cursor: pointer; position: relative; }
+  .db-col.sel .db-barra { background: #16a34a; }
+  .db-dica {
+    position: absolute; bottom: calc(100% + 6px); left: 50%; translate: -50% 0; z-index: 3;
+    background: #000; color: #fff; font-size: 12px; padding: 6px 10px; border-radius: 9px; white-space: nowrap;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dh-arte .dh-simbolo, .dh-arte .dh-estrela { animation: none !important; }
+    .dh-arte .dh-estrela { opacity: .7; }
+    .vv-item, .vv-foto img, .dh-dica { transition: none !important; }
+  }
+`;
+document.head.appendChild(estiloDash);
+
+const viewDash = document.getElementById("view-dashboard");
+
+// ---------- Banner de abertura ----------
+const dh = document.createElement("section");
+dh.className = "dh";
+dh.id = "dashHero";
+dh.innerHTML = `
+  <div>
+    <h2 id="dhOla">Olá!</h2>
+    <div class="dh-hoje"><span>Vendido hoje</span><strong id="dhHoje">R$ 0,00</strong><span id="dhHojeQtd"></span></div>
+    <button class="dh-dica" id="dhDica" type="button"><span>✦</span><span id="dhDicaTexto">Carregando as dicas do Pulso...</span></button>
+  </div>
+  <div class="dh-arte" id="dhArte" aria-hidden="true">
+    <div class="dh-simbolo">${ARYA_SIMBOLO}</div>
+    <span class="dh-estrela" style="top:6px; right:30px; font-size:18px;">✦</span>
+    <span class="dh-estrela" style="bottom:10px; left:20px; font-size:12px; animation-delay:1.2s;">✦</span>
+    <span class="dh-estrela" style="top:50%; right:0; font-size:10px; animation-delay:2.1s;">✦</span>
+  </div>
+`;
+viewDash.insertBefore(dh, viewDash.firstChild);
+
+const dhArte = document.getElementById("dhArte");
+if (!SEM_MOV_30) {
+  dh.addEventListener("pointermove", function (e) {
+    const r = dh.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - .5;
+    const y = (e.clientY - r.top) / r.height - .5;
+    dhArte.style.transform = "translate(" + (x * 24) + "px," + (y * 16) + "px) rotate(" + (x * 6) + "deg)";
+  });
+  dh.addEventListener("pointerleave", function () { dhArte.style.transform = ""; });
+}
+
+let dhDicas = [];
+let dhIndice = 0;
+let dhIntervalo = null;
+
+function dhMostrarDica() {
+  const el = document.getElementById("dhDica");
+  const texto = document.getElementById("dhDicaTexto");
+  if (!dhDicas.length) return;
+  el.classList.add("trocando");
+  setTimeout(function () {
+    texto.textContent = dhDicas[dhIndice % dhDicas.length].texto;
+    el.classList.remove("trocando");
+  }, 350);
+}
+document.getElementById("dhDica").addEventListener("click", function () {
+  const dica = dhDicas[dhIndice % dhDicas.length];
+  if (!dica || !dica.view) return;
+  const botao = document.querySelector('.nav [data-view="' + dica.view + '"]');
+  if (botao) botao.click();
+});
+
+// ---------- Vitrine dos mais vendidos ----------
+const vvCard = document.createElement("article");
+vvCard.className = "card";
+vvCard.id = "cardVitrineDash";
+vvCard.style.marginBottom = "16px";
+vvCard.hidden = true;
+vvCard.innerHTML = `
+  <div class="vv-card-topo">
+    <h2 id="vvTitulo">Mais vendidos · 30 dias</h2>
+    <div class="vv-setas"><button type="button" id="vvEsq" aria-label="Anterior">‹</button><button type="button" id="vvDir" aria-label="Próximo">›</button></div>
+  </div>
+  <div class="vv-trilho" id="vvTrilho"></div>
+`;
+const gradeDash = viewDash.querySelector(".grid-4");
+if (gradeDash) gradeDash.after(vvCard);
+else viewDash.appendChild(vvCard);
+
+const vvTrilho = document.getElementById("vvTrilho");
+let vvPausa = false;
+let vvAuto = null;
+function vvPassar(direcao) {
+  const passo = 194;
+  const fim = vvTrilho.scrollWidth - vvTrilho.clientWidth - 4;
+  if (direcao > 0 && vvTrilho.scrollLeft >= fim) vvTrilho.scrollTo({ left: 0, behavior: "smooth" });
+  else vvTrilho.scrollBy({ left: passo * direcao, behavior: "smooth" });
+}
+document.getElementById("vvEsq").addEventListener("click", function () { vvPassar(-1); });
+document.getElementById("vvDir").addEventListener("click", function () { vvPassar(1); });
+["pointerdown", "touchstart", "mouseenter"].forEach(function (ev) {
+  vvTrilho.addEventListener(ev, function () { vvPausa = true; }, { passive: true });
+});
+vvTrilho.addEventListener("mouseleave", function () { vvPausa = false; });
+vvTrilho.addEventListener("touchend", function () { setTimeout(function () { vvPausa = false; }, 4000); }, { passive: true });
+
+function vvAbrirFoto(lista, indice) {
+  if (typeof lbFundo === "undefined") return;
+  lbLista = lista;
+  lbIndice = indice;
+  lbFundo.hidden = false;
+  lbMostrar();
+}
+
+// ---------- Carregar tudo ----------
+let dashInterTimer = null;
+async function carregarDashInterativo() {
+  try {
+    const cliente = await iniciarSupabase();
+    const sessao = await cliente.auth.getSession();
+    if (!sessao.data || !sessao.data.session) return;
+
+    const usuario = await cliente.auth.getUser();
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const trintaDias = new Date(hoje.getTime() - 29 * 86400000);
+    const empresaId = await obterEmpresaId();
+
+    const r = await Promise.all([
+      cliente.from("profiles").select("full_name").eq("id", usuario.data.user.id).maybeSingle(),
+      cliente.from("sales").select("id, total, created_at").gte("created_at", trintaDias.toISOString()).neq("status", "cancelled"),
+      cliente.from("products").select("id, name, sale_price, stock_quantity, min_stock, image_url, created_at"),
+      cliente.from("quotes").select("status, total").eq("status", "accepted"),
+      cliente.from("companies").select("settings").eq("id", empresaId).maybeSingle()
+    ]);
+    r.forEach(function (x) { if (x.error) throw x.error; });
+
+    const nome = r[0].data && r[0].data.full_name ? String(r[0].data.full_name).trim().split(" ")[0] : "";
+    const vendas = r[1].data || [];
+    const produtos = r[2].data || [];
+    const aceitos = r[3].data || [];
+    const settings = (r[4].data && r[4].data.settings) || {};
+
+    // Saudação e vendido hoje
+    const hora = new Date().getHours();
+    document.getElementById("dhOla").textContent =
+      (hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite") + (nome ? ", " + nome : "") + ".";
+    const deHoje = vendas.filter(function (v) { return new Date(v.created_at) >= hoje; });
+    const totalHoje = deHoje.reduce(function (s, v) { return s + Number(v.total); }, 0);
+    const elHoje = document.getElementById("dhHoje");
+    if (typeof contarAte === "function") contarAte(elHoje, totalHoje, true);
+    else elHoje.textContent = moeda(totalHoje);
+    document.getElementById("dhHojeQtd").textContent =
+      deHoje.length === 1 ? "1 venda hoje" : deHoje.length + " vendas hoje";
+
+    // Dicas com números reais
+    dhDicas = [];
+    const baixos = produtos.filter(function (p) { return p.min_stock > 0 && p.stock_quantity <= p.min_stock; });
+    if (baixos.length) dhDicas.push({ texto: baixos.length + " produto(s) com estoque baixo. Toque para ver.", view: "produtos" });
+    if (aceitos.length) {
+      const soma = aceitos.reduce(function (s, o) { return s + Number(o.total); }, 0);
+      dhDicas.push({ texto: aceitos.length + " orçamento(s) aceito(s): " + moeda(soma) + " esperando virar venda.", view: "orcamentos" });
+    }
+    const meta = Number(settings.meta_mensal || 0);
+    if (meta > 0) {
+      const doMes = vendas.filter(function (v) { return new Date(v.created_at) >= inicioMes; })
+        .reduce(function (s, v) { return s + Number(v.total); }, 0);
+      dhDicas.push({ texto: doMes >= meta
+        ? "Meta do mês batida! Você já vendeu " + moeda(doMes) + "."
+        : "Faltam " + moeda(meta - doMes) + " para a meta do mês.", view: null });
+    }
+    dhDicas.push({ texto: "Veja todas as recomendações do ARYA Pulso.", view: "intelligence" });
+    dhIndice = 0;
+    dhMostrarDica();
+    clearInterval(dhIntervalo);
+    if (!SEM_MOV_30 && dhDicas.length > 1) {
+      dhIntervalo = setInterval(function () { dhIndice += 1; dhMostrarDica(); }, 4500);
+    }
+
+    // Vitrine: mais vendidos com foto (ou os mais recentes com foto)
+    const qtdPorProduto = {};
+    if (vendas.length) {
+      const ids = vendas.map(function (v) { return v.id; });
+      for (let i = 0; i < ids.length; i += 150) {
+        const it = await cliente.from("sale_items").select("product_id, quantity").in("sale_id", ids.slice(i, i + 150));
+        if (it.error) throw it.error;
+        (it.data || []).forEach(function (x) {
+          if (x.product_id) qtdPorProduto[x.product_id] = (qtdPorProduto[x.product_id] || 0) + x.quantity;
+        });
+      }
+    }
+    const comFoto = produtos.filter(function (p) { return p.image_url; });
+    let lista = comFoto.filter(function (p) { return qtdPorProduto[p.id]; })
+      .sort(function (a, b) { return qtdPorProduto[b.id] - qtdPorProduto[a.id]; });
+    let titulo = "Mais vendidos · 30 dias";
+    if (lista.length === 0) {
+      lista = comFoto.slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+      titulo = "Sua vitrine";
+    }
+    lista = lista.slice(0, 12);
+
+    vvTrilho.innerHTML = "";
+    if (lista.length === 0) {
+      vvCard.hidden = true;
+    } else {
+      document.getElementById("vvTitulo").textContent = titulo;
+      lista.forEach(function (p, i) {
+        const item = document.createElement("div");
+        item.className = "vv-item";
+        item.setAttribute("role", "button");
+        item.tabIndex = 0;
+        item.setAttribute("aria-label", "Ver foto de " + p.name);
+        const foto = document.createElement("div");
+        foto.className = "vv-foto";
+        const img = document.createElement("img");
+        img.src = p.image_url;
+        img.alt = p.name;
+        img.loading = "lazy";
+        foto.appendChild(img);
+        const texto = document.createElement("div");
+        texto.className = "vv-texto";
+        const n = document.createElement("strong");
+        n.textContent = p.name;
+        const s = document.createElement("span");
+        s.textContent = qtdPorProduto[p.id]
+          ? qtdPorProduto[p.id] + " vendido(s) · " + moeda(p.sale_price)
+          : moeda(p.sale_price) + " · estoque " + p.stock_quantity;
+        texto.appendChild(n);
+        texto.appendChild(s);
+        item.appendChild(foto);
+        item.appendChild(texto);
+        item.addEventListener("click", function () { vvAbrirFoto(lista, i); });
+        item.addEventListener("keydown", function (e) { if (e.key === "Enter") vvAbrirFoto(lista, i); });
+        vvTrilho.appendChild(item);
+      });
+      vvCard.hidden = false;
+      clearInterval(vvAuto);
+      if (!SEM_MOV_30 && lista.length > 2) {
+        vvAuto = setInterval(function () { if (!vvPausa && !vvCard.hidden) vvPassar(1); }, 3200);
+      }
+    }
+  } catch (e) {
+    console.error("Dashboard interativo:", e);
+  }
+}
+
+function agendarDashInterativo() {
+  clearTimeout(dashInterTimer);
+  dashInterTimer = setTimeout(carregarDashInterativo, 350);
+}
+
+// ---------- Gráfico que responde ao toque ----------
+// Esta versão substitui a anterior: guarda o valor exato de cada dia na barra.
+function dbDesenharGrafico(vendas) {
+  const grafico = document.getElementById("dbGrafico");
+  grafico.innerHTML = "";
+
+  const dias = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    dias.push({ data: d, chave: chaveDia(d), total: 0 });
+  }
+  vendas.forEach(function (v) {
+    const chave = chaveDia(new Date(v.created_at));
+    const dia = dias.find(function (x) { return x.chave === chave; });
+    if (dia) dia.total += Number(v.total);
+  });
+
+  const maximo = Math.max.apply(null, dias.map(function (d) { return d.total; }));
+  const somaSemana = dias.reduce(function (s, d) { return s + d.total; }, 0);
+  dbTexto("dbSemanaTotal", "Total da semana: " + moeda(somaSemana));
+
+  dias.forEach(function (d, i) {
+    const col = document.createElement("div");
+    col.className = "db-col" + (i === 6 ? " db-hoje" : "");
+    col.dataset.valor = d.total;
+    col.dataset.dia = i === 6 ? "Hoje" : d.data.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" });
+
+    const valor = document.createElement("span");
+    valor.className = "db-valor";
+    valor.textContent = d.total > 0 ? moedaCurta(d.total) : "";
+
+    const barra = document.createElement("div");
+    barra.className = "db-barra" + (d.total > 0 ? "" : " vazia");
+    barra.style.height = (maximo > 0 ? Math.max(3, Math.round(140 * d.total / maximo)) : 3) + "px";
+
+    const dia = document.createElement("span");
+    dia.className = "db-dia";
+    dia.textContent = i === 6 ? "Hoje" : d.data.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+
+    col.appendChild(valor);
+    col.appendChild(barra);
+    col.appendChild(dia);
+    grafico.appendChild(col);
+  });
+}
+
+document.getElementById("dbGrafico").addEventListener("click", function (e) {
+  const col = e.target.closest(".db-col");
+  if (!col) return;
+  const jaSelecionada = col.classList.contains("sel");
+  this.querySelectorAll(".db-col").forEach(function (c) {
+    c.classList.remove("sel");
+    const antiga = c.querySelector(".db-dica");
+    if (antiga) antiga.remove();
+  });
+  if (jaSelecionada) return;
+  col.classList.add("sel");
+  const dica = document.createElement("span");
+  dica.className = "db-dica";
+  dica.textContent = col.dataset.dia + " · " + moeda(Number(col.dataset.valor || 0));
+  col.appendChild(dica);
+});
+
+document.querySelectorAll('[data-view="dashboard"]').forEach(function (botao) {
+  botao.addEventListener("click", agendarDashInterativo);
+});
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (sessao) {
+      agendarDashInterativo();
+    } else {
+      clearInterval(dhIntervalo);
+      clearInterval(vvAuto);
+      vvCard.hidden = true;
+      vvTrilho.innerHTML = "";
+    }
+  });
+});
+// FIM DA PARTE 30
