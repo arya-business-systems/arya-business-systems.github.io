@@ -13317,4 +13317,813 @@ iniciarSupabase().then(function (cliente) {
 });
 asNav.addEventListener("click", function () { pxCarregar(); });
 // FIM DA PARTE 41
+// ===== PARTE 42: Sala da Fundadora (painel só da Vitória) + avaliação das lojas =====
+// Cole esta parte no FINAL do script.js (depois da Parte 41).
+// Fotos da sua história: envie para a pasta img/ com os nomes historia-1.jpg até historia-6.jpg
+const SF_INICIO_ARYA = "2026-10-29"; // dia em que a ARYA começou
+const SF_META_LOJAS = 20;            // meta das primeiras lojas pagantes
+const SF_HISTORIA = [
+  { data: "29 out 2026", titulo: "A ideia virou código", texto: "Comecei a ARYA no iPad, pelo CodePen, querendo ajudar pequenos negócios a crescer." },
+  { data: "03 nov 2026", titulo: "O coração da ARYA", texto: "Banco de dados, login, clientes e produtos funcionando de verdade, com cada loja protegida." },
+  { data: "04 nov 2026", titulo: "Nasce o ARYA Pulso", texto: "Vendas, estoque e a inteligência que mostra ao lojista onde está o dinheiro." },
+  { data: "06 nov 2026", titulo: "A ARYA foi ao ar", texto: "Publiquei o sistema na internet. Qualquer loja do Brasil já pode entrar." },
+  { data: "07 nov 2026", titulo: "aryasystems.com.br", texto: "Domínio próprio, cobrança por Pix e o primeiro pagamento real caindo na conta." },
+  { data: "Próximo capítulo", titulo: "As primeiras 20 lojas", texto: "Levar a ARYA para as lojas de Minaçu e transformar dados em crescimento." }
+];
+
+const estilo42 = document.createElement("style");
+estilo42.textContent = `
+  #view-fundadora { --sf-r: 22px; }
+  .sf-hero { position: relative; display: grid; grid-template-columns: 1.3fr 1fr; min-height: 300px; border-radius: 26px; overflow: hidden;
+    background: #000; color: #fff; margin-bottom: 16px; animation: ap-entra .5s ease; }
+  .sf-hero-txt { position: relative; z-index: 2; padding: 30px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
+  .sf-hero-txt small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #a1a1aa; font-weight: 600; }
+  .sf-hero h2 { font-size: clamp(28px, 4vw, 42px); line-height: 1.05; letter-spacing: -.035em; font-weight: 600; margin-top: 8px; }
+  .sf-hero h2 em { font-style: normal; color: #a1a1aa; }
+  .sf-hero-sub { color: #d4d4d8; font-size: 14.5px; max-width: 420px; margin-top: 10px; }
+  .sf-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sf-hero-chips span { font-size: 12.5px; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); }
+  .sf-hero-chips b { font-variant-numeric: tabular-nums; }
+  .sf-hero-foto { position: relative; min-height: 260px; background: radial-gradient(400px 300px at 70% 30%, #3f3f46, #000); }
+  .sf-hero-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; transform: scale(1.06); transition: transform 6s ease; }
+  .sf-hero:hover .sf-hero-foto img { transform: scale(1); }
+  .sf-hero-foto::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #000 0%, rgba(0,0,0,.35) 35%, transparent 70%); }
+  .sf-hero-foto .sf-assina { position: absolute; z-index: 2; right: 18px; bottom: 16px; text-align: right; font-size: 12px; color: #e4e4e7; }
+  .sf-hero-foto .sf-assina b { display: block; font-family: var(--font-brand); font-size: 13px; letter-spacing: .06em; }
+  .sf-hero-foto.sem-foto .sf-inicial { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-brand); font-size: 90px; color: rgba(255,255,255,.12); }
+
+  .sf-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .sf-kpi { position: relative; border-radius: 20px; padding: 18px; background: var(--surface); border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm); transition: transform .2s ease, box-shadow .2s ease; animation: ap-entra .5s ease backwards; cursor: default; }
+  .sf-kpi:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .sf-kpi small { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
+  .sf-kpi strong { display: block; font-size: 28px; letter-spacing: -.03em; margin-top: 6px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .sf-kpi p { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .sf-kpi .sf-ico { position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--surface-2); font-size: 14px; }
+
+  .sf-grade { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .sf-card { border-radius: var(--sf-r); padding: 20px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); min-width: 0; }
+  .sf-card + .sf-card { margin-top: 0; }
+  .sf-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .sf-card-head h3 { font-size: 16px; letter-spacing: -.01em; }
+  .sf-card-head p { font-size: 12.5px; color: var(--muted); }
+  .sf-abas { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); gap: 2px; }
+  .sf-abas button { white-space: nowrap; border: 0; background: transparent; font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px; color: var(--muted); cursor: pointer; }
+  .sf-abas button.ativo { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+
+  .sf-grafico { position: relative; display: flex; align-items: flex-end; gap: 10px; height: 200px; padding-top: 26px; }
+  .sf-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; cursor: pointer; min-width: 0; }
+  .sf-col .sf-barra { width: 100%; max-width: 56px; border-radius: 10px 10px 4px 4px; background: var(--surface-2); position: relative;
+    transition: height .8s cubic-bezier(.2,.8,.2,1), background .2s ease; height: 4px; }
+  .sf-col.cheia .sf-barra { background: #18181b; }
+  .sf-col.atual .sf-barra { background: #000; box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+  .sf-col:hover .sf-barra, .sf-col.foco .sf-barra { background: #52525b; }
+  .sf-col span { font-size: 11.5px; color: var(--muted); text-transform: capitalize; }
+  .sf-col .sf-val { position: absolute; left: 50%; transform: translate(-50%, -24px); top: 0; font-size: 11.5px; font-weight: 600; white-space: nowrap; color: var(--text); }
+  .sf-dica { min-height: 20px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .sf-dica b { color: var(--text); }
+
+  .sf-meta { display: grid; place-items: center; text-align: center; gap: 10px; }
+  .sf-anel { position: relative; width: 170px; height: 170px; }
+  .sf-anel svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .sf-anel circle { fill: none; stroke-width: 12; }
+  .sf-anel .fundo { stroke: var(--surface-2); }
+  .sf-anel .frente { stroke: #000; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1); }
+  .sf-anel div { position: absolute; inset: 0; display: grid; place-content: center; }
+  .sf-anel b { font-size: 38px; letter-spacing: -.04em; line-height: 1; }
+  .sf-anel small { font-size: 12px; color: var(--muted); }
+  .sf-funil { width: 100%; display: grid; gap: 6px; margin-top: 6px; }
+  .sf-funil div { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 12px; border-radius: 10px; background: var(--surface-2); }
+  .sf-funil div b { font-variant-numeric: tabular-nums; }
+
+  .sf-rank { display: grid; gap: 8px; }
+  .sf-loja { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: border-color .2s ease, box-shadow .2s ease; animation: ap-entra .4s ease backwards; }
+  .sf-loja:hover { border-color: var(--border-strong); }
+  .sf-loja.aberta { box-shadow: var(--shadow-md); border-color: #000; }
+  .sf-loja-topo { width: 100%; display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border: 0;
+    background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .sf-pos { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: var(--surface-2); }
+  .sf-loja:nth-child(1) .sf-pos { background: #000; color: #fff; }
+  .sf-loja:nth-child(2) .sf-pos, .sf-loja:nth-child(3) .sf-pos { background: #27272a; color: #fff; }
+  .sf-loja-nome b { display: block; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sf-loja-nome span { font-size: 12px; color: var(--muted); }
+  .sf-loja-barra { height: 4px; border-radius: 4px; background: var(--surface-2); margin-top: 6px; overflow: hidden; }
+  .sf-loja-barra i { display: block; height: 100%; background: #000; border-radius: 4px; width: 0; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+  .sf-loja-valor { text-align: right; }
+  .sf-loja-valor b { display: block; font-variant-numeric: tabular-nums; font-size: 14.5px; }
+  .sf-loja-valor span { font-size: 11.5px; color: var(--muted); }
+  .sf-loja-det { display: none; padding: 0 14px 14px; }
+  .sf-loja.aberta .sf-loja-det { display: block; animation: ap-entra .3s ease; }
+  .sf-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .sf-mini div { background: var(--surface-2); border-radius: 12px; padding: 10px; }
+  .sf-mini small { display: block; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .sf-mini b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .sf-loja-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .sf-chip { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
+  .sf-chip.ok { background: #000; color: #fff; }
+  .sf-chip.alerta { background: #fee2e2; color: #991b1b; }
+
+  .sf-saude { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .sf-saude button { border: 1px solid var(--border); background: var(--surface); border-radius: 14px; padding: 12px; text-align: left; font: inherit; color: inherit; cursor: pointer; transition: all .2s ease; }
+  .sf-saude button:hover { border-color: var(--border-strong); }
+  .sf-saude button.ativo { background: #000; color: #fff; border-color: #000; }
+  .sf-saude b { display: block; font-size: 24px; letter-spacing: -.03em; }
+  .sf-saude span { font-size: 12px; opacity: .75; }
+  .sf-saude-lista { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+  .sf-saude-lista span { font-size: 12.5px; padding: 5px 10px; border-radius: 999px; background: var(--surface-2); }
+
+  .sf-nps { display: grid; grid-template-columns: 150px 1fr; gap: 18px; align-items: center; margin-bottom: 14px; }
+  .sf-nps-num { text-align: center; padding: 16px 8px; border-radius: 18px; background: #000; color: #fff; }
+  .sf-nps-num b { display: block; font-size: 40px; letter-spacing: -.04em; line-height: 1; }
+  .sf-nps-num small { font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: .08em; }
+  .sf-nps-num p { font-size: 12.5px; margin-top: 6px; color: #e4e4e7; }
+  .sf-dist { display: flex; align-items: flex-end; gap: 4px; height: 90px; }
+  .sf-dist div { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; height: 100%; }
+  .sf-dist i { width: 100%; border-radius: 5px 5px 2px 2px; background: var(--surface-2); min-height: 3px; transition: height .8s ease; }
+  .sf-dist div.det i { background: #a1a1aa; }
+  .sf-dist div.neu i { background: #52525b; }
+  .sf-dist div.pro i { background: #000; }
+  .sf-dist span { font-size: 10.5px; color: var(--muted); }
+  .sf-coments { display: grid; gap: 8px; max-height: 300px; overflow: auto; }
+  .sf-coment { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+  .sf-coment-topo { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .sf-coment-topo b { color: var(--text); }
+  .sf-nota { display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 6px; border-radius: 7px; background: #000; color: #fff; font-weight: 700; font-size: 12px; }
+  .sf-coment p { font-size: 13.5px; }
+
+  .sf-hist { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 14px; -webkit-overflow-scrolling: touch; }
+  .sf-hist::-webkit-scrollbar { height: 6px; }
+  .sf-hist::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; }
+  .sf-cap { flex: 0 0 240px; scroll-snap-align: start; border-radius: 20px; overflow: hidden; background: var(--surface); border: 1px solid var(--border);
+    cursor: pointer; transition: transform .25s ease, box-shadow .25s ease; padding: 0; text-align: left; font: inherit; color: inherit; }
+  .sf-cap:hover { transform: translateY(-4px) rotate(-.4deg); box-shadow: var(--shadow-lg); }
+  .sf-cap-foto { position: relative; aspect-ratio: 4 / 5; background: linear-gradient(160deg, #27272a, #000); overflow: hidden; }
+  .sf-cap-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+  .sf-cap:hover .sf-cap-foto img { transform: scale(1.05); }
+  .sf-cap-foto .sf-vazio { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: #71717a; font-size: 12px; padding: 16px; gap: 6px; }
+  .sf-cap-foto .sf-vazio b { font-family: var(--font-brand); font-size: 44px; color: rgba(255,255,255,.14); }
+  .sf-cap-foto .sf-data { position: absolute; left: 12px; top: 12px; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 999px;
+    background: rgba(0,0,0,.6); color: #fff; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .sf-cap-txt { padding: 14px; }
+  .sf-cap-txt b { display: block; font-size: 14.5px; }
+  .sf-cap-txt p { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+  .sf-luz { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.92); display: grid; place-items: center; padding: 20px; animation: ap-entra .25s ease; }
+  .sf-luz[hidden] { display: none; }
+  .sf-luz-caixa { max-width: 520px; width: 100%; color: #fff; text-align: center; }
+  .sf-luz-caixa img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: 18px; }
+  .sf-luz-caixa small { display: block; color: #a1a1aa; margin-top: 14px; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
+  .sf-luz-caixa h4 { font-size: 22px; letter-spacing: -.02em; margin-top: 4px; }
+  .sf-luz-caixa p { color: #d4d4d8; font-size: 14px; margin-top: 6px; }
+  .sf-luz-nav { display: flex; justify-content: center; gap: 10px; margin-top: 16px; }
+  .sf-luz-nav button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #3f3f46; background: transparent; color: #fff; font-size: 18px; cursor: pointer; }
+
+  .sf-erro { padding: 16px; border-radius: 16px; background: #fef2f2; color: #991b1b; font-size: 13.5px; margin-bottom: 16px; }
+  .sf-vazio-txt { font-size: 13.5px; color: var(--muted); padding: 8px 0; }
+
+  /* Pergunta "De 0 a 10" que aparece para as lojas */
+  .sf-ava { position: fixed; z-index: 9000; right: 18px; bottom: 18px; width: min(380px, calc(100vw - 32px)); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-lg); padding: 18px; animation: ap-entra .4s ease; }
+  .sf-ava[hidden] { display: none; }
+  .sf-ava h4 { font-size: 15px; letter-spacing: -.01em; padding-right: 26px; }
+  .sf-ava > p { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .sf-ava-x { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--surface-2); cursor: pointer; font-size: 14px; color: var(--muted); }
+  .sf-ava-notas { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; margin: 12px 0 4px; }
+  .sf-ava-notas button { height: 34px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); padding: 0; }
+  .sf-ava-notas button.ativo { background: #000; color: #fff; border-color: #000; }
+  .sf-ava-legenda { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .sf-ava textarea { width: 100%; margin-top: 10px; min-height: 70px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); padding: 10px; font: inherit; font-size: 13.5px; color: var(--text); resize: vertical; }
+  .sf-ava-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+
+  @media (max-width: 900px) {
+    .sf-hero { grid-template-columns: 1fr; }
+    .sf-hero-foto { order: -1; min-height: 240px; }
+    .sf-hero-foto::after { background: linear-gradient(0deg, #000 0%, transparent 60%); }
+    .sf-hero-txt { padding: 22px; margin-top: -40px; }
+    .sf-kpis { grid-template-columns: 1fr 1fr; }
+    .sf-grade { grid-template-columns: 1fr; }
+    .sf-mini { grid-template-columns: 1fr 1fr; }
+    .sf-nps { grid-template-columns: 1fr; }
+    .sf-abas { width: 100%; }
+    .sf-abas button { flex: 1; padding: 6px 8px; }
+    .sf-ava { right: 16px; bottom: 84px; }
+  }
+  @media (max-width: 420px) {
+    .sf-kpi strong { font-size: 22px; }
+    .sf-saude b { font-size: 20px; }
+    .sf-cap { flex-basis: 210px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sf-hero-foto img, .sf-col .sf-barra, .sf-anel .frente, .sf-loja-barra i, .sf-dist i { transition: none; }
+  }
+`;
+document.head.appendChild(estilo42);
+
+// ---------- Nova cara do painel ----------
+titulos.fundadora = "Sala da Fundadora";
+fdNav.innerHTML = '<span class="ico">♛</span>Sala da Fundadora';
+if (fdMaisItem) fdMaisItem.innerHTML = '<span class="ico">♛</span>Sala da Fundadora';
+
+fdView.innerHTML = `
+  <section class="sf-hero">
+    <div class="sf-hero-txt">
+      <div>
+        <small id="sfData">ARYA · Sala da Fundadora</small>
+        <h2 id="sfOla">Olá, Vitória.<br><em>A ARYA é sua.</em></h2>
+        <p class="sf-hero-sub" id="sfFrase">Aqui você vê como a sua empresa está, quem são as melhores lojas e se elas estão gostando da ARYA.</p>
+      </div>
+      <div class="sf-hero-chips">
+        <span><b id="sfDias">0</b> dias de ARYA</span>
+        <span><b id="sfChipLojas">0</b> lojas cadastradas</span>
+        <span id="sfChipPix" hidden>⚡ <b id="sfChipPixN">0</b> Pix para confirmar</span>
+      </div>
+    </div>
+    <div class="sf-hero-foto">
+      <img src="img/fundadora.jpg" alt="Vitória Gabrielly, fundadora da ARYA" onerror="this.parentElement.classList.add('sem-foto');this.remove()">
+      <span class="sf-inicial" aria-hidden="true">V</span>
+      <div class="sf-assina"><b>VITÓRIA GABRIELLY</b>Fundadora · ARYA</div>
+    </div>
+  </section>
+
+  <div id="sfErro"></div>
+
+  <div class="sf-kpis">
+    <div class="sf-kpi" style="animation-delay:.05s"><span class="sf-ico">✦</span><small>Já recebi</small><strong id="sfRecebido">R$ 0</strong><p id="sfRecebidoTxt">desde o começo</p></div>
+    <div class="sf-kpi" style="animation-delay:.1s"><span class="sf-ico">↻</span><small>Por mês</small><strong id="sfMrr">R$ 0</strong><p id="sfMrrTxt">lojas pagantes × R$ 49</p></div>
+    <div class="sf-kpi" style="animation-delay:.15s"><span class="sf-ico">◎</span><small>Lojas clientes</small><strong id="sfLojas">0</strong><p id="sfLojasTxt">pagando agora</p></div>
+    <div class="sf-kpi" style="animation-delay:.2s"><span class="sf-ico">♥</span><small>Satisfação</small><strong id="sfSat">—</strong><p id="sfSatTxt">sem avaliações ainda</p></div>
+  </div>
+
+  <div class="sf-grade">
+    <article class="sf-card">
+      <div class="sf-card-head">
+        <div><h3 id="sfGrafTitulo">Dinheiro que entrou</h3><p>Últimos 6 meses · toque nas barras</p></div>
+        <div class="sf-abas" id="sfGrafAbas">
+          <button type="button" class="ativo" data-g="receita">Receita</button>
+          <button type="button" data-g="lojas">Novas lojas</button>
+        </div>
+      </div>
+      <div class="sf-grafico" id="sfGrafico"></div>
+      <p class="sf-dica" id="sfGrafDica">&nbsp;</p>
+    </article>
+    <article class="sf-card sf-meta">
+      <div class="sf-card-head" style="width:100%;margin-bottom:4px"><div style="text-align:left"><h3>Meta das primeiras lojas</h3><p>pagantes de verdade</p></div></div>
+      <div class="sf-anel">
+        <svg viewBox="0 0 170 170" aria-hidden="true"><circle class="fundo" cx="85" cy="85" r="72"/><circle class="frente" id="sfAnel" cx="85" cy="85" r="72"/></svg>
+        <div><b id="sfMetaNum">0</b><small>de ${SF_META_LOJAS} lojas</small></div>
+      </div>
+      <div class="sf-funil">
+        <div><span>Cadastradas</span><b id="sfF1">0</b></div>
+        <div><span>Em teste grátis</span><b id="sfF2">0</b></div>
+        <div><span>Pagando</span><b id="sfF3">0</b></div>
+      </div>
+    </article>
+  </div>
+
+  <article class="sf-card" id="sfPixCard" style="margin-bottom:16px" hidden>
+    <div class="sf-card-head"><div><h3>Pix para confirmar</h3><p>Confira na sua Nubank se o Pix chegou (a descrição tem o código ARYA da loja).</p></div></div>
+    <div id="fdAvisos"></div>
+  </article>
+
+  <div class="sf-grade">
+    <article class="sf-card">
+      <div class="sf-card-head">
+        <div><h3>Melhores clientes</h3><p>Toque numa loja para ver tudo</p></div>
+        <div class="sf-abas" id="sfRankAbas">
+          <button type="button" class="ativo" data-r="vendas">Mais vendem</button>
+          <button type="button" data-r="clientes">Mais clientes</button>
+          <button type="button" data-r="antigas">Mais antigas</button>
+        </div>
+      </div>
+      <div class="sf-rank" id="sfRank"></div>
+    </article>
+    <article class="sf-card">
+      <div class="sf-card-head"><div><h3>Saúde das lojas</h3><p>Quem está usando a ARYA</p></div></div>
+      <div class="sf-saude" id="sfSaude">
+        <button type="button" data-s="ativas"><b id="sfS1">0</b><span>vendendo</span></button>
+        <button type="button" data-s="esfriando"><b id="sfS2">0</b><span>esfriando</span></button>
+        <button type="button" data-s="paradas"><b id="sfS3">0</b><span>paradas</span></button>
+      </div>
+      <div class="sf-saude-lista" id="sfSaudeLista"><span class="sf-vazio-txt">Toque num grupo para ver as lojas.</span></div>
+      <p class="sf-dica">Vendendo: vendeu nos últimos 7 dias · Esfriando: 8 a 30 dias · Paradas: sem vendas há 30 dias. Lojas paradas merecem uma mensagem sua.</p>
+    </article>
+  </div>
+
+  <article class="sf-card" style="margin-bottom:16px">
+    <div class="sf-card-head"><div><h3>Elas estão gostando da ARYA?</h3><p>As lojas dão uma nota de 0 a 10 dentro do app</p></div></div>
+    <div class="sf-nps">
+      <div class="sf-nps-num"><small>Nota de indicação</small><b id="sfNps">—</b><p id="sfNpsTxt">sem avaliações</p></div>
+      <div class="sf-dist" id="sfDist"></div>
+    </div>
+    <div class="sf-coments" id="sfComents"></div>
+  </article>
+
+  <article class="sf-card" style="margin-bottom:16px">
+    <div class="sf-card-head"><div><h3>Minha história</h3><p>Como a ARYA nasceu · deslize para o lado</p></div></div>
+    <div class="sf-hist" id="sfHist"></div>
+  </article>
+
+  <div style="display:flex;justify-content:center;margin:6px 0 20px">
+    <button class="btn btn-ghost btn-small" id="fdAtualizar" type="button">↻ Atualizar números</button>
+  </div>
+`;
+
+const sfLuz = document.createElement("div");
+sfLuz.className = "sf-luz";
+sfLuz.hidden = true;
+sfLuz.innerHTML = `
+  <div class="sf-luz-caixa" role="dialog" aria-modal="true" aria-label="Minha história">
+    <div id="sfLuzFoto"></div>
+    <small id="sfLuzData"></small>
+    <h4 id="sfLuzTitulo"></h4>
+    <p id="sfLuzTexto"></p>
+    <div class="sf-luz-nav">
+      <button type="button" id="sfLuzAnt" aria-label="Anterior">←</button>
+      <button type="button" id="sfLuzFechar" aria-label="Fechar">✕</button>
+      <button type="button" id="sfLuzProx" aria-label="Próxima">→</button>
+    </div>
+  </div>
+`;
+document.body.appendChild(sfLuz);
+
+// ---------- Utilidades ----------
+function sfEl(id) { return document.getElementById(id); }
+function sfNum(v) { return Number(v) || 0; }
+function sfMesNome(chave) {
+  const p = String(chave).split("-");
+  return new Date(Number(p[0]), Number(p[1]) - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+}
+function sfQuando(data) {
+  if (!data) return "nunca vendeu";
+  const dias = Math.floor((Date.now() - new Date(data).getTime()) / 86400000);
+  if (dias <= 0) return "vendeu hoje";
+  if (dias === 1) return "vendeu ontem";
+  return "última venda há " + dias + " dias";
+}
+function sfContar(el, valor, ehMoeda) {
+  if (typeof contarAte === "function") contarAte(el, valor, ehMoeda);
+  else el.textContent = ehMoeda ? moeda(valor) : String(Math.round(valor));
+}
+
+// ---------- Saudação ----------
+function sfSaudacao() {
+  const h = new Date().getHours();
+  const oi = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  const nome = (typeof NOME_FUNDADORA !== "undefined" ? NOME_FUNDADORA : "Vitória").split(" ")[0];
+  sfEl("sfOla").innerHTML = "";
+  sfEl("sfOla").appendChild(document.createTextNode(oi + ", " + nome + "."));
+  sfEl("sfOla").appendChild(document.createElement("br"));
+  const em = document.createElement("em");
+  em.textContent = "Veja como está a sua ARYA.";
+  sfEl("sfOla").appendChild(em);
+  sfEl("sfData").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const dias = Math.max(1, Math.floor((Date.now() - new Date(SF_INICIO_ARYA + "T00:00:00").getTime()) / 86400000) + 1);
+  sfEl("sfDias").textContent = dias;
+}
+
+// ---------- Estado ----------
+let sfLojasDados = [];
+let sfReceitas = [];
+let sfRankModo = "vendas";
+let sfGrafModo = "receita";
+let sfAberta = null;
+
+// ---------- Gráfico (receita ou novas lojas por mês) ----------
+function sfDesenharGrafico() {
+  const caixa = sfEl("sfGrafico");
+  const dica = sfEl("sfGrafDica");
+  caixa.innerHTML = "";
+  let pontos = sfReceitas.map(function (r) { return { mes: r.mes, valor: sfNum(r.valor), qtd: sfNum(r.qtd) }; });
+  if (!pontos.length) {
+    const agora = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+      pontos.push({ mes: d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"), valor: 0, qtd: 0 });
+    }
+  }
+  if (sfGrafModo === "lojas") {
+    pontos = pontos.map(function (p) {
+      const n = sfLojasDados.filter(function (l) { return l.created_at && String(l.created_at).slice(0, 7) === p.mes; }).length;
+      return { mes: p.mes, valor: n, qtd: n };
+    });
+  }
+  sfEl("sfGrafTitulo").textContent = sfGrafModo === "lojas" ? "Lojas que chegaram" : "Dinheiro que entrou";
+  const max = Math.max.apply(null, pontos.map(function (p) { return p.valor; }).concat([0]));
+  const fmt = function (v) { return sfGrafModo === "lojas" ? v + (v === 1 ? " loja" : " lojas") : moeda(v); };
+  pontos.forEach(function (p, i) {
+    const col = document.createElement("button");
+    col.type = "button";
+    col.className = "sf-col" + (p.valor > 0 ? " cheia" : "") + (i === pontos.length - 1 ? " atual" : "");
+    col.style.background = "transparent"; col.style.border = "0"; col.style.font = "inherit"; col.style.padding = "0";
+    const barra = document.createElement("div");
+    barra.className = "sf-barra";
+    const val = document.createElement("em");
+    val.className = "sf-val";
+    val.style.fontStyle = "normal";
+    val.textContent = p.valor > 0 ? (sfGrafModo === "lojas" ? String(p.valor) : (typeof moedaCurta === "function" ? moedaCurta(p.valor) : moeda(p.valor))) : "";
+    barra.appendChild(val);
+    const nome = document.createElement("span");
+    nome.textContent = sfMesNome(p.mes);
+    col.appendChild(barra);
+    col.appendChild(nome);
+    col.addEventListener("click", function () {
+      caixa.querySelectorAll(".sf-col").forEach(function (c) { c.classList.remove("foco"); });
+      col.classList.add("foco");
+      dica.innerHTML = "";
+      const b = document.createElement("b");
+      b.textContent = fmt(p.valor);
+      dica.appendChild(document.createTextNode(sfMesNome(p.mes) + ": "));
+      dica.appendChild(b);
+      if (sfGrafModo === "receita") dica.appendChild(document.createTextNode(" · " + p.qtd + (p.qtd === 1 ? " pagamento" : " pagamentos")));
+    });
+    caixa.appendChild(col);
+    const alvo = max > 0 ? Math.max(4, Math.round(150 * p.valor / max)) : 4;
+    requestAnimationFrame(function () { setTimeout(function () { barra.style.height = alvo + "px"; }, 60 + i * 70); });
+  });
+  const total = pontos.reduce(function (s, p) { return s + p.valor; }, 0);
+  dica.textContent = total > 0 ? "Total nos 6 meses: " + fmt(total) : (sfGrafModo === "lojas" ? "Ainda nenhuma loja nova nesses meses." : "Quando você confirmar um Pix, ele aparece aqui. ✦");
+}
+sfEl("sfGrafAbas").addEventListener("click", function (e) {
+  const b = e.target.closest("button");
+  if (!b) return;
+  sfGrafModo = b.dataset.g;
+  sfEl("sfGrafAbas").querySelectorAll("button").forEach(function (x) { x.classList.toggle("ativo", x === b); });
+  sfDesenharGrafico();
+});
+
+// ---------- Ranking das melhores lojas ----------
+function sfDesenharRanking() {
+  const caixa = sfEl("sfRank");
+  caixa.innerHTML = "";
+  const lista = sfLojasDados.slice();
+  if (sfRankModo === "vendas") lista.sort(function (a, b) { return sfNum(b.revenue_30d) - sfNum(a.revenue_30d) || sfNum(b.revenue_all) - sfNum(a.revenue_all); });
+  if (sfRankModo === "clientes") lista.sort(function (a, b) { return sfNum(b.customers) - sfNum(a.customers); });
+  if (sfRankModo === "antigas") lista.sort(function (a, b) { return new Date(a.created_at || 0) - new Date(b.created_at || 0); });
+  if (!lista.length) { caixa.innerHTML = '<p class="sf-vazio-txt">Nenhuma loja ainda. A primeira vai aparecer aqui. ✦</p>'; return; }
+  const chave = sfRankModo === "clientes" ? "customers" : "revenue_30d";
+  const max = Math.max.apply(null, lista.map(function (l) { return sfNum(l[chave]); }).concat([0]));
+  lista.slice(0, 10).forEach(function (l, i) {
+    const s = l.situacao || ["—", "", ""];
+    const item = document.createElement("div");
+    item.className = "sf-loja" + (sfAberta === l.company_id ? " aberta" : "");
+    item.style.animationDelay = (i * 0.04) + "s";
+    item.innerHTML = `
+      <button type="button" class="sf-loja-topo">
+        <span class="sf-pos"></span>
+        <span class="sf-loja-nome"><b></b><span></span><div class="sf-loja-barra"><i></i></div></span>
+        <span class="sf-loja-valor"><b></b><span></span></span>
+      </button>
+      <div class="sf-loja-det">
+        <div class="sf-mini">
+          <div><small>Vendas 30 dias</small><b class="m1"></b></div>
+          <div><small>Faturou 30 dias</small><b class="m2"></b></div>
+          <div><small>Clientes</small><b class="m3"></b></div>
+          <div><small>Produtos</small><b class="m4"></b></div>
+        </div>
+        <div class="sf-loja-acoes"><span class="sf-chip"></span><span class="sf-det-txt" style="font-size:12.5px;color:var(--muted);flex:1;min-width:140px"></span></div>
+      </div>
+    `;
+    item.querySelector(".sf-pos").textContent = i < 3 ? ["🥇", "🥈", "🥉"][i] : String(i + 1);
+    item.querySelector(".sf-loja-nome b").textContent = l.name || l.company_name || "Loja";
+    item.querySelector(".sf-loja-nome > span").textContent = sfQuando(l.last_sale_at) + (l.last_score !== null && l.last_score !== undefined ? " · nota " + l.last_score : "");
+    if (sfRankModo === "clientes") {
+      item.querySelector(".sf-loja-valor b").textContent = sfNum(l.customers);
+      item.querySelector(".sf-loja-valor span").textContent = "clientes";
+    } else if (sfRankModo === "antigas") {
+      item.querySelector(".sf-loja-valor b").textContent = l.created_at ? new Date(l.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—";
+      item.querySelector(".sf-loja-valor span").textContent = "chegou";
+    } else {
+      item.querySelector(".sf-loja-valor b").textContent = moeda(sfNum(l.revenue_30d));
+      item.querySelector(".sf-loja-valor span").textContent = "vendeu em 30 dias";
+    }
+    item.querySelector(".m1").textContent = sfNum(l.sales_30d);
+    item.querySelector(".m2").textContent = moeda(sfNum(l.revenue_30d));
+    item.querySelector(".m3").textContent = sfNum(l.customers);
+    item.querySelector(".m4").textContent = sfNum(l.products);
+    const chip = item.querySelector(".sf-chip");
+    chip.textContent = s[0];
+    if (s[1]) chip.classList.add(s[1]);
+    item.querySelector(".sf-det-txt").textContent = (s[2] ? s[2] + " · " : "") + "já vendeu " + moeda(sfNum(l.revenue_all)) + " com a ARYA";
+    const acoes = item.querySelector(".sf-loja-acoes");
+    if (l.status !== "lifetime") acoes.appendChild(criarBotao("Liberar para sempre", "btn btn-ghost btn-small", function () { fdStatus(l.company_id, "lifetime"); }));
+    else acoes.appendChild(criarBotao("Tirar vitalício", "btn btn-ghost btn-small", function () { fdStatus(l.company_id, "trial"); }));
+    item.querySelector(".sf-loja-topo").addEventListener("click", function () {
+      sfAberta = sfAberta === l.company_id ? null : l.company_id;
+      caixa.querySelectorAll(".sf-loja").forEach(function (x) { if (x !== item) x.classList.remove("aberta"); });
+      item.classList.toggle("aberta", sfAberta === l.company_id);
+    });
+    caixa.appendChild(item);
+    const largura = sfRankModo === "antigas" ? 100 : (max > 0 ? Math.round(100 * sfNum(l[chave]) / max) : 0);
+    setTimeout(function () { item.querySelector(".sf-loja-barra i").style.width = largura + "%"; }, 120 + i * 60);
+  });
+}
+sfEl("sfRankAbas").addEventListener("click", function (e) {
+  const b = e.target.closest("button");
+  if (!b) return;
+  sfRankModo = b.dataset.r;
+  sfEl("sfRankAbas").querySelectorAll("button").forEach(function (x) { x.classList.toggle("ativo", x === b); });
+  sfDesenharRanking();
+});
+
+// ---------- Saúde das lojas ----------
+function sfGrupo(l) {
+  if (sfNum(l.sales_7d) > 0) return "ativas";
+  if (sfNum(l.sales_30d) > 0) return "esfriando";
+  return "paradas";
+}
+function sfDesenharSaude(filtro) {
+  const g = { ativas: [], esfriando: [], paradas: [] };
+  sfLojasDados.forEach(function (l) { g[sfGrupo(l)].push(l); });
+  sfEl("sfS1").textContent = g.ativas.length;
+  sfEl("sfS2").textContent = g.esfriando.length;
+  sfEl("sfS3").textContent = g.paradas.length;
+  sfEl("sfSaude").querySelectorAll("button").forEach(function (b) { b.classList.toggle("ativo", b.dataset.s === filtro); });
+  const lista = sfEl("sfSaudeLista");
+  if (!filtro) return;
+  lista.innerHTML = "";
+  if (!g[filtro].length) { lista.innerHTML = '<span class="sf-vazio-txt">Nenhuma loja aqui. ✦</span>'; return; }
+  g[filtro].forEach(function (l) {
+    const s = document.createElement("span");
+    s.textContent = l.name || "Loja";
+    s.title = sfQuando(l.last_sale_at);
+    lista.appendChild(s);
+  });
+}
+sfEl("sfSaude").addEventListener("click", function (e) {
+  const b = e.target.closest("button");
+  if (b) sfDesenharSaude(b.dataset.s);
+});
+
+// ---------- Satisfação (nota de 0 a 10) ----------
+function sfDesenharSatisfacao(feedback) {
+  const notas = feedback.map(function (f) { return sfNum(f.score); });
+  const dist = sfEl("sfDist");
+  const coments = sfEl("sfComents");
+  dist.innerHTML = "";
+  coments.innerHTML = "";
+  const cont = new Array(11).fill(0);
+  notas.forEach(function (n) { cont[n]++; });
+  const max = Math.max.apply(null, cont);
+  cont.forEach(function (c, n) {
+    const d = document.createElement("div");
+    d.className = n <= 6 ? "det" : n <= 8 ? "neu" : "pro";
+    d.title = c + (c === 1 ? " loja deu nota " : " lojas deram nota ") + n;
+    const i = document.createElement("i");
+    const s = document.createElement("span");
+    s.textContent = n;
+    d.appendChild(i);
+    d.appendChild(s);
+    dist.appendChild(d);
+    setTimeout(function () { i.style.height = (max > 0 ? Math.max(3, Math.round(66 * c / max)) : 3) + "px"; }, 80 + n * 40);
+  });
+  if (!notas.length) {
+    sfEl("sfNps").textContent = "—";
+    sfEl("sfNpsTxt").textContent = "sem avaliações ainda";
+    sfEl("sfSat").textContent = "—";
+    sfEl("sfSatTxt").textContent = "as lojas avaliam dentro do app";
+    coments.innerHTML = '<p class="sf-vazio-txt">Quando uma loja usar a ARYA por alguns minutos, ela recebe a pergunta "De 0 a 10, quanto você indicaria a ARYA?". As respostas aparecem aqui.</p>';
+    return;
+  }
+  const pro = notas.filter(function (n) { return n >= 9; }).length;
+  const det = notas.filter(function (n) { return n <= 6; }).length;
+  const nps = Math.round(100 * (pro - det) / notas.length);
+  const media = notas.reduce(function (s, n) { return s + n; }, 0) / notas.length;
+  sfEl("sfNps").textContent = (nps > 0 ? "+" : "") + nps;
+  sfEl("sfNpsTxt").textContent = nps >= 50 ? "excelente · elas amam" : nps >= 0 ? "bom · dá para melhorar" : "atenção · ouça as lojas";
+  sfEl("sfSat").textContent = media.toFixed(1).replace(".", ",") + " / 10";
+  sfEl("sfSatTxt").textContent = notas.length + (notas.length === 1 ? " avaliação" : " avaliações") + " · " + pro + " fãs";
+  feedback.forEach(function (f) {
+    const c = document.createElement("div");
+    c.className = "sf-coment";
+    c.innerHTML = '<div class="sf-coment-topo"><span><b></b> · <span class="q"></span></span><span class="sf-nota"></span></div><p></p>';
+    c.querySelector("b").textContent = f.company_name || "Loja";
+    c.querySelector(".q").textContent = new Date(f.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+    c.querySelector(".sf-nota").textContent = f.score;
+    c.querySelector("p").textContent = f.comment || "Deu a nota sem comentário.";
+    if (!f.comment) c.querySelector("p").style.color = "var(--muted)";
+    coments.appendChild(c);
+  });
+}
+
+// ---------- Minha história (fotos + marcos) ----------
+function sfFotoHistoria(i) { return "img/historia-" + (i + 1) + ".jpg"; }
+function sfDesenharHistoria() {
+  const caixa = sfEl("sfHist");
+  caixa.innerHTML = "";
+  SF_HISTORIA.forEach(function (h, i) {
+    const cap = document.createElement("button");
+    cap.type = "button";
+    cap.className = "sf-cap";
+    cap.innerHTML = '<div class="sf-cap-foto"><div class="sf-vazio"><b></b><span>Envie a foto<br>img/historia-' + (i + 1) + '.jpg</span></div><span class="sf-data"></span></div><div class="sf-cap-txt"><b></b><p></p></div>';
+    cap.querySelector(".sf-vazio b").textContent = String(i + 1).padStart(2, "0");
+    cap.querySelector(".sf-data").textContent = h.data;
+    cap.querySelector(".sf-cap-txt b").textContent = h.titulo;
+    cap.querySelector(".sf-cap-txt p").textContent = h.texto;
+    const img = document.createElement("img");
+    img.alt = h.titulo;
+    img.loading = "lazy";
+    img.style.position = "absolute";
+    img.style.inset = "0";
+    img.onerror = function () { img.remove(); };
+    img.src = sfFotoHistoria(i);
+    cap.querySelector(".sf-cap-foto").insertBefore(img, cap.querySelector(".sf-data"));
+    cap.addEventListener("click", function () { sfAbrirLuz(i); });
+    caixa.appendChild(cap);
+  });
+}
+let sfLuzAtual = 0;
+function sfAbrirLuz(i) {
+  sfLuzAtual = (i + SF_HISTORIA.length) % SF_HISTORIA.length;
+  const h = SF_HISTORIA[sfLuzAtual];
+  const foto = sfEl("sfLuzFoto");
+  foto.innerHTML = "";
+  const img = document.createElement("img");
+  img.alt = h.titulo;
+  img.onerror = function () { img.remove(); };
+  img.src = sfFotoHistoria(sfLuzAtual);
+  foto.appendChild(img);
+  sfEl("sfLuzData").textContent = h.data + " · capítulo " + (sfLuzAtual + 1) + " de " + SF_HISTORIA.length;
+  sfEl("sfLuzTitulo").textContent = h.titulo;
+  sfEl("sfLuzTexto").textContent = h.texto;
+  sfLuz.hidden = false;
+}
+sfEl("sfLuzFechar").addEventListener("click", function () { sfLuz.hidden = true; });
+sfEl("sfLuzAnt").addEventListener("click", function () { sfAbrirLuz(sfLuzAtual - 1); });
+sfEl("sfLuzProx").addEventListener("click", function () { sfAbrirLuz(sfLuzAtual + 1); });
+sfLuz.addEventListener("click", function (e) { if (e.target === sfLuz) sfLuz.hidden = true; });
+document.addEventListener("keydown", function (e) {
+  if (sfLuz.hidden) return;
+  if (e.key === "Escape") sfLuz.hidden = true;
+  if (e.key === "ArrowLeft") sfAbrirLuz(sfLuzAtual - 1);
+  if (e.key === "ArrowRight") sfAbrirLuz(sfLuzAtual + 1);
+});
+
+// ---------- Pix para confirmar ----------
+function sfDesenharPix(pend) {
+  const card = sfEl("sfPixCard");
+  const avisos = sfEl("fdAvisos");
+  card.hidden = !pend.length;
+  sfEl("sfChipPix").hidden = !pend.length;
+  sfEl("sfChipPixN").textContent = pend.length;
+  avisos.innerHTML = "";
+  pend.forEach(function (l) {
+    const div = document.createElement("div");
+    div.className = "fd-aviso";
+    div.innerHTML = '<span class="fd-ic">⚡</span><div class="fd-txt"><b></b><span></span></div>';
+    div.querySelector("b").textContent = l.company_name + " · " + moeda(l.claim_amount);
+    div.querySelector(".fd-txt span").textContent = "Avisou em " + new Date(l.claim_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + " · código " + l.claim_reference;
+    div.appendChild(criarBotao("✓ Recebi", "btn btn-small", function () { fdDecidir(l.claim_id, true); }));
+    div.appendChild(criarBotao("Não recebi", "btn btn-ghost btn-small", function () { fdDecidir(l.claim_id, false); }));
+    avisos.appendChild(div);
+  });
+}
+
+// ---------- Carregar tudo ----------
+fdCarregar = async function () {
+  sfSaudacao();
+  sfDesenharHistoria();
+  const erro = sfEl("sfErro");
+  erro.innerHTML = "";
+  const cliente = await iniciarSupabase();
+  const resp = await Promise.all([cliente.rpc("founder_overview"), cliente.rpc("founder_insights")]);
+  const r1 = resp[0];
+  const r2 = resp[1];
+  if (r1.error) {
+    erro.innerHTML = '<div class="sf-erro"></div>';
+    erro.firstChild.textContent = "Não foi possível carregar as lojas: " + r1.error.message;
+    return;
+  }
+  const overview = r1.data || [];
+  const insights = r2.error ? null : (r2.data || {});
+  if (r2.error) {
+    erro.innerHTML = '<div class="sf-erro"></div>';
+    erro.firstChild.textContent = "Falta rodar o SQL da Parte 42 no Supabase para ver receita, ranking e satisfação. (" + r2.error.message + ")";
+  }
+
+  // Junta a situação da assinatura (Parte 41) com os números de cada loja (Parte 42)
+  const extra = {};
+  ((insights && insights.lojas) || []).forEach(function (l) { extra[l.company_id] = l; });
+  sfLojasDados = overview.map(function (o) {
+    const e = extra[o.company_id] || {};
+    return Object.assign({ name: o.company_name, sales_30d: o.sales_30d }, e, {
+      company_id: o.company_id, status: o.status, paid_until: o.paid_until, trial_ends_at: o.trial_ends_at, situacao: fdSituacao(o)
+    });
+  });
+  sfReceitas = (insights && insights.receitas) || [];
+
+  const ativas = sfLojasDados.filter(function (l) { return l.situacao[0] === "Ativa"; }).length;
+  const vitalicias = sfLojasDados.filter(function (l) { return l.situacao[0] === "Vitalícia"; }).length;
+  const teste = sfLojasDados.filter(function (l) { return l.situacao[0] === "Teste grátis"; }).length;
+  const preco = pxConfig && pxConfig.price ? Number(pxConfig.price) : 49;
+  const pend = overview.filter(function (l) { return l.claim_id; });
+
+  sfEl("sfChipLojas").textContent = sfLojasDados.length;
+  sfContar(sfEl("sfRecebido"), insights ? sfNum(insights.recebido_total) : 0, true);
+  const mesAtual = sfReceitas.length ? sfNum(sfReceitas[sfReceitas.length - 1].valor) : 0;
+  sfEl("sfRecebidoTxt").textContent = insights ? moeda(mesAtual) + " neste mês" : "rode o SQL da Parte 42";
+  sfContar(sfEl("sfMrr"), ativas * preco, true);
+  sfEl("sfMrrTxt").textContent = ativas + (ativas === 1 ? " loja pagante" : " lojas pagantes") + " × " + moeda(preco);
+  sfContar(sfEl("sfLojas"), ativas, false);
+  sfEl("sfLojasTxt").textContent = "pagando · " + teste + " em teste" + (vitalicias ? " · " + vitalicias + " vitalícia(s)" : "");
+
+  // Meta
+  const pct = Math.min(1, ativas / SF_META_LOJAS);
+  const anel = sfEl("sfAnel");
+  const volta = 2 * Math.PI * 72;
+  anel.style.strokeDasharray = volta;
+  anel.style.strokeDashoffset = volta;
+  setTimeout(function () { anel.style.strokeDashoffset = volta * (1 - pct); }, 150);
+  sfContar(sfEl("sfMetaNum"), ativas, false);
+  sfEl("sfF1").textContent = sfLojasDados.length;
+  sfEl("sfF2").textContent = teste;
+  sfEl("sfF3").textContent = ativas;
+
+  sfDesenharPix(pend);
+  sfDesenharGrafico();
+  sfDesenharRanking();
+  sfDesenharSaude(null);
+  sfDesenharSatisfacao((insights && insights.feedback) || []);
+};
+sfEl("fdAtualizar").addEventListener("click", function () { fdCarregar(); avisar("Números atualizados ✦"); });
+
+// ---------- Para as lojas: "De 0 a 10, quanto você indicaria a ARYA?" ----------
+const sfAva = document.createElement("div");
+sfAva.className = "sf-ava";
+sfAva.hidden = true;
+sfAva.innerHTML = `
+  <button type="button" class="sf-ava-x" aria-label="Agora não">✕</button>
+  <h4>De 0 a 10, quanto você indicaria a ARYA para outra loja?</h4>
+  <p>Sua resposta vai direto para a fundadora e ajuda a ARYA a melhorar.</p>
+  <div class="sf-ava-notas"></div>
+  <div class="sf-ava-legenda"><span>Nada provável</span><span>Com certeza</span></div>
+  <textarea maxlength="1000" placeholder="Conte o que você mais gosta ou o que podemos melhorar (opcional)"></textarea>
+  <div class="sf-ava-acoes">
+    <button type="button" class="btn btn-ghost btn-small sf-ava-depois">Agora não</button>
+    <button type="button" class="btn btn-small sf-ava-enviar" disabled>Enviar</button>
+  </div>
+`;
+document.body.appendChild(sfAva);
+let sfAvaNota = null;
+const sfAvaNotas = sfAva.querySelector(".sf-ava-notas");
+for (let n = 0; n <= 10; n++) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = n;
+  b.addEventListener("click", function () {
+    sfAvaNota = n;
+    sfAvaNotas.querySelectorAll("button").forEach(function (x) { x.classList.toggle("ativo", x === b); });
+    sfAva.querySelector(".sf-ava-enviar").disabled = false;
+  });
+  sfAvaNotas.appendChild(b);
+}
+function sfAvaAdiar() {
+  sfAva.hidden = true;
+  try { localStorage.setItem("arya_avaliacao_depois", String(Date.now())); } catch (e) { /* sem armazenamento */ }
+}
+sfAva.querySelector(".sf-ava-x").addEventListener("click", sfAvaAdiar);
+sfAva.querySelector(".sf-ava-depois").addEventListener("click", sfAvaAdiar);
+sfAva.querySelector(".sf-ava-enviar").addEventListener("click", async function () {
+  const botao = this;
+  if (sfAvaNota === null) return;
+  botao.disabled = true;
+  botao.textContent = "Enviando...";
+  try {
+    const cliente = await iniciarSupabase();
+    const r = await cliente.rpc("submit_feedback", { p_score: sfAvaNota, p_comment: sfAva.querySelector("textarea").value });
+    if (r.error) throw r.error;
+    sfAva.hidden = true;
+    avisar("✦ Obrigada! Sua opinião chegou na fundadora.");
+  } catch (e) {
+    console.error(e);
+    botao.disabled = false;
+    botao.textContent = "Enviar";
+    avisar("Não consegui enviar: " + (e.message || e));
+  }
+});
+
+let sfAvaTimer = null;
+async function sfAvaVerificar() {
+  clearTimeout(sfAvaTimer);
+  sfAva.hidden = true;
+  try {
+    const adiado = Number(localStorage.getItem("arya_avaliacao_depois") || 0);
+    if (Date.now() - adiado < 3 * 86400000) return; // tocou em "Agora não": pergunta de novo em 3 dias
+  } catch (e) { /* sem armazenamento */ }
+  const cliente = await iniciarSupabase();
+  const f = await cliente.rpc("is_founder");
+  if (!f.error && f.data === true) return; // a fundadora não avalia a si mesma
+  const r = await cliente.rpc("my_last_feedback");
+  if (r.error) return; // SQL da Parte 42 ainda não rodou
+  if (r.data && Date.now() - new Date(r.data).getTime() < 30 * 86400000) return; // já avaliou nos últimos 30 dias
+  sfAvaTimer = setTimeout(function () { sfAva.hidden = false; }, 90000); // aparece depois de 1min30 de uso
+}
+
+iniciarSupabase().then(function (cliente) {
+  cliente.auth.onAuthStateChange(function (evento, sessao) {
+    if (!sessao) { clearTimeout(sfAvaTimer); sfAva.hidden = true; return; }
+    if (evento === "SIGNED_IN" || evento === "INITIAL_SESSION") setTimeout(sfAvaVerificar, 1500);
+  });
+});
+// FIM DA PARTE 42
 
