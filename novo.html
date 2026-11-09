@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARYA — Tecnologia que movimenta negócios</title>
+<meta name="description" content="A ARYA desenvolve soluções digitais para pequenos negócios. Conheça a ARYA Business: clientes, produtos, estoque e vendas em um só lugar.">
+<meta name="theme-color" content="#101114">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   ARYA — SITE INSTITUCIONAL · PARTE 1 (MENU + HERO)
+   ========================================================= */
+
+/* ---------- 1. CORES E MEDIDAS DA MARCA ---------- */
+:root{
+  --preto:#101114;
+  --branco:#FFFFFF;
+  --azul:#245BDB;
+  --azul-profundo:#153B91;
+  --cinza-claro:#E9EAED;
+  --cinza:#777B84;
+  --linha:rgba(16,17,20,.08);
+  --pad:clamp(20px,5vw,72px);
+  --ease:cubic-bezier(.2,.7,.1,1);
+}
+
+/* ---------- 2. BASE ---------- */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+  background:var(--branco);color:var(--preto);
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+.pular{position:absolute;left:-999px;top:0}
+.pular:focus{left:16px;top:16px;background:var(--azul);color:#fff;padding:8px 12px;z-index:100}
+
+/* ---------- 3. MENU ---------- */
+.nav{
+  position:fixed;inset:0 0 auto 0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px var(--pad);
+  border-bottom:1px solid transparent;
+  transition:background .4s,border-color .4s,color .4s;
+}
+.nav.solido{
+  background:rgba(255,255,255,.92);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-color:var(--linha);
+}
+.marca{display:flex;align-items:center;gap:12px;font-family:Archivo,sans-serif;font-weight:700;letter-spacing:.42em;font-size:15px}
+.marca svg{width:34px;height:24px}
+.nav-links{display:flex;gap:30px;list-style:none}
+.nav-links a{font-size:14px;color:var(--cinza);position:relative;padding:4px 0;transition:color .25s}
+.nav-links a::after{
+  content:"";position:absolute;left:0;bottom:-2px;height:1.5px;width:100%;
+  background:var(--azul);transform:scaleX(0);transform-origin:right;
+  transition:transform .35s var(--ease);
+}
+.nav-links a:hover{color:var(--preto)}
+.nav-links a:hover::after{transform:scaleX(1);transform-origin:left}
+.nav-acoes{display:flex;gap:10px;align-items:center}
+
+/* ---------- 4. BOTÕES ---------- */
+.btn{
+  --x:0px;--y:0px;
+  display:inline-flex;align-items:center;gap:10px;
+  font:600 14px Inter,sans-serif;padding:13px 22px;border-radius:2px;
+  border:1.5px solid var(--preto);background:transparent;color:var(--preto);
+  position:relative;overflow:hidden;isolation:isolate;cursor:pointer;
+  transform:translate(var(--x),var(--y));
+  transition:transform .3s var(--ease),color .3s,border-color .3s;
+}
+.btn::before{
+  content:"";position:absolute;inset:0;background:var(--azul);
+  transform:translateY(101%);transition:transform .4s var(--ease);z-index:-1;
+}
+.btn:hover::before{transform:translateY(0)}
+.btn:hover{border-color:var(--azul);color:#fff}
+.btn-escuro{background:var(--preto);color:#fff}
+.btn .seta{transition:transform .3s var(--ease)}
+.btn:hover .seta{transform:translateX(4px)}
+.btn:focus-visible,.nav-links a:focus-visible,.menu-btn:focus-visible{outline:2px solid var(--azul);outline-offset:3px}
+
+/* ---------- 5. MENU DO CELULAR ---------- */
+.menu-btn{display:none;background:none;border:0;width:44px;height:44px;cursor:pointer}
+.menu-btn span{display:block;height:1.5px;width:22px;background:currentColor;margin:6px auto;transition:transform .35s var(--ease)}
+.painel{
+  position:fixed;inset:0;z-index:49;background:var(--preto);color:#fff;
+  display:flex;flex-direction:column;justify-content:center;gap:6px;
+  padding:var(--pad);transform:translateY(-100%);visibility:hidden;
+  transition:transform .55s var(--ease),visibility 0s .55s;
+}
+.painel a.grande{font-family:Archivo,sans-serif;font-weight:800;font-size:clamp(34px,9vw,56px);text-transform:uppercase;letter-spacing:-.01em;line-height:1.15}
+.painel a.grande span{color:var(--azul);font-size:.35em;vertical-align:top;margin-right:10px;font-weight:600}
+.painel .painel-acoes{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap}
+.painel .btn{border-color:#fff;color:#fff}
+body.menu-aberto .painel{transform:none;visibility:visible;transition:transform .55s var(--ease)}
+body.menu-aberto .nav{color:#fff;background:transparent;border-color:transparent}
+body.menu-aberto .menu-btn span:first-child{transform:translateY(3.75px) rotate(45deg)}
+body.menu-aberto .menu-btn span:last-child{transform:translateY(-3.75px) rotate(-45deg)}
+
+/* ---------- 6. HERO ---------- */
+.hero{
+  min-height:100svh;position:relative;overflow:hidden;
+  padding:118px var(--pad) 0;
+  display:grid;grid-template-rows:auto 1fr auto auto;
+}
+/* grade suíça: a assinatura da ARYA */
+.grade{
+  position:absolute;inset:0;display:grid;grid-template-columns:repeat(12,1fr);
+  padding:0 var(--pad);pointer-events:none;z-index:0;
+}
+.grade i{border-left:1px solid var(--linha);transform:scaleY(0);transform-origin:top;animation:desce 1.6s var(--ease) forwards;animation-delay:calc(var(--d) * 70ms)}
+.grade i:last-child{border-right:1px solid var(--linha)}
+@keyframes desce{to{transform:scaleY(1)}}
+
+.hero-topo{
+  position:relative;z-index:1;display:flex;justify-content:space-between;gap:16px;
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cinza);
+  padding-bottom:18px;border-bottom:1px solid var(--preto);
+  opacity:0;transition:opacity 1s .2s;
+}
+.hero-topo b{color:var(--azul);font-weight:600}
+body.pronto .hero-topo{opacity:1}
+
+.hero-meio{position:relative;z-index:1;display:flex;align-items:center;padding:4vh 0}
+.titulo{
+  font-family:Archivo,sans-serif;font-weight:800;font-stretch:112%;
+  font-variation-settings:"wdth" 112;
+  font-size:clamp(46px,10.5vw,172px);line-height:.88;letter-spacing:-.025em;
+  text-transform:uppercase;
+}
+.titulo .linha{display:block;overflow:hidden;padding-bottom:.04em}
+.titulo .palavra{display:inline-block;white-space:nowrap}
+.titulo .ch{display:inline-block;transform:translateY(108%);transition:transform .9s var(--ease);transition-delay:calc(var(--i) * 26ms + 250ms)}
+body.pronto .titulo .ch{transform:none}
+.titulo em{font-style:normal;color:var(--azul)}
+.titulo .ponto{color:var(--azul)}
+
+/* desenho geométrico do "A" */
+.desenho{
+  position:absolute;z-index:0;right:calc(var(--pad) - 10px);top:50%;
+  width:min(44vw,600px);transform:translateY(-50%);pointer-events:none;
+}
+.desenho svg{width:100%;height:auto;overflow:visible}
+.desenho .guia{stroke:var(--cinza);stroke-width:.6;fill:none;opacity:.45}
+.desenho .tracejado{stroke-dasharray:3 5}
+.desenho .traco{stroke:var(--azul);stroke-width:2.4;fill:none;stroke-linecap:square}
+.desenho .desenha{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.8s var(--ease)}
+body.pronto .desenho .desenha{stroke-dashoffset:0}
+.desenho .d2{transition-delay:.5s}.desenho .d3{transition-delay:.9s}.desenho .d4{transition-delay:1.2s}
+.desenho .rotulo{font:500 7px Inter,sans-serif;fill:var(--cinza);letter-spacing:.12em;opacity:0;transition:opacity 1s 1.6s}
+body.pronto .desenho .rotulo{opacity:1}
+.desenho .estrela{fill:var(--azul);transform-origin:206px 34px;transform:scale(0);transition:transform .7s var(--ease) 1.9s}
+body.pronto .desenho .estrela{transform:scale(1)}
+
+.hero-base{
+  position:relative;z-index:1;display:grid;grid-template-columns:repeat(12,1fr);gap:20px;
+  align-items:end;padding:10px 0 36px;
+  opacity:0;transform:translateY(16px);transition:opacity 1s 1s,transform 1s var(--ease) 1s;
+}
+body.pronto .hero-base{opacity:1;transform:none}
+.hero-base p{grid-column:1 / span 5;font-size:clamp(16px,1.35vw,19px);line-height:1.55;color:#3a3d44}
+.hero-base .acoes{grid-column:7 / span 6;display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+
+/* faixa com os recursos reais */
+.faixa{position:relative;z-index:1;margin:0 calc(var(--pad) * -1);background:var(--preto);color:#fff;overflow:hidden;padding:15px 0}
+.trilho{display:flex;width:max-content;animation:corre 45s linear infinite}
+.trilho span{font-family:Archivo,sans-serif;font-weight:600;font-size:13px;letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:28px;padding-right:28px;white-space:nowrap}
+.trilho span::after{content:"";width:6px;height:6px;background:var(--azul)}
+@keyframes corre{to{transform:translateX(-50%)}}
+
+/* ---------- 7. TELAS MENORES (iPad em pé e celular) ---------- */
+@media (max-width:980px){
+  .nav-links,.nav-acoes{display:none}
+  .menu-btn{display:block}
+  .grade{grid-template-columns:repeat(6,1fr)}
+  .grade i:nth-child(n+7){display:none}
+  .desenho{width:78vw;right:-14vw;top:44%;opacity:.55}
+  .hero-base p{grid-column:1 / -1}
+  .hero-base .acoes{grid-column:1 / -1;justify-content:flex-start}
+}
+@media (max-width:560px){
+  .hero-topo span:nth-child(2){display:none}
+  .hero-base .btn{flex:1 1 100%;justify-content:space-between}
+}
+
+/* ---------- 8. VERSÃO ESCURA (menu + hero em preto ARYA) ---------- */
+.nav{color:#fff}
+.nav.solido{background:rgba(16,17,20,.9);border-color:rgba(255,255,255,.1)}
+.nav-links a{color:#9A9EA6}
+.nav-links a:hover{color:#fff}
+.nav .btn{border-color:rgba(255,255,255,.7);color:#fff}
+.nav .btn-escuro{background:#fff;border-color:#fff;color:var(--preto)}
+.hero{background:var(--preto);color:#fff;--linha:rgba(255,255,255,.09)}
+.hero-topo{border-bottom-color:rgba(255,255,255,.35);color:#9A9EA6}
+.hero-base p{color:#B9BCC3}
+.hero .btn{border-color:rgba(255,255,255,.7);color:#fff}
+.hero .btn-escuro{background:#fff;border-color:#fff;color:var(--preto)}
+.nav .btn:hover,.hero .btn:hover{border-color:var(--azul);color:#fff}
+.desenho .guia{stroke:#9A9EA6;opacity:.4}
+.desenho .base{stroke:#fff!important}
+.desenho .rotulo{fill:#9A9EA6}
+.faixa{background:var(--azul)}
+.trilho span::after{background:#fff}
+
+/* ---------- 9. MOVIMENTO REDUZIDO ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .grade i,.titulo .ch{transform:none!important}
+  .desenho .desenha{stroke-dashoffset:0!important}
+  .desenho .estrela{transform:scale(1)!important}
+  .hero-topo,.hero-base,.desenho .rotulo{opacity:1!important;transform:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+
+<body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<!-- ===================== MENU ===================== -->
+<header class="nav" id="nav">
+  <a href="#topo" class="marca" aria-label="ARYA, início">
+    <svg viewBox="0 0 120 80" aria-hidden="true">
+      <path d="M6 72 L50 8 L94 72" fill="none" stroke="currentColor" stroke-width="11" stroke-linejoin="miter"/>
+      <path d="M106 4 L108.5 11.5 L116 14 L108.5 16.5 L106 24 L103.5 16.5 L96 14 L103.5 11.5Z" fill="currentColor"/>
+    </svg>
+    ARYA
+  </a>
+
+  <nav aria-label="Principal">
+    <ul class="nav-links">
+      <li><a href="#sobre">Sobre</a></li>
+      <li><a href="#solucoes">Soluções</a></li>
+      <li><a href="#ecossistema">Ecossistema</a></li>
+      <li><a href="#demonstracao">Demonstração</a></li>
+      <li><a href="#visao">Visão</a></li>
+      <li><a href="#contato">Contato</a></li>
+    </ul>
+  </nav>
+
+  <div class="nav-acoes">
+    <a class="btn" href="app.html">Entrar</a>
+    <a class="btn btn-escuro magnetico" href="app.html">Começar grátis <span class="seta">→</span></a>
+  </div>
+
+  <button class="menu-btn" id="menuBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="painel">
+    <span></span><span></span>
+  </button>
+</header>
+
+<div class="painel" id="painel" aria-hidden="true">
+  <a class="grande" href="#sobre"><span>01</span>Sobre</a>
+  <a class="grande" href="#solucoes"><span>02</span>Soluções</a>
+  <a class="grande" href="#ecossistema"><span>03</span>Ecossistema</a>
+  <a class="grande" href="#demonstracao"><span>04</span>Demonstração</a>
+  <a class="grande" href="#visao"><span>05</span>Visão</a>
+  <a class="grande" href="#contato"><span>06</span>Contato</a>
+  <div class="painel-acoes">
+    <a class="btn" href="app.html">Entrar</a>
+    <a class="btn" href="app.html">Começar grátis <span class="seta">→</span></a>
+  </div>
+</div>
+
+<!-- ===================== HERO ===================== -->
+<main id="conteudo">
+<section class="hero" id="topo" aria-labelledby="titulo">
+  <div class="grade" aria-hidden="true">
+    <i style="--d:0"></i><i style="--d:1"></i><i style="--d:2"></i><i style="--d:3"></i>
+    <i style="--d:4"></i><i style="--d:5"></i><i style="--d:6"></i><i style="--d:7"></i>
+    <i style="--d:8"></i><i style="--d:9"></i><i style="--d:10"></i><i style="--d:11"></i>
+  </div>
+
+  <div class="hero-topo">
+    <span><b>Nº 01</b> — ARYA Business</span>
+    <span>Soluções digitais para pequenos negócios</span>
+    <span>Ecossistema em construção</span>
+  </div>
+
+  <div class="hero-meio">
+    <!-- Desenho de construção do "A": a assinatura geométrica -->
+    <div class="desenho" id="desenho" aria-hidden="true">
+      <svg viewBox="0 0 240 200">
+        <circle class="guia tracejado" cx="100" cy="112" r="78"/>
+        <line class="guia" x1="0" y1="176" x2="240" y2="176"/>
+        <line class="guia" x1="100" y1="10" x2="100" y2="196"/>
+        <line class="guia tracejado" x1="0" y1="40" x2="240" y2="40"/>
+        <path class="guia" d="M128 176 A28 28 0 0 1 148 152" />
+        <text class="rotulo" x="152" y="168">55°</text>
+        <text class="rotulo" x="6" y="36">ARYA / GRID 12</text>
+        <text class="rotulo" x="6" y="192">BASE</text>
+
+        <path class="traco desenha" pathLength="1" d="M30 176 L100 40 L170 176"/>
+        <path class="traco desenha d2" pathLength="1" d="M58 176 L100 94 L142 176" style="stroke-width:1;opacity:.6"/>
+        <path class="traco desenha d3 base" pathLength="1" d="M10 176 L230 176" style="stroke:var(--preto);stroke-width:1.2"/>
+        <rect class="traco desenha d4" pathLength="1" x="96" y="36" width="8" height="8" style="stroke-width:1.2"/>
+        <path class="estrela" d="M206 22 L209 31 L218 34 L209 37 L206 46 L203 37 L194 34 L203 31Z"/>
+      </svg>
+    </div>
+
+    <h1 class="titulo" id="titulo">
+      <span class="linha">Tecnologia</span>
+      <span class="linha">que <em>movimenta</em></span>
+      <span class="linha">negócios<span class="ponto">.</span></span>
+    </h1>
+  </div>
+
+  <div class="hero-base">
+    <p>Desenvolvemos soluções digitais que simplificam processos, conectam informações e ajudam negócios a evoluir.</p>
+    <div class="acoes">
+      <a class="btn btn-escuro magnetico" href="#sobre">Conheça a ARYA <span class="seta">→</span></a>
+      <a class="btn magnetico" href="#solucoes">Explore nossas soluções</a>
+    </div>
+  </div>
+
+  <div class="faixa" aria-label="Recursos da ARYA Business">
+    <div class="trilho">
+      <span>Clientes</span><span>Produtos</span><span>Estoque</span><span>Grade de tamanhos e cores</span>
+      <span>Vendas</span><span>Caixa rápido</span><span>Orçamentos</span><span>ARYA Pulso</span>
+      <span>ARYA Cresce</span><span>Relatórios</span>
+      <span aria-hidden="true">Clientes</span><span aria-hidden="true">Produtos</span><span aria-hidden="true">Estoque</span><span aria-hidden="true">Grade de tamanhos e cores</span>
+      <span aria-hidden="true">Vendas</span><span aria-hidden="true">Caixa rápido</span><span aria-hidden="true">Orçamentos</span><span aria-hidden="true">ARYA Pulso</span>
+      <span aria-hidden="true">ARYA Cresce</span><span aria-hidden="true">Relatórios</span>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+(function(){
+  var reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 1. Título letra por letra
+  var i = 0;
+  document.querySelectorAll('.titulo .linha').forEach(function(linha){
+    var partes = [];
+    linha.childNodes.forEach(function(n){ partes.push(n); });
+    partes.forEach(function(n){
+      if (n.nodeType === 3) {
+        var frag = document.createDocumentFragment();
+        n.textContent.split(/(\s+)/).forEach(function(trecho){
+          if (!trecho) return;
+          if (/^\s+$/.test(trecho)) { frag.appendChild(document.createTextNode(' ')); return; }
+          var w = document.createElement('span'); w.className = 'palavra';
+          trecho.split('').forEach(function(c){
+            var s = document.createElement('span'); s.className = 'ch';
+            s.style.setProperty('--i', i++); s.textContent = c; w.appendChild(s);
+          });
+          frag.appendChild(w);
+        });
+        linha.replaceChild(frag, n);
+      } else if (n.nodeType === 1) {
+        var txt = n.textContent; n.textContent = '';
+        var w2 = document.createElement('span'); w2.className = 'palavra';
+        txt.split('').forEach(function(c){
+          var s = document.createElement('span'); s.className = 'ch';
+          s.style.setProperty('--i', i++); s.textContent = c; w2.appendChild(s);
+        });
+        n.appendChild(w2);
+      }
+    });
+  });
+
+  // 2. Começa as animações quando as fontes carregarem
+  var iniciou = false;
+  function iniciar(){ if (iniciou) return; iniciou = true; requestAnimationFrame(function(){ document.body.classList.add('pronto'); }); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(iniciar);
+  setTimeout(iniciar, 1200);
+
+  // 3. Menu fica sólido ao rolar
+  var nav = document.getElementById('nav');
+  var desenho = document.getElementById('desenho');
+  var agendado = false;
+  function aoRolar(){
+    agendado = false;
+    var y = window.scrollY;
+    nav.classList.toggle('solido', y > 20);
+    if (!reduzido && desenho) {
+      desenho.style.transform = 'translateY(calc(-50% + ' + (y * 0.18) + 'px)) rotate(' + (y * 0.012) + 'deg)';
+    }
+  }
+  window.addEventListener('scroll', function(){ if (!agendado){ agendado = true; requestAnimationFrame(aoRolar); } }, {passive:true});
+  aoRolar();
+
+  // 4. Menu do celular
+  var btn = document.getElementById('menuBtn');
+  var painel = document.getElementById('painel');
+  function fechar(){
+    document.body.classList.remove('menu-aberto');
+    btn.setAttribute('aria-expanded','false'); btn.setAttribute('aria-label','Abrir menu');
+    painel.setAttribute('aria-hidden','true');
+  }
+  btn.addEventListener('click', function(){
+    var aberto = document.body.classList.toggle('menu-aberto');
+    btn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+    btn.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
+    painel.setAttribute('aria-hidden', aberto ? 'false' : 'true');
+  });
+  painel.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', fechar); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') fechar(); });
+
+  // 5. Botões magnéticos (só com mouse)
+  if (!reduzido && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    document.querySelectorAll('.magnetico').forEach(function(b){
+      b.addEventListener('mousemove', function(e){
+        var r = b.getBoundingClientRect();
+        b.style.setProperty('--x', ((e.clientX - r.left - r.width/2) * 0.15) + 'px');
+        b.style.setProperty('--y', ((e.clientY - r.top - r.height/2) * 0.25) + 'px');
+      });
+      b.addEventListener('mouseleave', function(){ b.style.setProperty('--x','0px'); b.style.setProperty('--y','0px'); });
+    });
+  }
+})();
+</script>
+</body>
+</html>
