@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARYA — Experiência interativa</title>
+<meta name="description" content="ARYA Business Systems: gestão, inteligência e crescimento para pequenos negócios.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="experiencia.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="vignette"></div>
+<div class="grain"></div>
+<div id="cursor"></div>
+<div id="progress"></div>
+
+<div id="loader"><div class="in">
+  <svg viewBox="0 0 40 40" fill="none"><path d="M6 34 L18 7 L30 34" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.5 24 H24.5" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/><path d="M32 3 l1.5 3.5 3.5 1.5 -3.5 1.5 -1.5 3.5 -1.5 -3.5 -3.5 -1.5 3.5 -1.5z" fill="#9d8cff"/></svg>
+  <div class="bar"><i id="lbar"></i></div><small>CARREGANDO</small>
+</div></div>
+
+<nav>
+  <a class="brand" href="#hero" data-go>
+    <svg viewBox="0 0 40 40" fill="none"><path d="M6 34 L18 7 L30 34" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.5 24 H24.5" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/><path d="M32 3 l1.5 3.5 3.5 1.5 -3.5 1.5 -1.5 3.5 -1.5 -3.5 -3.5 -1.5 3.5 -1.5z" fill="#9d8cff"/></svg>
+    ARYA
+  </a>
+  <div class="navlinks">
+    <a href="#sobre" data-go>Sobre</a><a href="#servicos" data-go>Soluções</a><a href="#projetos" data-go>Projetos</a><a href="#interativo" data-go>Experimente</a><a href="#contato" data-go>Contato</a>
+  </div>
+  <a class="btn btn-w" href="app.html" id="navApp">Entrar</a>
+</nav>
+
+<main>
+  <!-- 1. HERO -->
+  <section id="hero">
+    <div class="top">
+      <span class="eyebrow" data-hero>ARYA Business Systems</span>
+      <h1 style="margin-top:16px">
+        <span class="line"><span data-hero>Seu negócio inteiro</span></span>
+        <span class="line"><span data-hero>em <em>uma só tela.</em></span></span>
+      </h1>
+    </div>
+    <div class="bottom">
+      <div>
+        <p data-hero>Gestão, inteligência e crescimento para pequenos negócios. Role a página e conheça a ARYA por dentro.</p>
+        <div class="cta" style="margin-top:18px" data-hero>
+          <a class="btn btn-w" href="#contato" data-go>Quero conhecer</a>
+          <a class="btn btn-g" href="#story" data-go>Ver por dentro</a>
+        </div>
+      </div>
+      <div class="scrollhint" data-hero>ROLE<i></i></div>
+    </div>
+  </section>
+
+  <!-- 2. ROLAGEM DO NOTEBOOK -->
+  <section id="story">
+    <div class="stick">
+      <div class="chip glass c1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div><div><b>Vendas em tempo real</b><small>Cada venda entra no painel</small></div></div>
+      <div class="chip glass c2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4v13h16V7z"/><path d="M16 7V4H8v3"/></svg></div><div><b>Estoque com grade</b><small>Tamanhos e cores</small></div></div>
+      <div class="chip glass c3"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><div><b>ARYA Pulso</b><small>Recomendações com dados reais</small></div></div>
+      <div class="chip glass c4"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M17 11l2 2 4-4"/></svg></div><div><b>Clientes que voltam</b><small>Fidelidade com o Cresce</small></div></div>
+
+      <div class="cap"><div class="n">01 / 04</div><h3>Tudo em um painel</h3><p>Vendas, clientes, produtos e caixa juntos. O lojista abre a ARYA e entende o dia em segundos.</p></div>
+      <div class="cap"><div class="n">02 / 04</div><h3>Gráficos que explicam</h3><p>A evolução das vendas aparece de forma visual, sem planilha e sem conta de cabeça.</p></div>
+      <div class="cap"><div class="n">03 / 04</div><h3>ARYA Pulso</h3><p>Recomendações práticas a partir dos dados da própria loja, sempre explicando o porquê. Nada de resultado inventado.</p></div>
+      <div class="cap"><div class="n">04 / 04</div><h3>Decisões simples</h3><p>O que repor, quem chamar de volta, qual orçamento cobrar. A ARYA transforma números em próximos passos.</p></div>
+      <div class="stepdots"><i></i><i></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <!-- 3. SOBRE -->
+  <section id="sobre">
+    <div class="wrap">
+      <div class="sobre-grid">
+        <div>
+          <span class="eyebrow" data-reveal>Quem é a ARYA</span>
+          <p class="split" data-split>A ARYA é uma empresa de tecnologia que transforma os dados de pequenos negócios em crescimento e decisões simples.</p>
+          <div class="pillars">
+            <div class="pillar glass" data-reveal><span class="k">MISSÃO</span><div><h3>Tecnologia que cabe no dia a dia</h3><p>Dar ao pequeno lojista a mesma clareza que grandes empresas têm, sem complicação e com preço acessível.</p></div></div>
+            <div class="pillar glass" data-reveal><span class="k">O QUE FAZ</span><div><h3>Gestão, vendas e inteligência</h3><p>Um sistema completo para lojas de roupas, acessórios e pequenos comércios: do caixa ao relatório.</p></div></div>
+            <div class="pillar glass" data-reveal><span class="k">OBJETIVO</span><div><h3>Crescer junto com quem usa</h3><p>Validar com lojistas reais, evoluir a partir do que eles precisam e se tornar uma empresa de tecnologia nacional.</p></div></div>
+          </div>
+          <div class="founder glass" data-reveal><div class="av"><span>VG</span></div><div><b>Vitória Gabrielly</b><div class="muted" style="font-size:13px">Fundadora da ARYA</div></div></div>
+        </div>
+        <div></div>
+      </div>
+      <div class="diffs">
+        <div class="diff glass" data-reveal><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg></div><h4>Pulso transparente</h4><p>Toda recomendação mostra de onde veio.</p></div>
+        <div class="diff glass" data-reveal><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M12 4l8 8-8 8"/></svg></div><h4>Vendas automáticas</h4><p>Pedidos da loja virtual viram venda sozinhos.</p></div>
+        <div class="diff glass" data-reveal><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div><h4>Feita para o celular</h4><p>Funciona no celular, no iPad e no computador.</p></div>
+        <div class="diff glass" data-reveal><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h4>Dados protegidos</h4><p>Cada empresa só enxerga as próprias informações.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. SERVIÇOS -->
+  <section id="servicos">
+    <div class="wrap">
+      <div class="head">
+        <div><span class="eyebrow" data-reveal>Soluções</span><h2 data-reveal>Cada parte da loja, resolvida.</h2></div>
+        <p data-reveal>Passe o mouse e clique em cada solução para ver o que ela faz na prática.</p>
+      </div>
+      <div class="cards">
+        <button class="card glass big" data-card="management"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div><span class="tag">Pilar 1</span><h3>ARYA Management</h3><p>A gestão do negócio inteiro em um só lugar.</p><span class="more">Descobrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+        <button class="card glass" data-card="pulso"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><span class="tag">Pilar 2</span><h3>Intelligence · Pulso</h3><p>Interpreta os dados e sugere o próximo passo.</p><span class="more">Descobrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+        <button class="card glass" data-card="connect"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M8.5 7.5l7 9M9 6h6"/></svg></div><span class="tag">Pilar 3</span><h3>ARYA Connect</h3><p>Loja virtual conectada: pedidos viram vendas.</p><span class="more">Descobrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+        <button class="card glass" data-card="cresce"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div><span class="tag">Fidelização</span><h3>ARYA Cresce</h3><p>Pontos, lembretes e recompra.</p><span class="more">Descobrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+        <button class="card glass" data-card="caixa"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14"/></svg></div><span class="tag">Vendas</span><h3>Caixa rápido</h3><p>Venda com código de barras em segundos.</p><span class="more">Descobrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+        <button class="card glass" data-card="estoque"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg></div><span class="tag">Produtos</span><h3>Estoque e grade</h3><p>Tamanhos, cores e alertas de reposição.</p><span class="more">Descobrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+        <button class="card glass big" data-card="relatorios"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 17v-3M12 17v-6M16 17v-2"/></svg></div><span class="tag">Gestão</span><h3>Orçamentos, relatórios e fornecedores</h3><p>Do orçamento enviado à planilha exportada.</p><span class="more">Descobrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. PROJETOS -->
+  <section id="projetos">
+    <div class="stick">
+      <div class="phead">
+        <div><span class="eyebrow">Projetos e soluções</span><h2>O que já foi construído</h2></div>
+        <div class="counter"><b id="pcount">01</b> / <span id="ptotal">06</span></div>
+      </div>
+      <div class="track" id="track">
+        <article class="proj glass"><div class="vis"><svg viewBox="0 0 400 220"><g fill="none" stroke="#9d8cff" stroke-width="3"><path class="draw" d="M20 170 L80 140 L130 150 L190 95 L250 110 L310 60 L380 40"/></g><g fill="rgba(255,255,255,.08)"><rect x="20" y="20" width="80" height="40" rx="8"/><rect x="110" y="20" width="80" height="40" rx="8"/><rect x="200" y="20" width="80" height="40" rx="8"/></g></svg></div><div class="meta"><span>Dashboard</span><span class="status">No ar</span></div><h3>Visão geral do negócio</h3><p>Cards, gráfico de 7 dias, mais vendidos, produtos para repor e meta do mês.</p></article>
+        <article class="proj glass"><div class="vis"><svg viewBox="0 0 400 220"><g fill="rgba(255,255,255,.07)"><rect x="40" y="30" width="320" height="34" rx="8"/><rect x="40" y="74" width="320" height="34" rx="8"/><rect x="40" y="118" width="320" height="34" rx="8"/></g><rect x="40" y="166" width="150" height="34" rx="17" fill="#fff"/><g stroke="#9d8cff" stroke-width="3"><path d="M260 168v30M268 168v30M280 168v30M288 168v30M300 168v30M312 168v30M320 168v30"/></g></svg></div><div class="meta"><span>Vendas</span><span class="status">No ar</span></div><h3>Vendas e Caixa rápido</h3><p>Nova venda, cancelamento seguro e leitura por código de barras.</p></article>
+        <article class="proj glass"><div class="vis"><svg viewBox="0 0 400 220"><g font-family="Space Grotesk" font-size="15" fill="#fff"><g fill="rgba(255,255,255,.07)"><rect x="30" y="30" width="60" height="44" rx="10"/><rect x="100" y="30" width="60" height="44" rx="10"/><rect x="170" y="30" width="60" height="44" rx="10" fill="#9d8cff"/><rect x="240" y="30" width="60" height="44" rx="10"/></g><text x="52" y="57">P</text><text x="122" y="57">M</text><text x="192" y="57" fill="#000">G</text><text x="257" y="57">GG</text></g><g><circle cx="60" cy="130" r="18" fill="#fff"/><circle cx="110" cy="130" r="18" fill="#9d8cff"/><circle cx="160" cy="130" r="18" fill="#3a3a48"/><circle cx="210" cy="130" r="18" fill="#c9c1ff"/></g><rect x="30" y="172" width="250" height="8" rx="4" fill="rgba(255,255,255,.08)"/><rect x="30" y="172" width="70" height="8" rx="4" fill="#ffd58a"/></svg></div><div class="meta"><span>Produtos</span><span class="status">No ar</span></div><h3>Estoque com grade</h3><p>Tamanhos e cores por produto, entrada e saída protegidas, fotos e categorias.</p></article>
+        <article class="proj glass"><div class="vis"><svg viewBox="0 0 400 220"><path d="M20 110h80l20-50 30 100 25-70 20 20h185" fill="none" stroke="#9d8cff" stroke-width="3" class="draw"/><g fill="rgba(255,255,255,.08)"><rect x="40" y="160" width="320" height="40" rx="10"/></g><circle cx="62" cy="180" r="7" fill="#9ff0c4"/><rect x="80" y="175" width="160" height="10" rx="5" fill="rgba(255,255,255,.25)"/></svg></div><div class="meta"><span>Intelligence</span><span class="status">No ar</span></div><h3>ARYA Pulso</h3><p>Clientes que podem voltar, orçamentos parados e estoque baixo, com explicação.</p></article>
+        <article class="proj glass"><div class="vis"><svg viewBox="0 0 400 220"><g fill="none" stroke="rgba(255,255,255,.15)" stroke-width="2"><circle cx="200" cy="110" r="70"/><circle cx="200" cy="110" r="40"/></g><circle cx="200" cy="110" r="70" fill="none" stroke="#9d8cff" stroke-width="6" stroke-dasharray="300 440" transform="rotate(-90 200 110)" stroke-linecap="round"/><text x="200" y="118" text-anchor="middle" font-family="Space Grotesk" font-size="24" fill="#fff">pts</text></svg></div><div class="meta"><span>Fidelização</span><span class="status">No ar</span></div><h3>ARYA Cresce</h3><p>Programa de pontos e lembretes de recompra para clientes que somem.</p></article>
+        <article class="proj glass"><div class="vis"><svg viewBox="0 0 400 220"><rect x="40" y="50" width="110" height="120" rx="14" fill="rgba(255,255,255,.07)"/><rect x="250" y="50" width="110" height="120" rx="14" fill="rgba(157,140,255,.25)"/><path d="M160 110h80" stroke="#fff" stroke-width="3" stroke-dasharray="8 8" class="dash"/><path d="M232 102l10 8-10 8" fill="none" stroke="#fff" stroke-width="3"/><text x="95" y="115" text-anchor="middle" font-family="Space Grotesk" font-size="14" fill="#fff">Loja virtual</text><text x="305" y="115" text-anchor="middle" font-family="Space Grotesk" font-size="14" fill="#fff">ARYA</text></svg></div><div class="meta"><span>Integração</span><span class="status next">Em evolução</span></div><h3>ARYA Connect</h3><p>Pedidos da loja virtual entram como venda automaticamente.</p></article>
+      </div>
+      <div class="ptrack"><i id="pbar"></i></div>
+    </div>
+  </section>
+
+  <section id="evolucao">
+    <div class="wrap">
+      <span class="eyebrow" data-reveal>Indicadores</span>
+      <div class="stats">
+        <div class="stat glass" data-reveal><div class="v"><span data-count="3">0</span></div><p>Pilares: Management, Intelligence e Connect</p></div>
+        <div class="stat glass" data-reveal><div class="v"><span data-count="5">0</span><small>fases</small></div><p>No plano de evolução da empresa</p></div>
+        <div class="stat glass" data-reveal><div class="v">R$&nbsp;<span data-count="49">0</span><small>/mês</small></div><p>Plano inicial para pequenos negócios</p></div>
+        <div class="stat glass" data-reveal><div class="v"><span data-count="3">0</span><small>telas</small></div><p>Celular, iPad e computador</p></div>
+      </div>
+      <div class="road glass" data-reveal>
+        <h3>Linha de evolução</h3>
+        <div class="phase"><b>Fase 1</b><div class="bar"><i data-w="100"></i></div><span>Concluída</span><div class="t">Produto inicial funcional: gestão, vendas, clientes e estoque.</div></div>
+        <div class="phase"><b>Fase 2</b><div class="bar"><i data-w="100"></i></div><span>Concluída</span><div class="t">ARYA Pulso: inteligência operacional com dados reais.</div></div>
+        <div class="phase"><b>Fase 3</b><div class="bar"><i data-w="80"></i></div><span>Em andamento</span><div class="t">Fidelização com o ARYA Cresce.</div></div>
+        <div class="phase"><b>Fase 4</b><div class="bar"><i data-w="35"></i></div><span>Começando</span><div class="t">Automação e integrações, como a loja virtual.</div></div>
+        <div class="phase"><b>Fase 5</b><div class="bar"><i data-w="5"></i></div><span>Futuro</span><div class="t">Expansão e ecossistema ARYA.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. INTERATIVO -->
+  <section id="interativo">
+    <div class="wrap int-grid">
+      <div></div>
+      <div>
+        <span class="eyebrow" data-reveal>Experimente</span>
+        <h2 data-reveal>Veja o Pulso pensar.</h2>
+        <p class="muted" data-reveal>Mexa nos controles como se fosse a sua loja. O Pulso responde na hora com o que fazer primeiro.</p>
+        <div class="sim glass" data-reveal style="margin-top:26px">
+          <div class="row"><label>Produtos com estoque baixo <b id="v1">4</b></label><input type="range" id="s1" min="0" max="20" value="4"></div>
+          <div class="row"><label>Clientes sem comprar há 30+ dias <b id="v2">12</b></label><input type="range" id="s2" min="0" max="60" value="12"></div>
+          <div class="row"><label>Orçamentos sem resposta <b id="v3">3</b></label><input type="range" id="s3" min="0" max="15" value="3"></div>
+          <div class="chart" id="chart"><div><span></span></div><div><span></span></div><div><span></span></div></div>
+          <div class="chart-l"><span>Estoque</span><span>Clientes</span><span>Orçamentos</span></div>
+          <div class="recs" id="recs"></div>
+          <p class="note">Simulação para demonstração. Na ARYA, o Pulso usa os dados reais da loja.</p>
+        </div>
+        <div class="acc">
+          <div class="it glass"><button>A ARYA serve para a minha loja?<i>+</i></button><div class="ans"><p>Ela foi pensada para lojas de roupas, acessórios e pequenos comércios que querem controlar vendas, estoque e clientes sem planilhas.</p></div></div>
+          <div class="it glass"><button>Preciso de computador?<i>+</i></button><div class="ans"><p>Não. A ARYA funciona no navegador do celular, do iPad ou do computador.</p></div></div>
+          <div class="it glass"><button>Meus dados ficam seguros?<i>+</i></button><div class="ans"><p>Cada empresa tem acesso só às próprias informações, com regras de segurança no banco de dados.</p></div></div>
+          <div class="it glass"><button>Quanto custa?<i>+</i></button><div class="ans"><p>O plano inicial é de R$ 49 por mês. Fale com a ARYA para saber sobre as condições para as primeiras lojas.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. CONTATO -->
+  <section id="contato">
+    <div class="outline">ARYA</div>
+    <div class="wrap contact-top">
+      <span class="eyebrow" data-reveal>Contato</span>
+      <h2 data-reveal>Vamos fazer sua loja crescer com dados.</h2>
+      <p data-reveal>Fale com a ARYA, siga nas redes ou entre no sistema.</p>
+      <div class="contact-btns" data-reveal>
+        <a class="btn btn-w" id="lnkWhats" href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>WhatsApp</a>
+        <a class="btn btn-g" id="lnkInsta" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</a>
+        <a class="btn btn-g" id="lnkMail" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>E-mail</a>
+        <a class="btn btn-g" href="app.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>Entrar no sistema</a>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="foot">
+        <div class="glass"><h5>ARYA</h5><a href="#sobre" data-go>Quem somos</a><a href="#servicos" data-go>Soluções</a><a href="#projetos" data-go>Projetos</a></div>
+        <div class="glass"><h5>Sistema</h5><a href="app.html">Entrar</a><a href="app.html">Criar conta</a></div>
+        <div class="glass"><h5>Legal</h5><a href="termos.html">Termos de Uso</a><a href="termos.html">Privacidade</a></div>
+        <div class="glass"><h5>Site</h5><a href="https://aryasystems.com.br">aryasystems.com.br</a></div>
+      </div>
+      <div class="copy"><span>©️ <span id="yr"></span> ARYA Business Systems</span><span>Criado por Vitória Gabrielly · Fundadora</span></div>
+    </div>
+  </section>
+</main>
+
+<div id="modal"><div class="bd"></div><div class="box glass"><button class="x" aria-label="Fechar">✕</button><span class="eyebrow" id="mTag"></span><h3 id="mTitle"></h3><p class="muted" id="mText"></p><ul id="mList"></ul><a class="btn btn-w" href="#contato" data-go id="mCta">Quero isso na minha loja</a></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module" src="experiencia.js"></script>
+</body>
+</html>
