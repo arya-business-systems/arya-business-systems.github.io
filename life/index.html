@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ARYA Life — Identidade visual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/life.css">
+</head>
+<body>
+
+  <!-- TOPO ESCURO (como vai ser a ARYA Home) -->
+  <header class="hero">
+    <div class="container">
+      <div class="topbar">
+        <a class="brand" href="#">ARYA <span class="life">Life</span></a>
+        <span class="badge badge-demo">Demonstração</span>
+      </div>
+
+      <nav class="tabs" aria-label="Telas">
+        <button class="tab" aria-current="page">Home</button>
+        <button class="tab">Discover</button>
+        <button class="tab">My Life</button>
+        <button class="tab">Resolver</button>
+        <button class="tab">Activity</button>
+        <button class="tab">Privacidade</button>
+      </nav>
+
+      <div class="stack" style="margin-top:48px">
+        <p class="eyebrow reveal">Bom dia</p>
+        <h1 class="display reveal reveal-2">Intelligence that<br>moves life forward.</h1>
+        <p class="lead reveal reveal-3">Esta página é só o guia visual da ARYA Life. Nada aqui usa dados reais ainda.</p>
+        <div class="ask reveal reveal-3">
+          <input class="input" type="text" placeholder="Pergunte à ARYA…" aria-label="Pergunte à ARYA">
+          <button class="btn btn-primary">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+
+      <!-- CORES -->
+      <section class="section stack">
+        <p class="eyebrow">01 · Cores</p>
+        <h2 class="h1">Azul profundo, branco e um azul luminoso</h2>
+        <div class="swatches">
+          <div class="swatch"><div class="swatch-color" style="background:#050E24"></div><div class="swatch-name">Navy 950<br><span class="small">#050E24</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#0A1A3D"></div><div class="swatch-name">Navy 900<br><span class="small">#0A1A3D</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#2E6BFF"></div><div class="swatch-name">Azul luminoso<br><span class="small">#2E6BFF</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#E6EEFF"></div><div class="swatch-name">Azul suave<br><span class="small">#E6EEFF</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#F6F8FC"></div><div class="swatch-name">Fundo<br><span class="small">#F6F8FC</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#FFFFFF"></div><div class="swatch-name">Branco<br><span class="small">#FFFFFF</span></div></div>
+        </div>
+      </section>
+
+      <!-- TIPOGRAFIA -->
+      <section class="section stack">
+        <p class="eyebrow">02 · Tipografia</p>
+        <h2 class="h1">Títulos editoriais, texto limpo</h2>
+        <p class="lead">Instrument Serif nos títulos e Inter no texto. A combinação parece revista, não template de app.</p>
+        <p class="h2">Subtítulo em Inter, peso 600</p>
+        <p>Texto normal em Inter 16px, confortável para ler no celular.</p>
+        <p class="small">Texto pequeno para datas, fontes e detalhes.</p>
+      </section>
+
+      <!-- BOTÕES E CAMPOS -->
+      <section class="section stack">
+        <p class="eyebrow">03 · Botões e campos</p>
+        <div class="buttons">
+          <button class="btn btn-primary">Salvar oportunidade</button>
+          <button class="btn btn-secondary">Ver requisitos</button>
+          <button class="btn btn-ghost">Abrir fonte oficial →</button>
+        </div>
+        <div class="field" style="max-width:420px">
+          <label class="label" for="ex-objetivo">Qual é o seu objetivo?</label>
+          <input class="input" id="ex-objetivo" type="text" placeholder="Ex.: entrar em uma faculdade">
+        </div>
+      </section>
+
+      <!-- SELOS -->
+      <section class="section stack">
+        <p class="eyebrow">04 · Selos</p>
+        <div class="buttons">
+          <span class="badge badge-ok">✓ Verificada</span>
+          <span class="badge badge-warn">Faltam 7 dias</span>
+          <span class="badge badge-danger">Último dia</span>
+          <span class="badge">Bolsas</span>
+          <span class="badge badge-demo">Demonstração</span>
+        </div>
+      </section>
+
+      <!-- LISTA EDITORIAL -->
+      <section class="section stack">
+        <p class="eyebrow">05 · Lista de oportunidades</p>
+        <h2 class="h1">Linhas limpas no lugar de muitos cartões</h2>
+        <div class="list">
+          <article class="row">
+            <div>
+              <h3 class="row-title">Oportunidade de exemplo</h3>
+              <div class="row-meta">
+                <span class="badge">Educação</span>
+                <span class="badge badge-demo">Demonstração</span>
+                <span class="small">Conferido em —</span>
+              </div>
+              <p class="why">Por que estou vendo isto: aqui vai aparecer o motivo da recomendação.</p>
+            </div>
+            <button class="btn btn-secondary">Ver detalhes</button>
+          </article>
+          <article class="row">
+            <div>
+              <h3 class="row-title">Outra oportunidade de exemplo</h3>
+              <div class="row-meta">
+                <span class="badge">Carreira</span>
+                <span class="badge badge-demo">Demonstração</span>
+              </div>
+            </div>
+            <button class="btn btn-secondary">Ver detalhes</button>
+          </article>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+</body>
+</html>
