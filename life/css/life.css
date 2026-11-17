@@ -1,0 +1,336 @@
+/* =========================================================
+   ARYA LIFE — Identidade visual (Fase 2.1)
+   Azul profundo + branco + azul luminoso como destaque.
+   Mobile primeiro: tudo funciona no celular e cresce no iPad.
+   ========================================================= */
+
+/* ---------- 1. Tokens (as "variáveis" da marca) ---------- */
+:root {
+  /* Cores */
+  --navy-950: #050E24;   /* azul mais profundo (fundos escuros) */
+  --navy-900: #0A1A3D;   /* texto principal e topo das telas */
+  --navy-700: #1B3470;   /* bordas fortes, hover */
+  --blue-500: #2E6BFF;   /* azul luminoso: o destaque da marca */
+  --blue-400: #5B8CFF;
+  --blue-100: #E6EEFF;   /* fundo suave de destaque */
+  --ice-50:   #F6F8FC;   /* fundo da página */
+  --white:    #FFFFFF;
+  --ink:      #0A1A3D;   /* texto */
+  --muted:    #5A6785;   /* texto secundário */
+  --line:     #DFE5F0;   /* linhas finas */
+  --ok:       #127A4B;   /* verificado */
+  --warn:     #A15C00;   /* prazo chegando */
+  --danger:   #B42318;   /* prazo encerrando / erro */
+
+  /* Tipografia: serifada editorial nos títulos, sem serifa no texto */
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Espaços (múltiplos de 4) */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+  /* Formas */
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-full: 999px;
+  --shadow: 0 1px 2px rgba(10, 26, 61, .06), 0 8px 24px rgba(10, 26, 61, .06);
+
+  /* Movimento suave */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --fast: 160ms;
+  --slow: 420ms;
+
+  --max: 1080px;
+}
+
+/* ---------- 2. Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--ice-50);
+  -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; display: block; }
+
+a { color: var(--blue-500); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 2px solid var(--blue-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--s4);
+}
+@media (min-width: 768px) {
+  .container { padding: 0 var(--s6); }
+}
+
+/* ---------- 3. Tipografia ---------- */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(36px, 8vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.1;
+  margin: 0;
+}
+.h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--blue-500);
+}
+.lead { font-size: 18px; color: var(--muted); max-width: 56ch; }
+.small { font-size: 13px; color: var(--muted); }
+
+/* ---------- 4. Marca ---------- */
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: inherit;
+}
+.brand .life {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0;
+  font-size: 1.15em;
+  color: var(--blue-400);
+}
+
+/* ---------- 5. Topo escuro (usado na Home) ---------- */
+.hero {
+  background: var(--navy-950);
+  color: var(--white);
+  padding: var(--s7) 0 var(--s8);
+  position: relative;
+  overflow: hidden;
+}
+/* um único brilho azul discreto, sem excesso de gradiente */
+.hero::after {
+  content: "";
+  position: absolute;
+  width: 520px; height: 520px;
+  right: -180px; top: -220px;
+  background: radial-gradient(circle, rgba(46, 107, 255, .35), transparent 65%);
+  pointer-events: none;
+}
+.hero .container { position: relative; z-index: 1; }
+.hero .lead { color: #AFC0E6; }
+
+/* ---------- 6. Navegação ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s4) 0;
+}
+
+/* abas: no celular ficam embaixo, no iPad/computador ficam no topo */
+.tabs {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--white);
+  border-top: 1px solid var(--line);
+  padding: var(--s2) var(--s1) calc(var(--s2) + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+.tab {
+  flex: 1;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  padding: var(--s2) var(--s1);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+.tab[aria-current="page"] { color: var(--blue-500); font-weight: 600; }
+
+@media (min-width: 768px) {
+  .tabs {
+    position: static;
+    justify-content: flex-start;
+    gap: var(--s1);
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+  .tab { flex: none; font-size: 14px; padding: var(--s2) var(--s3); }
+  .hero .tab { color: #AFC0E6; }
+  .hero .tab[aria-current="page"] { color: var(--white); background: rgba(255,255,255,.08); }
+}
+
+/* espaço para as abas fixas do celular não cobrirem o conteúdo */
+.page { padding-bottom: 96px; }
+@media (min-width: 768px) { .page { padding-bottom: var(--s8); } }
+
+/* ---------- 7. Botões ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: 44px;              /* tamanho bom para o dedo */
+  padding: 0 var(--s5);
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.btn:active { transform: scale(.98); }
+.btn-primary { background: var(--blue-500); color: var(--white); }
+.btn-primary:hover { background: #1F57E6; text-decoration: none; }
+.btn-secondary { background: var(--white); color: var(--ink); border-color: var(--line); }
+.btn-secondary:hover { border-color: var(--navy-700); text-decoration: none; }
+.btn-ghost { background: transparent; color: var(--blue-500); padding: 0 var(--s3); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---------- 8. Campos ---------- */
+.field { display: grid; gap: var(--s2); }
+.label { font-size: 14px; font-weight: 600; }
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--s4);
+  font: inherit;
+  font-size: 16px;               /* 16px evita o zoom automático do iPhone */
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px var(--blue-100);
+}
+
+/* Campo de conversa com a ARYA */
+.ask {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  background: var(--white);
+  border-radius: var(--radius-full);
+  padding: var(--s1) var(--s1) var(--s1) var(--s5);
+  box-shadow: var(--shadow);
+}
+.ask .input { border: 0; box-shadow: none; padding: 0; min-height: 44px; }
+
+/* ---------- 9. Selos ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--blue-100);
+  color: var(--navy-700);
+  white-space: nowrap;
+}
+.badge-ok { background: #E3F4EC; color: var(--ok); }
+.badge-warn { background: #FFF2DE; color: var(--warn); }
+.badge-danger { background: #FDE8E6; color: var(--danger); }
+/* Etiqueta obrigatória em tudo que ainda não tem dados reais */
+.badge-demo {
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--muted);
+}
+
+/* ---------- 10. Lista editorial (no lugar de muitos cartões) ---------- */
+.list { border-top: 1px solid var(--line); }
+.row {
+  display: grid;
+  gap: var(--s2);
+  padding: var(--s5) 0;
+  border-bottom: 1px solid var(--line);
+}
+@media (min-width: 768px) {
+  .row { grid-template-columns: 1fr auto; align-items: start; gap: var(--s5); }
+}
+.row-title { font-size: 17px; font-weight: 600; margin: 0; }
+.row-meta { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+
+/* "Por que estou vendo isto" */
+.why {
+  font-size: 14px;
+  color: var(--muted);
+  border-left: 2px solid var(--blue-500);
+  padding-left: var(--s3);
+  margin: var(--s2) 0 0;
+}
+
+/* ---------- 11. Painel (usado com moderação) ---------- */
+.panel {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--s5);
+}
+
+/* ---------- 12. Animação de entrada suave ---------- */
+.reveal { animation: reveal var(--slow) var(--ease) both; }
+.reveal-2 { animation-delay: 80ms; }
+.reveal-3 { animation-delay: 160ms; }
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+/* respeita quem desativa animações no aparelho */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- 13. Utilidades ---------- */
+.stack > * + * { margin-top: var(--s4); }
+.section { padding: var(--s7) 0 0; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s3); }
+.swatch { border-radius: var(--radius-sm); border: 1px solid var(--line); overflow: hidden; background: var(--white); }
+.swatch-color { height: 64px; }
+.swatch-name { padding: var(--s2) var(--s3); font-size: 13px; }
+.buttons { display: flex; flex-wrap: wrap; gap: var(--s3); }
